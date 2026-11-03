@@ -8,7 +8,7 @@
 |---|---|---|
 | Cane robot | Modello ignoto. StartupItalia (letto solo da snippet ⚠️) parla di "cyberdog già presenti, in attesa di certificazione" → forse Xiaomi CyberDog; candidato principale nelle guide: Unitree Go2 | [robot-dog.md](robot-dog.md) |
 | Droni | "A few drones", modello ignoto. Candidato più probabile per indoor: DJI/Ryze Tello (EDU) | [drones.md](drones.md) |
-| Braccio robotico | Solo sul sito dell'hackathon, non su Luma; usato in laboratori didattici | [museum-inventory.md](museum-inventory.md) |
+| Bracci robotici (3 cobot) | **Arm 1** + camera 1 (traccia C), **arm 2** + camera 2 (A), **arm 3** senza camera (04, 05). Utensile stampato forchetta/spintore/punta, niente gripper, solo vassoi fessurati. Slot da 30 minuti con lo staff. Modello ignoto | [robot-arm.md](robot-arm.md), [../event/tracks.md](../event/tracks.md) |
 | Simulatore di volo | "Three-screen flight simulator on a motion platform" (alt text del sito), stanza dedicata; software ignoto (MSFS / X-Plane / FlightGear) | [flight-simulator.md](flight-simulator.md) |
 | Simulatore di guida | "Seat and steering wheel", usato per un progetto di guida sicura con le scuole; software ignoto | [driving-simulator.md](driving-simulator.md) |
 | Macchine d'epoca | C64, PET 2001, Amiga 1000, Apple Lisa, Olivetti Programma 101; **Ultimate 64 Elite MK2 con REST API**; "chattralino" (centralino con telefoni a disco + ChatGPT); Videotel via ESP32 | [retro-machines.md](retro-machines.md), [../event/museum.md](../event/museum.md) |

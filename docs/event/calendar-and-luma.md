@@ -48,7 +48,8 @@ Cane robot, simulatore di guida, simulatore di volo, alcuni droni. Modelli non d
 - **Speaker SpaceXAI:** calendario e artifact citano Nick Miller; **confermato Ralph Johnson** (Luma + sito), che è anche in giuria.
 - **Orari:** il calendario dice 10:00 → 23:30, ma è sfasato di un'ora (errore di fuso): **kick-off 09:00**, fine evento su Luma 22:30, closing/awards 21:00.
 - **Team size:** Luma dice 1–4, il sito pavia.grokbot.it dice **4–6** (posto garantito solo ai team con almeno 4 persone). Chi non ha team entra in ordine di arrivo fino a capienza. Verificare l'approvazione Luma di Rios e Puddu.
-- **Indirizzo:** Luma dice Via Riviera 39, il sito dice Via Gragnani 18. Il museo ha entrambe le sedi: controllare sul canale Telegram `#pavia` (https://t.me/spacexai_italia/231).
+- **Indirizzo: risolto, è Via Gragnani 18** (mail di Luca Bianchi del 3/11 sera). Via Riviera 39 è l'altra sede del museo.
+- **Agenda aggiornata con i talk** e scadenza demo alle 16:00 di giovedì: vedi [tracks.md](tracks.md#agenda-aggiornata-home-del-sito--mail-del-311).
 - **Brand:** Luma, docs e SDK ora dicono **SpaceXSI** (SpaceX Super Intelligence); il sito e alcuni repo dicono ancora SpaceXAI.
 - **Criteri di giudizio e premi:** "To be announced".
 - **Startup Weekend 6–8/11:** probabilmente rinviato a marzo 2027.

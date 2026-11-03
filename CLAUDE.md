@@ -9,6 +9,7 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 | Ti serve | Leggi |
 |---|---|
 | Indice completo della documentazione | [docs/README.md](docs/README.md) |
+| **Le 10 tracce ufficiali (A–D aziende, 01–06 organizzatori), regole comuni, analisi e raccomandazione** | [docs/event/tracks.md](docs/event/tracks.md) (originali in [docs/event/raw/](docs/event/raw/)) |
 | Agenda, regole, giuria, criteri, cosa consegnare | [docs/event/hackathon.md](docs/event/hackathon.md), [docs/event/grokbot-site.md](docs/event/grokbot-site.md), [docs/event/calendar-and-luma.md](docs/event/calendar-and-luma.md) |
 | Il museo e la sua collezione | [docs/event/museum.md](docs/event/museum.md) |
 | Stato di SpaceXSI e dei prodotti Grok | [docs/event/spacexai-landscape.md](docs/event/spacexai-landscape.md) |
@@ -65,7 +66,11 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 - Se il cane è un Unitree Go2: WebRTC con `unitree_webrtc_connect`, serve la **chiave AES** del proprietario, un solo client alla volta, comandi di velocità da ripetere in loop, **mai `Damp`**.
 - Se i droni sono Tello: comandi UDP testuali, `stop` = hover, `emergency` = motori spenti; atterra da solo dopo 15 s senza comandi (keepalive); collegati al Tello si perde Internet.
 
-**Evento**
+**Evento** (aggiornato alla mail di Luca Bianchi del 3/11 sera)
+- **10 tracce** con demo minima e metriche definite: vedi [docs/event/tracks.md](docs/event/tracks.md). Hardware delle tracce: **3 bracci robotici** (utensile stampato forchetta/spintore/punta, niente gripper, solo vassoi fessurati), 2 camere, il cane. Slot da 30 minuti con lo staff. Simulatori e droni non sono in nessuna traccia.
+- Regole comuni: Grok essenziale; **demo minima entro gio 16:00 su un caso nuovo della giuria**; repo con README, dati, **almeno un risultato contro una baseline**, limiti; solo dati pubblici o sintetici.
+- Prima scelta per noi: **traccia 04 Voice Control** (braccio a voce con Grok Voice); alternativa **D Robot Dog Patrol**.
+- Indirizzo confermato: **Via Gragnani 18**, Pavia.
 - Kick-off **mer 9:00** (il calendario dice 10:00 ed è sbagliato). Gio 9:00 talk di **Ralph Johnson** (SpaceXSI, anche in giuria). Gio 16–19 pitch.
 - Da consegnare: **repo GitHub con README, demo 5 min, dataset/fixture, risultati quantitativi, limiti, roadmap**. Criteri: "To be announced"; principi del sito: Reproducibility, Evidence first, Human in the loop, Security by design, Realistic scope.
 

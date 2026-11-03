@@ -14,6 +14,9 @@
 ### [event/](event/): l'evento
 | File | Contenuto |
 |---|---|
+| **[tracks.md](event/tracks.md)** | **Le 10 tracce ufficiali, regole comuni, hardware per traccia, analisi e raccomandazione** |
+| [track-resources.md](event/track-resources.md) | Risorse pubbliche citate nelle tracce (YOLO-World, Frigate, voice-agent-phone/web, LeRobot, MAST…) |
+| [raw/](event/raw/) | Originali salvati: pagina tracks (HTML e testo), home, regole, mail di Luca Bianchi del 3/11 |
 | [hackathon.md](event/hackathon.md) | Agenda, regole, team size, cosa consegnare, criteri (indizi), giuria con profili, speaker, logistica |
 | [grokbot-site.md](event/grokbot-site.md) | Tutto il contenuto di pavia.grokbot.it: tracce, regole, giuria, risorse |
 | [calendar-and-luma.md](event/calendar-and-luma.md) | Dati da Google Calendar e Luma, brief originale, discrepanze tra le fonti |

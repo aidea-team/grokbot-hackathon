@@ -4,6 +4,10 @@
 > Wow / fattibilità / novità sono **stime su 10 fatte prima di vedere l'hardware**: da ricalibrare dopo il giro con lo staff di mercoledì mattina.
 > Per cosa esiste già sul mercato e in letteratura vedi [prior-art.md](prior-art.md). Per gli SDK dell'hardware vedi [../hardware/](../hardware/).
 
+## 🚨 Aggiornamento del 3/11 sera: ci sono 10 tracce ufficiali
+
+Gli organizzatori hanno pubblicato **10 tracce** con demo minima, metriche e hardware assegnato: vedi **[../event/tracks.md](../event/tracks.md)**. L'hardware delle tracce sono 3 bracci robotici e il cane; **simulatori, droni e macchine d'epoca non sono in nessuna traccia**. Le idee di questo file vanno rilette in quella chiave: *Il trucco nuovo* → traccia 04 (registrare una skill a voce), *Chiama il cane* → traccia D, *Hackerato con un A4* → strato avversario su A/D/04. La mappatura completa è in [tracks.md](../event/tracks.md#dove-finiscono-le-nostre-idee-ideasideasmd).
+
 ## ⚠️ Correzioni dopo la ricerca del 2026-11-03 (leggere prima delle idee)
 
 L'artifact è del 30/10; la ricerca sulle docs ha cambiato alcune premesse:
