@@ -11,3 +11,5 @@ node_modules/
 recordings/
 *.wav
 *.mp4
+.claude/worktrees/
+.claude/settings.local.json

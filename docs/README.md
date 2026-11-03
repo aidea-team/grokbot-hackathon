@@ -64,5 +64,16 @@
 | [grok-build.md](bots-imagine/grok-build.md) | Grok Build dal lato prodotto: comandi `/imagine`, MCP X |
 | [code-samples.md](bots-imagine/code-samples.md) | 10 snippet Python/JS + curl |
 
+### [claude-vs-grok/](claude-vs-grok/README.md): dallo stack Anthropic a Grok, e come lavoriamo
+| File | Contenuto |
+|---|---|
+| [README.md](claude-vs-grok/README.md) | **Dizionario Anthropic → Grok** e matrice decisionale "cosa usare per cosa" |
+| [models.md](claude-vs-grok/models.md) | Corrispondenza dei tier, prezzi e rate limit affiancati, raccomandazioni per ruolo |
+| [api-platform.md](claude-vs-grok/api-platform.md) | Claude API ↔ Grok API, circa 45 corrispondenze con snippet |
+| [dev-tools-and-agents.md](claude-vs-grok/dev-tools-and-agents.md) | Claude Code ↔ Grok Build ↔ Cursor CLI; Agent SDK ↔ equivalenti |
+| [cloud-and-automation.md](claude-vs-grok/cloud-and-automation.md) | Managed Agents, routine, sessioni cloud, browser, integrazioni, app, MCP |
+| [claude-code-workflow.md](claude-vs-grok/claude-code-workflow.md) | Guida operativa: Claude Code costruisce, Grok gira |
+| [preflight-checklist.md](claude-vs-grok/preflight-checklist.md) | Cosa fare la sera prima |
+
 ### [hardware/](hardware/README.md): SDK e integrazione dell'hardware
 Vedi [hardware/README.md](hardware/README.md): cane robot, droni, braccio, simulatori di volo e guida, cockpit come controller, macchine d'epoca, architettura LLM → robot.

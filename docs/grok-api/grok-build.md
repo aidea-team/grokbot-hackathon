@@ -75,7 +75,7 @@ Fa da ponte tra Claude Code e la CLI `grok`, per avere un secondo agente che fa 
 /grok-build:delegate investigate the flaky test in auth
 /grok-build:import           # importa la sessione Claude Code corrente in Grok
 ```
-Di default il bridge è read-only (`--permission-mode plan --sandbox read-only`). Il subagent `delegate` aggiunge `--write`.
+Review e critique girano con `--agent explore --sandbox read-only --always-approve` (verificato sul codice del plugin v0.2.1 il 2026-11-03). ⚠️ Il subagent `delegate` usa `--write --always-approve` **senza sandbox** ed è marcato "Proactively use": non usarlo sul portatile collegato all'hardware. Dettagli in [../claude-vs-grok/claude-code-workflow.md](../claude-vs-grok/claude-code-workflow.md).
 
 ## Costi e piani
 - Via **API key**: si paga a consumo con le tariffe API del modello scelto.

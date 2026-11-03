@@ -137,7 +137,7 @@ curl -s https://api.x.ai/v1/models  -H "Authorization: Bearer $XAI_API_KEY" | py
    ```bash
    claude mcp add --transport http xai-docs https://docs.x.ai/api/mcp
    ```
-   (La pagina ufficiale mostra la configurazione per Grok Build, Cursor, Zed, Windsurf e OpenCode. Il comando per Claude Code l'ho derivato io, ma usa il transport HTTP standard.)
+   (La pagina ufficiale mostra la configurazione per Grok Build, Cursor, Zed, Windsurf e OpenCode. Il comando per Claude Code è verificato il 2026-11-03: `initialize` e `tools/list` rispondono senza chiavi, 4 tool `list_doc_pages`, `get_doc_page`, `search_docs`, `get_llms_txt`. È già configurato nel `.mcp.json` della repo.)
 2. **Docs come markdown:** si aggiunge `.md` a qualsiasi URL di docs.x.ai, per esempio `curl -sL https://docs.x.ai/developers/tools/function-calling.md`. Con l'header `Accept-Language: en, python-xai` (oppure `python-openai`, `javascript-ai-sdk`, `javascript-openai`) si ricevono solo gli esempi del linguaggio scelto. L'indice completo è su https://docs.x.ai/llms.txt.
 3. **OpenAPI spec:** https://docs.x.ai/openapi.json
 4. **Plugin ufficiale "Grok Build ↔ Claude Code"** (`xai-org/grok-build-plugin-cc`) per delegare review e task a Grok Build da dentro Claude Code: vedi [grok-build.md](grok-build.md).

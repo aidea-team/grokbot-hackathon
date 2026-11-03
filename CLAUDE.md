@@ -28,6 +28,15 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 | Grok Build (CLI di coding `grok`) | [docs/grok-api/grok-build.md](docs/grok-api/grok-build.md), [docs/bots-imagine/grok-build.md](docs/bots-imagine/grok-build.md) |
 | Hardware del museo e SDK (cane, droni, simulatori, retro) | [docs/hardware/README.md](docs/hardware/README.md) |
 | Architettura LLM → robot sicura, tool JSON pronti, validatore | [docs/hardware/llm-robot-architecture.md](docs/hardware/llm-robot-architecture.md) |
+| **Equivalente Grok di ogni cosa Anthropic, e cosa usare per cosa** | [docs/claude-vs-grok/README.md](docs/claude-vs-grok/README.md) → [models.md](docs/claude-vs-grok/models.md), [api-platform.md](docs/claude-vs-grok/api-platform.md), [dev-tools-and-agents.md](docs/claude-vs-grok/dev-tools-and-agents.md), [cloud-and-automation.md](docs/claude-vs-grok/cloud-and-automation.md) |
+| **Come lavoriamo: Claude Code costruisce, Grok gira** | [docs/claude-vs-grok/claude-code-workflow.md](docs/claude-vs-grok/claude-code-workflow.md), [preflight-checklist.md](docs/claude-vs-grok/preflight-checklist.md) |
+
+## Strumenti di Claude Code già configurati in questa repo
+
+- **`.mcp.json` → `xai-docs`** (`https://docs.x.ai/api/mcp`, nessuna auth, verificato): approvalo al primo `claude`. Prima di scrivere codice su un'API Grok, **cerca nelle docs live con `mcp__xai-docs__search_docs` / `get_doc_page`** invece di andare a memoria: i docs xAI cambiano di continuo.
+- **Skill `grok-api`** (`.claude/skills/grok-api/`): model id, endpoint, formati dei tool, regole di runtime. Si carica quando scrivi codice che chiama Grok.
+- **Skill `robot-safety`** (`.claude/skills/robot-safety/`): whitelist, validatore, kill switch, mock-first. Si carica quando scrivi codice che muove hardware. **Non lanciare mai `--real` sull'hardware: lo fa un umano.**
+- Grok Build (`grok`) legge gli stessi `CLAUDE.md`, skill e `.mcp.json`; Cursor legge [AGENTS.md](AGENTS.md), che rimanda qui.
 
 ## Fatti chiave (riassunto, dettagli e fonti nei docs)
 
