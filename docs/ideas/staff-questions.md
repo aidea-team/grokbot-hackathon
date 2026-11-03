@@ -5,6 +5,9 @@
 ## Domande
 
 - [ ] **Cane robot:** che modello è (marca, modello, variante: es. Unitree Go2 Air/Pro/EDU)? Accetta codice nostro (SDK, ROS2, WebRTC) o solo l'app? Firmware?
+- [ ] **Cane robot (se Unitree Go2 con firmware ≥ 1.1.15):** ci date la **chiave AES** del dispositivo (si ottiene solo con l'account Unitree del proprietario, `unitree-fetch-aes-key`)? Chiudete l'app Unitree Go sui telefoni: accetta **un solo client** alla volta. È una EDU (SDK ufficiale su Ethernet)?
+- [ ] **Braccio robotico:** è sul sito ufficiale ma non su Luma. Che modello, che SDK, è disponibile ai team?
+- [ ] **Droni Tello:** se sì, sono EDU (station mode sul router del museo)? Altrimenti serve un secondo adattatore Wi-Fi perché collegati al Tello si perde Internet (e quindi Grok).
 - [ ] **Cane robot:** si può montare un telefono o una scheda sul dorso? Ha speaker/microfono utilizzabili? Camera accessibile?
 - [ ] **Simulatore di volo:** che software (MSFS 2020/2024, X-Plane 11/12, FlightGear…)? Esporta telemetria e comandi autopilota (SimConnect, UDP, Web API)? Possiamo installare roba sul PC o collegarci in rete?
 - [ ] **Simulatore di guida:** quale gioco, che telemetria esce (UDP, shared memory)? Volante e pedali si possono collegare a un altro PC?

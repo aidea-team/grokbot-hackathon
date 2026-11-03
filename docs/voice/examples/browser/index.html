@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grok Voice - browser</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  button { font-size: 1.2rem; padding: .6rem 1.2rem; }
+  #log { white-space: pre-wrap; background: #f4f4f4; padding: 1rem; height: 50vh; overflow: auto; font-size: .9rem; }
+</style>
+</head>
+<body>
+<h1>Grok Voice (browser, ephemeral token)</h1>
+<label><input type="checkbox" id="half"> half-duplex (casse aperte senza cuffie)</label><br><br>
+<button id="btn">Start</button>
+<div id="log"></div>
+<script>
+const MODEL = "grok-voice-latest";          // in produzione: "grok-voice-3.0"
+const URL_RT = `wss://api.x.ai/v1/realtime?model=${MODEL}`;
+const RATE = 24000;                          // PCM16 mono 24 kHz in/out (default API)
+
+const TOOLS = [{
+  type: "function",
+  name: "move_robot",
+  description: "Make the robot dog perform a movement or trick.",
+  parameters: {
+    type: "object",
+    properties: { action: { type: "string", enum: ["sit", "stand", "walk_forward", "turn_left", "turn_right", "wave", "dance"] } },
+    required: ["action"],
+  },
+}];
+const INSTRUCTIONS = `## Role & Persona
+You are Fido, a playful robot dog at the Ctrl+Alt Museum. You speak Italian.
+## Objective
+Do what the visitor asks with the move_robot tool.
+## Conversation Flow
+Before calling move_robot say one short line like "Ok!". After the result, confirm briefly.
+## Guardrails & Escalation
+Only use the actions in move_robot.
+## Voice & Communication Style
+- Respond only in Italian. Spoken words only. 1-2 short sentences.`;
+
+const $ = (id) => document.getElementById(id);
+const log = (s) => { $("log").textContent += s; $("log").scrollTop = 1e9; };
+let S = null; // stato sessione
+
+// AudioWorklet: passa i campioni del microfono al main thread
+const WORKLET = URL.createObjectURL(new Blob([`registerProcessor("cap", class extends AudioWorkletProcessor {
+  process([i]) { if (i[0]) this.port.postMessage(i[0]); return true; } });`], { type: "text/javascript" }));
+
+$("btn").onclick = () => (S ? stop() : start());
+
+async function start() {
+  // AudioContext creato DENTRO il click (Safari lo sospende altrimenti)
+  const audio = new AudioContext({ sampleRate: RATE });
+  await audio.resume();
+  S = { audio, playhead: 0, sources: [], calls: [], buf: new Int16Array(RATE / 10), filled: 0, ready: false };
+  $("btn").textContent = "Stop";
+  const mic = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  });
+  S.mic = mic;
+  await audio.audioWorklet.addModule(WORKLET);
+  S.ws = await openSocket();
+  S.ws.onmessage = (m) => handle(JSON.parse(m.data));
+  S.ws.onclose = (e) => { log(`\n[chiuso ${e.code} ${e.reason}]`); stop(); };
+  S.ws.send(JSON.stringify({ type: "session.update", session: {
+    voice: "eve",
+    instructions: INSTRUCTIONS,
+    turn_detection: { type: "server_vad" },
+    audio: {
+      input: { format: { type: "audio/pcm", rate: RATE }, transcription: { language_hint: "it" } },
+      output: { format: { type: "audio/pcm", rate: RATE } },
+    },
+    tools: TOOLS,
+  }}));
+}
+
+// ~1 connessione su 10 si apre ma non manda session.created (cookbook live-interpreter):
+// timeout 5 s e retry con token nuovo (un token apre UNA sola sessione)
+async function openSocket() {
+  for (let i = 0; i < 3; i++) {
+    const r = await fetch("/session", { method: "POST" });
+    const { value } = await r.json();
+    const ws = new WebSocket(URL_RT, [`xai-client-secret.${value}`]);
+    const ok = await new Promise((res) => {
+      const t = setTimeout(() => res(false), 5000);
+      ws.onmessage = (m) => { if (JSON.parse(m.data).type === "session.created") { clearTimeout(t); res(true); } };
+      ws.onclose = () => { clearTimeout(t); res(false); };
+    });
+    if (ok) return ws;
+    ws.close();
+    log("\n[retry connessione]");
+  }
+  throw new Error("sessione non avviata");
+}
+
+function startMic() {
+  const node = new AudioWorkletNode(S.audio, "cap", { numberOfOutputs: 0 });
+  node.port.onmessage = (m) => sendMic(m.data);
+  S.audio.createMediaStreamSource(S.mic).connect(node);
+}
+
+function sendMic(samples) {
+  if (!S?.ready || S.ws.readyState !== WebSocket.OPEN) return;
+  if ($("half").checked && S.audio.currentTime < S.playhead + 0.3) return; // half-duplex anti-eco
+  for (const x of samples) {
+    S.buf[S.filled++] = Math.max(-1, Math.min(1, x)) * 0x7fff;
+    if (S.filled === S.buf.length) {               // 100 ms
+      const b = new Uint8Array(S.buf.buffer);
+      let s = ""; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+      S.ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: btoa(s) }));
+      S.filled = 0;
+    }
+  }
+}
+
+function play(b64, itemId) {
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const pcm = new Int16Array(bytes.buffer, 0, bytes.length >> 1);
+  const buf = S.audio.createBuffer(1, pcm.length, RATE);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 0x8000;
+  const src = S.audio.createBufferSource();
+  src.buffer = buf; src.connect(S.audio.destination);
+  S.playhead = Math.max(S.playhead, S.audio.currentTime + 0.05);
+  if (S.itemId !== itemId) { S.itemId = itemId; S.itemStart = S.playhead; }
+  src.start(S.playhead);
+  S.playhead += buf.duration;
+  S.sources.push(src);
+  src.onended = () => { S && (S.sources = S.sources.filter((x) => x !== src)); };
+}
+
+function bargeIn() {
+  if (!S.sources.length) return;
+  const playedMs = Math.max(0, Math.round((S.audio.currentTime - S.itemStart) * 1000));
+  S.sources.forEach((s) => { try { s.stop(); } catch {} });
+  S.sources = []; S.playhead = 0;
+  // allinea il contesto a quello che l'utente ha davvero sentito
+  if (S.itemId) S.ws.send(JSON.stringify({ type: "conversation.item.truncate", item_id: S.itemId, content_index: 0, audio_end_ms: playedMs }));
+}
+
+async function runTool(name, args) {
+  if (name === "move_robot") {
+    const r = await fetch("/robot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(args) });
+    return await r.json();
+  }
+  return { ok: false, error: "unknown tool" };
+}
+
+const waitPlayback = () => new Promise((res) => {
+  const tick = () => (S.audio.currentTime >= S.playhead ? res() : setTimeout(tick, 50));
+  tick();
+});
+
+async function handle(ev) {
+  switch (ev.type) {
+    case "session.updated":
+      if (!S.ready && ev.session?.instructions) {   // con token, il primo updated puo' non avere instructions
+        S.ready = true; startMic(); log("[pronto: parla]\n");
+        S.ws.send(JSON.stringify({ type: "response.create", response: { instructions: "Greet the visitor in Italian in one short sentence." } }));
+      }
+      break;
+    case "input_audio_buffer.speech_started": bargeIn(); log("\n[tu] "); break;
+    case "conversation.item.input_audio_transcription.completed": log(ev.transcript + "\n"); break;
+    case "response.output_audio.delta": play(ev.delta, ev.item_id); break;
+    case "response.output_audio_transcript.delta": log(ev.delta); break;
+    case "response.function_call_arguments.done": S.calls.push(ev); break;
+    case "response.done": {
+      const calls = S.calls; S.calls = [];
+      if (!calls.length) break;
+      for (const c of calls) {
+        const out = await runTool(c.name, JSON.parse(c.arguments || "{}"));
+        log(`\n[tool ${c.name}] ${JSON.stringify(out)}\n`);
+        S.ws.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: c.call_id, output: JSON.stringify(out) } }));
+      }
+      await waitPlayback();                                   // niente audio sovrapposto
+      S.ws.send(JSON.stringify({ type: "response.create" })); // una sola volta, dopo TUTTI gli output
+      break;
+    }
+    case "error": log(`\n[errore] ${JSON.stringify(ev.error)}\n`); break;
+  }
+}
+
+function stop() {
+  if (!S) return;
+  const s = S; S = null;
+  try { s.ws && (s.ws.onclose = null, s.ws.close()); } catch {}
+  s.mic?.getTracks().forEach((t) => t.stop());
+  s.audio.close();
+  $("btn").textContent = "Start";
+}
+</script>
+</body>
+</html>

@@ -4,6 +4,24 @@
 > Wow / fattibilità / novità sono **stime su 10 fatte prima di vedere l'hardware**: da ricalibrare dopo il giro con lo staff di mercoledì mattina.
 > Per cosa esiste già sul mercato e in letteratura vedi [prior-art.md](prior-art.md). Per gli SDK dell'hardware vedi [../hardware/](../hardware/).
 
+## ⚠️ Correzioni dopo la ricerca del 2026-11-03 (leggere prima delle idee)
+
+L'artifact è del 30/10; la ricerca sulle docs ha cambiato alcune premesse:
+
+| Premessa dell'artifact | Realtà verificata | Idee impattate | Dove |
+|---|---|---|---|
+| "Custom Voices: clona una voce da una breve registrazione" | Custom Voices è **solo USA**, richiede che lo speaker legga una passphrase dal vivo, niente cloning da registrazioni esistenti; l'API di creazione è Enterprise. → usare le voci built-in (`eve`, `ara`, `rex`, `sal`, `leo`… ) + persona nel prompt. Chiedere a SpaceXAI se possono abilitarlo. | Telefono del tempo, Regista | [../voice/custom-voices.md](../voice/custom-voices.md) |
+| Il telefono d'epoca serve Twilio | No: cornetta → scheda audio USB → laptop con il client locale. Twilio solo per "Chiama il cane" (numero USA, quello italiano richiede giorni di bundle regolatorio). | Telefono del tempo, Chiama il cane | [../voice/telephony-twilio.md](../voice/telephony-twilio.md) |
+| "Grok Bot con connettore X" per far comandare il pubblico | Grok Bot è un'**app** (computer cloud + routine + MCP), **non un SDK**; il tag @bot su X **non funziona per account UE**. → leggere X con il tool server-side `x_search` della Responses API ($5/1k post); postare con X API v2 a consumo (OAuth utente). | X comanda | [../bots-imagine/](../bots-imagine/) |
+| "Grok 4.7 / Grok Build" | Confermati: `grok-4.7` (500k ctx, reasoning non disattivabile) e `grok-build-0.1` per coding via API; la CLI `grok` (Grok Build) ha modalità headless. Per bassa latenza: `grok-4.3` con `reasoning.effort: "none"`. | Trucco nuovo, C64 | [../grok-api/models.md](../grok-api/models.md) |
+| Editing video "fino a circa 9 s" | Edit su clip fino a **8,7 s** solo con `grok-imagine-video`; generazione 1–15 s, async con polling, "fino a diversi minuti". | Film del volo, Regista | [../bots-imagine/grok-imagine.md](../bots-imagine/grok-imagine.md) |
+| Hardware: cane, droni, 2 simulatori | Il sito ufficiale elenca anche un **braccio robotico**. Modelli ancora non pubblicati. | Tutte | [../hardware/museum-inventory.md](../hardware/museum-inventory.md) |
+| "Macchina d'epoca + LLM" è nuovo | Il museo ha già un Videotel collegato via ESP32 e ChatGPT su C64 via BBS (Sblendorio). Ha però un **Ultimate 64 Elite MK2 con REST API** per caricare ed eseguire programmi da remoto → Ghost in the C64 diventa molto più fattibile. Per distinguerci Grok deve **agire** (programmare), non chattare. | Ghost in the C64, Grok vs 1983 | [../event/museum.md](../event/museum.md), [../hardware/retro-machines.md](../hardware/retro-machines.md) |
+| Telefono del tempo come idea nuova | Il museo ha già il **"chattralino"**: un centralino analogico con telefoni a disco collegati a ChatGPT. → Il telefono da solo non basta: va reso teatrale (personaggi, Grok che agisce sull'hardware) o riusato come interfaccia per un'altra idea. | Telefono del tempo | [../hardware/museum-inventory-sims.md](../hardware/museum-inventory-sims.md) |
+| "Hackerato con un A4" | Combacia con la traccia ufficiale **Agent Failure Lab** e con i principi "Security by design" / "Evidence first". RoboPAIR ha già attaccato un Unitree Go2: citarlo nel pitch. | Hackerato con un A4 | [prior-art.md](prior-art.md), [../event/hackathon.md](../event/hackathon.md) |
+
+**Cosa consegnare** (sito ufficiale): repo GitHub con README, demo da 5 minuti, dataset/fixture, **risultati quantitativi**, limiti, roadmap. Ogni idea va quindi pensata con una metrica (latenza, tasso di successo, attacchi riusciti prima/dopo).
+
 ## Come si vince qui (la nostra lettura, non i criteri ufficiali)
 
 1. **Le idee del brief le faranno in tanti.** Partire da lì e ribaltarle: la giuria vedrà dieci cani che camminano a comando.

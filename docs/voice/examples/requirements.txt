@@ -1,0 +1,7 @@
+# Testato con websockets 17.4, fastapi 0.162, Python 3.12/3.14 (contro mock locale)
+websockets>=14
+sounddevice>=0.4      # richiede PortAudio di sistema: apt install libportaudio2 / brew install portaudio
+numpy                 # opzionale
+fastapi               # solo twilio_bridge.py
+uvicorn[standard]     # solo twilio_bridge.py
+requests              # snippet REST TTS/STT/custom voices

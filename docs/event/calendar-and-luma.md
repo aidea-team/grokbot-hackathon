@@ -43,8 +43,12 @@
 
 Cane robot, simulatore di guida, simulatore di volo, alcuni droni. Modelli non dichiarati: vedi [../hardware/](../hardware/) e [../ideas/staff-questions.md](../ideas/staff-questions.md).
 
-## ⚠️ Discrepanze da chiarire
+## ⚠️ Discrepanze (risolte o aperte, vedi [hackathon.md](hackathon.md))
 
-- **Speaker SpaceXAI:** la descrizione salvata in calendario (copiata da Luma a ottobre) e l'artifact delle idee citano **Nick Miller**; la pagina Luma al 2026-11-03 indica **Ralph Johnson**. Vedi [hackathon.md](hackathon.md) per la verifica.
-- **Orari:** il calendario ha inizio alle 10:00, Luma dice kick-off alle 9:00. Fidarsi di Luma: arrivare per le 9.
-- **Criteri di giudizio e premi:** non indicati su Luma.
+- **Speaker SpaceXAI:** calendario e artifact citano Nick Miller; **confermato Ralph Johnson** (Luma + sito), che è anche in giuria.
+- **Orari:** il calendario dice 10:00 → 23:30, ma è sfasato di un'ora (errore di fuso): **kick-off 09:00**, fine evento su Luma 22:30, closing/awards 21:00.
+- **Team size:** Luma dice 1–4, il sito pavia.grokbot.it dice **4–6** (posto garantito solo ai team con almeno 4 persone). Chi non ha team entra in ordine di arrivo fino a capienza. Verificare l'approvazione Luma di Rios e Puddu.
+- **Indirizzo:** Luma dice Via Riviera 39, il sito dice Via Gragnani 18. Il museo ha entrambe le sedi: controllare sul canale Telegram `#pavia` (https://t.me/spacexai_italia/231).
+- **Brand:** Luma, docs e SDK ora dicono **SpaceXSI** (SpaceX Super Intelligence); il sito e alcuni repo dicono ancora SpaceXAI.
+- **Criteri di giudizio e premi:** "To be announced".
+- **Startup Weekend 6–8/11:** probabilmente rinviato a marzo 2027.
