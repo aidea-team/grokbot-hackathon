@@ -255,6 +255,7 @@ Ci contano: Grok Voice già studiato a fondo (con esempi pronti), l'architettura
 
 ### Raccomandazione
 
+0. **Hardware dei bracci:** molto probabilmente **UR3e e UR5e** di Spazio Robot ⚠️ (dettagli in [../hardware/robot-arm.md](../hardware/robot-arm.md)). Stasera si può già provare tutto sul simulatore ufficiale URSim: `docker run -e ROBOT_MODEL=UR3 -p 6080:6080 -p 29999:29999 -p 30001-30004:30001-30004 universalrobots/ursim_e-series`.
 1. **Prima scelta: 04 Voice Control.** Arrivare alle 9:00 e prenotare subito uno dei 2 posti. Pitch: "voce in italiano → skill validate → conferma → movimento, con stop garantito e misurato", più lo stretch *insegnagli una skill nuova a voce* (il nostro "trucco nuovo"). Docs pronti: [../voice/](../voice/README.md), [../hardware/llm-robot-architecture.md](../hardware/llm-robot-architecture.md), [../hardware/robot-arm.md](../hardware/robot-arm.md).
 2. **Alternativa: D Robot Dog Patrol**, se il cane è un Unitree accessibile e c'è posto. Console vocale, Frigate o una camera da smartphone come sensore, Grok che decide e descrive, allerta con chiamata Twilio.
 3. **Aggiunta differenziante su entrambe:** una suite di **attacchi avversari** (comandi ambigui, "stop" sussurrato, prompt injection vocale o visiva) con una tabella "prima/dopo", come risultato misurato contro una baseline.

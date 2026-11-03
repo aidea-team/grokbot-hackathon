@@ -57,3 +57,11 @@
 - [ ] Nastro adesivo colorato per delimitare l'area (checklist di sicurezza in [llm-robot-architecture.md §6](../hardware/llm-robot-architecture.md)).
 - [ ] [staff-questions.md](../ideas/staff-questions.md) stampato o aperto sul telefono.
 - [ ] Batterie esterne e caricatori dei portatili.
+
+## 10. Aggiunte dopo le tracce (3/11 sera)
+
+- [ ] **Python 3.12** per tutto il team: `ur_rtde` ha wheel solo fino alla 3.12, e LeRobot e tau2-bench richiedono almeno la 3.12.
+- [ ] `pip install ur_rtde` e avvio di **URSim**: `docker run -e ROBOT_MODEL=UR3 -p 6080:6080 -p 29999:29999 -p 30001-30004:30001-30004 universalrobots/ursim_e-series`, con il teach pendant nel browser su `http://localhost:6080`. Vedi [../hardware/robot-arm.md](../hardware/robot-arm.md).
+- [ ] Far girare in mock il wrapper `ArmSkills` di robot-arm.md collegato a `voice_agent_local.py --text`.
+- [ ] Solo per la traccia 01: creare stasera una API key gratuita OpenAlex (senza key si hanno 100 crediti al giorno).
+- [ ] Rileggere [../event/tracks.md](../event/tracks.md) e decidere la traccia prima delle 9:00.

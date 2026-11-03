@@ -69,6 +69,7 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 **Evento** (aggiornato alla mail di Luca Bianchi del 3/11 sera)
 - **10 tracce** con demo minima e metriche definite: vedi [docs/event/tracks.md](docs/event/tracks.md). Hardware delle tracce: **3 bracci robotici** (utensile stampato forchetta/spintore/punta, niente gripper, solo vassoi fessurati), 2 camere, il cane. Slot da 30 minuti con lo staff. Simulatori e droni non sono in nessuna traccia.
 - Regole comuni: Grok essenziale; **demo minima entro gio 16:00 su un caso nuovo della giuria**; repo con README, dati, **almeno un risultato contro una baseline**, limiti; solo dati pubblici o sintetici.
+- **Bracci: molto probabilmente Universal Robots UR3e e UR5e** prestati da Spazio Robot (il loro calendario pubblico li dà prenotati il 4–5/11; il CEO di Fabbrica Vigevano, Alessandro Rano, è in giuria). Il terzo braccio è ignoto. Controllo da Python con `ur_rtde` (robot in **Remote Control**), simulatore ufficiale URSim in Docker. **Python 3.12** per tutto il team. Vedi [docs/hardware/robot-arm.md](docs/hardware/robot-arm.md).
 - Prima scelta per noi: **traccia 04 Voice Control** (braccio a voce con Grok Voice); alternativa **D Robot Dog Patrol**.
 - Indirizzo confermato: **Via Gragnani 18**, Pavia.
 - Kick-off **mer 9:00** (il calendario dice 10:00 ed è sbagliato). Gio 9:00 talk di **Ralph Johnson** (SpaceXSI, anche in giuria). Gio 16–19 pitch.

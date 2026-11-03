@@ -8,7 +8,7 @@
 |---|---|---|
 | Cane robot | Modello ignoto. StartupItalia (letto solo da snippet ⚠️) parla di "cyberdog già presenti, in attesa di certificazione" → forse Xiaomi CyberDog; candidato principale nelle guide: Unitree Go2 | [robot-dog.md](robot-dog.md) |
 | Droni | "A few drones", modello ignoto. Candidato più probabile per indoor: DJI/Ryze Tello (EDU) | [drones.md](drones.md) |
-| Bracci robotici (3 cobot) | **Arm 1** + camera 1 (traccia C), **arm 2** + camera 2 (A), **arm 3** senza camera (04, 05). Utensile stampato forchetta/spintore/punta, niente gripper, solo vassoi fessurati. Slot da 30 minuti con lo staff. Modello ignoto | [robot-arm.md](robot-arm.md), [../event/tracks.md](../event/tracks.md) |
+| Bracci robotici (3 cobot) | **Arm 1** + camera 1 (traccia C), **arm 2** + camera 2 (A), **arm 3** senza camera (04, 05). Utensile stampato forchetta/spintore/punta, niente gripper, solo vassoi fessurati. Slot da 30 minuti con lo staff. **Molto probabilmente UR3e + UR5e** (Spazio Robot) ⚠️ dedotto dal loro calendario pubblico; terzo braccio ignoto | [robot-arm.md](robot-arm.md), [../event/tracks.md](../event/tracks.md) |
 | Simulatore di volo | "Three-screen flight simulator on a motion platform" (alt text del sito), stanza dedicata; software ignoto (MSFS / X-Plane / FlightGear) | [flight-simulator.md](flight-simulator.md) |
 | Simulatore di guida | "Seat and steering wheel", usato per un progetto di guida sicura con le scuole; software ignoto | [driving-simulator.md](driving-simulator.md) |
 | Macchine d'epoca | C64, PET 2001, Amiga 1000, Apple Lisa, Olivetti Programma 101; **Ultimate 64 Elite MK2 con REST API**; "chattralino" (centralino con telefoni a disco + ChatGPT); Videotel via ESP32 | [retro-machines.md](retro-machines.md), [../event/museum.md](../event/museum.md) |
@@ -16,6 +16,8 @@
 Inventario e fonti: [museum-inventory.md](museum-inventory.md) (cane, droni, braccio) e [museum-inventory-sims.md](museum-inventory-sims.md) (simulatori, macchine d'epoca, 15 domande allo staff).
 
 ## Guide
+
+- [robot-arm.md](robot-arm.md): bracci robotici. Indizi sul modello (UR3e/UR5e), checklist da 5 minuti per riconoscerlo, UR e-Series con `ur_rtde`, Dashboard, URSim in Docker, altri cobot candidati, 9 tool Grok, wrapper `ArmSkills` con mock, validatore, conferma, kill switch e log JSONL, piano del primo slot da 30 minuti.
 
 - [llm-robot-architecture.md](llm-robot-architecture.md): **leggere per primo**. Grok → validatore deterministico → executor, kill switch locale, tool JSON pronti per cane (10) e drone (7), codice del validatore, loop con Grok, mock driver, checklist di sicurezza.
 - [robot-dog.md](robot-dog.md): riconoscere il modello in 10 minuti; Unitree Go2 (WebRTC `unitree_webrtc_connect`, SDK ufficiale su Ethernet per EDU, ROS2); Go1, Petoi Bittle, CyberDog, Spot; simulazione.
