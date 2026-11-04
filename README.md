@@ -52,6 +52,14 @@ Col cane vero:
 
 **INVIO o Ctrl+C = stop.** Il telecomando resta in mano a qualcuno. Dettagli in [src/dog/README.md](src/dog/README.md).
 
+### Quale SDK del cane usiamo (e perché)
+
+- **`free-dog-sdk` (Bin4ry) non è l'SDK ufficiale.** È un reverse engineering in puro Python della `unitree_legged_sdk` di Unitree Robotics: stesso protocollo UDP high-level del Go1, ma **senza le safety features** dell'originale. Lo usiamo perché si installa senza compilare, è fissato a un commit (`0ececb5`) e gira uguale su tutti i PC.
+- **Con l'SDK ufficiale (anche via Docker) non avremmo comandi in più.** `free-dog-sdk` espone tutte le modalità high-level del Go1 (`ucl/enums.py`, `MotorModeHigh`): `IDLE`, `FORCE_STAND`, `VEL_WALK`, `POS_WALK`, `PATH`, `STAND_UP`, `STAND_DOWN`, `RECOVERY`, `STRAIGHTHAND`, `DANCE1`, `DANCE2`, `BACKFLIP`, `JUMPYAW`, `DAMPING`, più le andature di `GaitType`.
+- **Cosa limita davvero i comandi è il nostro `src/dog/driver.py`**, che oggi usa solo `VEL_WALK` e `IDLE` con i limiti di velocità. Per usare altri comandi si estende il driver, non si cambia SDK.
+- ⚠️ `DAMPING` spegne i motori e il cane cade. Nessun limite software copre un comando sbagliato: la prima prova di un comando nuovo sul cane vero va fatta con qualcuno al telecomando.
+- Se `free-dog-sdk` desse problemi sul Go1 vero, il piano B è `unitree_legged_sdk` (binding Python da compilare).
+
 ## Come lavoriamo insieme (git)
 
 - `main` deve funzionare sempre. Per ogni pezzo di lavoro aprite un branch corto, per esempio `git checkout main && git pull && git checkout -b nome/cosa`.
