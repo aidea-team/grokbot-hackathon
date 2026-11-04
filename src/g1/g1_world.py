@@ -30,6 +30,16 @@ from rgbd import RGBD, Floor, Intrinsics  # noqa: E402
 SCENE = Path(__file__).parent / "assets" / "scene.xml"
 # "default": two coloured cylinders 4 m ahead (chat/camera tests). "desk": an office corner (desk, monitor, keyboard, chair) for perception.
 SCENES = {"default": SCENE, "desk": Path(__file__).parent / "assets" / "scene_desk.xml"}
+# Where the robot (re)starts, (x, y, yaw rad): in the desk scene ~1.5 m from the desk's front edge, a bit to the right of the chair,
+# facing the desk's centre (3.0, 0): desk, monitor, keyboard and mouse centred in the head camera, the chair on the left.
+SCENE_START = {"desk": (1.2, -0.6, float(np.arctan2(0.6, 1.8)))}
+# External view (azimuth = viewing direction, elevation, distance): desk scene = the robot in profile with the desk in front of it.
+SCENE_ORBIT = {"desk": (-50.0, -22.0, 3.8)}
+# The desk scene starts with lab29: standing still with zero command, gym12 walks off by itself (~1.7 m and 30 deg in 10 s, measured).
+SCENE_CONTROLLER = {"desk": "lab29"}
+# ...and even lab29 turns away slowly (~35 deg in 2 min). The real G1 stands still without Move: in these scenes, with no command,
+# small corrective commands bring the robot back to where it was left (at start: facing the desk).
+HOLD_POSE_SCENES = {"desk"}
 
 # Two interchangeable leg/whole-body controllers (both Unitree's, both in the simulator only):
 #   "gym12": unitree_rl_gym motion.pt, 12 leg joints, arms/waist held by PD at our targets (jog, gestures work); arms forward at ~90 deg
@@ -125,11 +135,12 @@ def gravity_in_body(quat: np.ndarray) -> np.ndarray:
 
 
 class G1World:
-    def __init__(self, width: int = 800, height: int = 450, head_size: tuple[int, int] = (640, 360), controller: str = "gym12",
+    def __init__(self, width: int = 800, height: int = 450, head_size: tuple[int, int] = (640, 360), controller: str | None = None,
                  scene: str = "default"):
         if scene not in SCENES:
             raise ValueError(f"scene {scene!r}: choose from {sorted(SCENES)}")
         self.scene = scene
+        controller = controller or SCENE_CONTROLLER.get(scene, "gym12")
         self.model = mujoco.MjModel.from_xml_path(str(SCENES[scene]))
         self.model.opt.timestep = SIM_DT
         self.data = mujoco.MjData(self.model)
@@ -177,8 +188,11 @@ class G1World:
         self.fallen = False
         self.falls = 0
         self.cam = mujoco.MjvCamera()
-        self.cam.type, self.cam.distance, self.cam.azimuth, self.cam.elevation = mujoco.mjtCamera.mjCAMERA_FREE, 3.0, 145.0, -15.0
+        az, el, dist = SCENE_ORBIT.get(scene, (145.0, -15.0, 3.0))
+        self.cam.type, self.cam.distance, self.cam.azimuth, self.cam.elevation = mujoco.mjtCamera.mjCAMERA_FREE, dist, az, el
         self.follow = True
+        self.hold_pose = scene in HOLD_POSE_SCENES
+        self._anchor: tuple[float, float, float] | None = None  # (x, y, yaw) to hold while no command arrives
 
     # ------------------------------------------------------------------ public API (thread-safe)
     def start(self) -> None:
@@ -312,6 +326,7 @@ class G1World:
                 "vyaw": round(float(self._cmd_eff[2]), 2), "fallen": self.fallen, "falls": self.falls,
                 "sim_time": round(self.sim_time, 1), "preset": self._seq_name, "damped": self._damped,
                 "controller": self.controller, "controllers": CONTROLLERS,
+                "orbit": [round(float(self.cam.azimuth), 1), round(float(self.cam.elevation), 1), round(float(self.cam.distance), 2)],
                 "arms": {n: round(float(self._utarget[i]), 2) for i, n in enumerate(UPPER) if n not in LOCKED},
                 "arm_limits": {n: [round(float(self._lo[i]), 2), round(float(self._hi[i]), 2)]
                                for i, n in enumerate(UPPER) if n not in LOCKED}}
@@ -353,6 +368,10 @@ class G1World:
         if self._pending_controller is not None:
             self.controller, self._pending_controller = self._pending_controller, None
         mujoco.mj_resetData(m, d)
+        x, y, yaw = SCENE_START.get(self.scene, (0.0, 0.0, 0.0))
+        d.qpos[0:2] = x, y
+        d.qpos[3:7] = np.cos(yaw / 2), 0.0, 0.0, np.sin(yaw / 2)
+        self._anchor = (x, y, yaw)
         d.qpos[2] = 0.793
         if self.controller == "lab29":
             if self._lab is None:
@@ -444,6 +463,22 @@ class G1World:
             self._rgbd_pose = rd.qpos.copy()  # the exact state of that frame (tests rebuild ground-truth masks from it)
             self._cond.notify_all()
 
+    def _hold(self, d: "mujoco.MjData") -> np.ndarray:
+        """Zero command with hold_pose: a gentle velocity command back to the anchor (position in the body frame, then heading)."""
+        q = d.qpos
+        yaw = float(np.arctan2(2 * (q[3] * q[6] + q[4] * q[5]), 1 - 2 * (q[5] ** 2 + q[6] ** 2)))
+        if self._anchor is None:
+            self._anchor = (float(q[0]), float(q[1]), yaw)
+        ax, ay, ayaw = self._anchor
+        ex, ey = ax - q[0], ay - q[1]
+        fwd, side = np.cos(yaw) * ex + np.sin(yaw) * ey, -np.sin(yaw) * ex + np.cos(yaw) * ey
+        eyaw = (ayaw - yaw + np.pi) % (2 * np.pi) - np.pi
+        if np.hypot(fwd, side) < 0.06 and abs(eyaw) < np.radians(3):
+            return np.zeros(3, np.float32)
+        lo, hi = self.limits()
+        cap = np.array([0.25, 0.15, 0.3], np.float32)
+        return np.clip(np.array([0.8 * fwd, 0.8 * side, 1.2 * eyaw], np.float32), np.maximum(lo, -cap), np.minimum(hi, cap))
+
     def _step_upper(self, dt: float, now: float) -> None:
         """Called once per control tick (50 Hz): advance jog / preset and move the target toward the goal."""
         with self._lock:
@@ -471,6 +506,8 @@ class G1World:
                     t0, steps = time.monotonic(), 0
                 fresh = time.monotonic() - self._cmd_t < 0.4
                 want = self._cmd.copy() if fresh else np.zeros(3, np.float32)
+                if fresh and want.any():
+                    self._anchor = None  # moving: the place to hold is wherever it stops
             d = self.data
             tau = np.empty(29, np.float32)
             if self.controller == "lab29":
@@ -487,6 +524,8 @@ class G1World:
             steps += 1
             self.sim_time = steps * SIM_DT
             if self._counter % DECIMATION == 0:
+                if self.hold_pose and not want.any() and not self.fallen and not self._damped:
+                    want = self._hold(d)
                 step = CMD_RATE * (SIM_DT * DECIMATION)
                 self._cmd_eff += np.clip(want - self._cmd_eff, -step, step)
                 if self.controller == "lab29":

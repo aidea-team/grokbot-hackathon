@@ -16,7 +16,14 @@ Il pannello "Percezione" a destra elenca gli oggetti con distanza, altezza e dir
 python src/g1/g1_app.py --port 8766 --scene desk      # simulatore con scrivania, monitor, tastiera, sedia
 ```
 
-Apri <http://127.0.0.1:8766/?head=annotated> e porta il G1 verso la scrivania con WASD. Nel simulatore la profondità è **esatta** (buffer di profondità di MuJoCo).
+Apri <http://127.0.0.1:8766/?head=annotated>. Nel simulatore la profondità è **esatta** (buffer di profondità di MuJoCo).
+
+Come parte la scena `desk`:
+
+- **Posizione:** il G1 parte a circa 1,5 m dalla scrivania, girato verso il suo centro. Scrivania, monitor, tastiera e mouse sono al centro della camera della testa, la sedia a sinistra. La vista esterna lo mostra di profilo davanti alla scrivania.
+- **Controller:** `lab29`, perché con `gym12` il G1 "fermo" se ne va da solo (1,7 m e 30° in 10 s, misurato).
+- **Mantiene la posizione:** senza comandi, il simulatore riporta il robot dove l'hai lasciato, come fa il G1 vero quando non riceve `Move`. Misurato: entro 1 cm e 3° in 30 s.
+- **Comandi:** con WASD lo sposti, e la nuova posizione diventa quella da mantenere. R lo rimette al punto di partenza.
 
 Percorso del robot vero **senza robot**: `scripts/fake_g1_head.py` renderizza la scena da due camere a 60 mm e la trasmette come lo streamer della testa (hello UDP 5601, H.264 side-by-side via RTP). Sulla stessa macchina la porta video va spostata, perché ffmpeg occupa anche porta+1 per l'RTCP, che lì è la 5601 della finta testa:
 

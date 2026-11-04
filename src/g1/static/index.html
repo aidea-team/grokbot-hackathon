@@ -18,6 +18,7 @@
   .tag { position: absolute; top: 6px; left: 8px; font-size: var(--fs-12); color: var(--fg-2); background: rgba(0,0,0,.55); padding: 2px 8px; }
   .nosig { position: absolute; color: var(--fg-3); font-size: var(--fs-14); text-align: center; padding: var(--space-4); }
   .badge { position: absolute; top: 6px; right: 8px; }
+  .badge[hidden] { display: none; }  /* .btn sets display and would show "caduto" even when not fallen */
   .htabs { position: absolute; bottom: 6px; right: 8px; display: inline-flex; }
   .htabs .btn { border-radius: 0; font-size: 11px; padding: 2px 8px; }
   .htabs .btn + .btn { margin-left: -1px; }
@@ -313,7 +314,7 @@ async function loadPresets() {
 loadPresets();
 
 // ---------- orbit camera (simulator)
-let az = 145, el = -15, dist = 3, drag = null, orbitT = 0;
+let az = 145, el = -15, dist = 3, drag = null, orbitT = 0, orbitSynced = false;
 const sendOrbit = () => { const t = Date.now(); if (t - orbitT > 50) { orbitT = t; post("api/orbit", { azimuth: az, elevation: el, distance: dist }); } };
 $("cam").onpointerdown = (e) => { drag = [e.clientX, e.clientY]; $("cam").setPointerCapture(e.pointerId); };
 $("cam").onpointerup = () => { drag = null; };
@@ -350,6 +351,7 @@ $("arm").onclick = async () => { const d = await post("api/mode", { mode: "real"
 async function poll() {
   try {
     const s = await (await fetch("api/state")).json(); applyMode(s);
+    if (!orbitSynced && s.orbit) { [az, el, dist] = s.orbit; orbitSynced = true; }  // start dragging from the scene's own view
     $("status").textContent = `G1 U2 · ${s.mode === "real" ? "ROBOT VERO" : "simulatore MuJoCo"} · ${s.fallen ? "CADUTO" : s.damped ? "molle (damp)" : "ok"}`;
     $("fell").hidden = !s.fallen;
     const sig = s.camera_error; $("nosig").hidden = !sig; $("nosig").textContent = sig || "";
