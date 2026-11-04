@@ -1,0 +1,11 @@
+# Dipendenze del team (Python 3.12). Installate da scripts/setup.sh.
+-r docs/voice/examples/requirements.txt   # websockets, sounddevice, numpy, fastapi, uvicorn, requests
+
+xai-sdk          # Grok (Responses API, Voice)
+openai           # client compatibile, base_url https://api.x.ai/v1
+python-dotenv    # carica .env
+
+# Unitree Go1 via free-dog-sdk (clonato in vendor/ da scripts/setup.sh).
+# Il suo requirements.txt fissa numpy==1.23.5, che non si installa su Python 3.12:
+# l'SDK in realtà importa solo crcmod, quindi installiamo solo quello.
+crcmod==1.7
