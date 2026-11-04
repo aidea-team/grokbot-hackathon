@@ -78,5 +78,10 @@
 | [claude-code-workflow.md](claude-vs-grok/claude-code-workflow.md) | Guida operativa: Claude Code costruisce, Grok gira |
 | [preflight-checklist.md](claude-vs-grok/preflight-checklist.md) | Cosa fare la sera prima |
 
+### [vision/](vision/sam3.md): visione in cloud
+| File | Contenuto |
+|---|---|
+| [sam3.md](vision/sam3.md) | SAM 3 su Roboflow serverless: come chiamarlo, cosa torna indietro (maschere a poligoni, niente bbox), risultato sulla scrivania |
+
 ### [hardware/](hardware/README.md): SDK e integrazione dell'hardware
 Vedi [hardware/README.md](hardware/README.md): cane robot, droni, braccio, simulatori di volo e guida, cockpit come controller, macchine d'epoca, architettura LLM → robot.
