@@ -16,6 +16,9 @@ mujoco>=3.2
 # Immagini della telecamera del cane (JPEG)
 pillow
 
+# Percezione live (src/vision): profondità stereo (StereoSGBM), maschere e overlay; YOLO/YOLOE girano con onnxruntime
+opencv-python-headless
+
 # Go2 vero via WebRTC (opzionale, pesante: aiortc & co). Senza, il Go2 funziona solo in mock.
 #   .venv/bin/pip install unitree_webrtc_connect
 

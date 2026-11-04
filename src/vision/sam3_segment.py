@@ -73,7 +73,7 @@ def _polygons(node) -> list[Polygon]:
     return found
 
 
-def segment(jpeg: bytes, prompts: list[str], key: str, thresh: float, size: tuple[int, int], raw_path: Path) -> list[Instance]:
+def segment(jpeg: bytes, prompts: list[str], key: str, thresh: float, size: tuple[int, int], raw_path: Path | None = None) -> list[Instance]:
     r = requests.post(
         URL,
         headers={"Authorization": f"Bearer {key}"},
@@ -87,7 +87,12 @@ def segment(jpeg: bytes, prompts: list[str], key: str, thresh: float, size: tupl
     )
     r.raise_for_status()
     data = r.json()
-    raw_path.write_text(json.dumps(data)[:300_000])  # keep the real schema to fix the parser if needed
+    if raw_path is not None:
+        raw_path.write_text(json.dumps(data))  # keep the real answer: schema debugging and offline re-runs
+    return parse_instances(data, prompts, size)
+
+
+def parse_instances(data: dict, prompts: list[str], size: tuple[int, int]) -> list[Instance]:
     out: list[Instance] = []
     for prompt, res in zip(prompts, data.get("prompt_results", [])):
         for pred in res.get("predictions", []):

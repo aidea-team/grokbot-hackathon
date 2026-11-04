@@ -1,0 +1,46 @@
+<mujoco model="g1 desk scene">
+  <!-- Same robot/floor/lights as scene.xml, with an office corner instead of the two cylinders: desk with monitor, keyboard, mouse and a
+       PC tower, plus an office chair. For the perception tests (segmentation + distance / height). Select it with `--scene desk`.
+       Real-world sizes: desk top 1.40 x 0.70 m at 0.75 m, monitor 0.60 x 0.36 m, chair seat at 0.46 m, backrest top at 1.04 m.
+       The robot starts at the origin facing +x: the desk's front edge is 2.65 m ahead, the chair is in front of it, a bit to the left. -->
+  <include file="g1_29dof_rev_1_0.xml"/>
+  <option timestep="0.002"/>
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+  </visual>
+  <asset>
+    <material name="wood" rgba="0.62 0.45 0.28 1" specular="0.2"/>
+    <material name="metal" rgba="0.55 0.56 0.58 1" specular="0.5"/>
+    <material name="black" rgba="0.07 0.07 0.08 1" specular="0.3"/>
+    <material name="fabric" rgba="0.12 0.13 0.16 1" specular="0.05"/>
+    <material name="screen" rgba="0.20 0.45 0.90 1" emission="0.7"/>
+    <material name="keys" rgba="0.18 0.18 0.20 1"/>
+  </asset>
+  <worldbody>
+    <body name="desk" pos="3.0 0 0">
+      <geom name="desk_top" type="box" size="0.35 0.70 0.015" pos="0 0 0.735" material="wood"/>
+      <geom name="desk_leg_fl" type="box" size="0.02 0.02 0.36" pos="-0.31 -0.66 0.36" material="metal"/>
+      <geom name="desk_leg_fr" type="box" size="0.02 0.02 0.36" pos="-0.31 0.66 0.36" material="metal"/>
+      <geom name="desk_leg_bl" type="box" size="0.02 0.02 0.36" pos="0.31 -0.66 0.36" material="metal"/>
+      <geom name="desk_leg_br" type="box" size="0.02 0.02 0.36" pos="0.31 0.66 0.36" material="metal"/>
+      <!-- monitor: base, neck, frame, lit screen facing the robot -->
+      <geom name="monitor_base" type="box" size="0.10 0.12 0.006" pos="0.15 0 0.756" material="black"/>
+      <geom name="monitor_neck" type="box" size="0.015 0.03 0.10" pos="0.18 0 0.86" material="black"/>
+      <geom name="monitor_frame" type="box" size="0.015 0.30 0.18" pos="0.15 0 1.03" material="black"/>
+      <geom name="monitor_screen" type="box" size="0.002 0.285 0.165" pos="0.134 0 1.03" material="screen" contype="0" conaffinity="0"/>
+      <geom name="keyboard" type="box" size="0.07 0.22 0.009" pos="-0.15 0 0.759" material="keys"/>
+      <geom name="mouse" type="ellipsoid" size="0.055 0.03 0.017" pos="-0.15 0.33 0.767" material="black"/>
+      <geom name="pc_tower" type="box" size="0.22 0.10 0.22" pos="0.05 0.50 0.22" material="black"/>
+    </body>
+    <!-- angles in RADIANS (the robot file sets compiler angle="radian"): chair turned 20 deg, backrest leaning back 8 deg -->
+    <body name="chair" pos="2.35 0.35 0" euler="0 0 0.35">
+      <geom name="chair_seat" type="box" size="0.24 0.24 0.04" pos="0 0 0.46" material="fabric"/>
+      <geom name="chair_back" type="box" size="0.03 0.22 0.25" pos="-0.24 0 0.79" euler="0 -0.14 0" material="fabric"/>
+      <geom name="chair_post" type="cylinder" size="0.025 0.18" pos="0 0 0.25" material="metal"/>
+      <geom name="chair_base_a" type="box" size="0.30 0.025 0.02" pos="0 0 0.07" euler="0 0 0.63" material="black"/>
+      <geom name="chair_base_b" type="box" size="0.30 0.025 0.02" pos="0 0 0.07" euler="0 0 -0.63" material="black"/>
+      <geom name="chair_arm_l" type="box" size="0.16 0.02 0.015" pos="0 0.23 0.66" material="black"/>
+      <geom name="chair_arm_r" type="box" size="0.16 0.02 0.015" pos="0 -0.23 0.66" material="black"/>
+    </body>
+  </worldbody>
+</mujoco>

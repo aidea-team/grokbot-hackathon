@@ -16,6 +16,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "vision"))
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse  # noqa: E402
@@ -23,7 +24,9 @@ from pydantic import BaseModel  # noqa: E402
 
 from g1_agent import AgentError, G1Agent  # noqa: E402
 from g1_real import ARMED, RealError, RealG1, load_cached_actions, load_cached_custom  # noqa: E402
-from g1_world import ARM_ACTION_IDS, MAX_VX, MAX_VY, MAX_VYAW, PRESETS, SIM_BY_ID, G1World  # noqa: E402
+from g1_world import ARM_ACTION_IDS, MAX_VX, MAX_VY, MAX_VYAW, PRESETS, SCENES, SIM_BY_ID, G1World  # noqa: E402
+from live import LivePerception  # noqa: E402
+from segmenters import BACKENDS  # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 
@@ -79,6 +82,13 @@ class LoIn(BaseModel):
 
 class ChatIn(BaseModel):
     text: str
+
+
+class PerceptionIn(BaseModel):
+    enabled: bool | None = None
+    backend: str | None = None
+    period_s: float | None = None
+    prompts: list[str] | None = None
 
 
 class G1Hub:
@@ -146,12 +156,14 @@ class G1Hub:
                 "locomotion_only": self.restricted, "controller": self._sim.controller if self._sim is not None and self.mode == "sim" else None}
 
 
-def create_app(world: G1World | None = None, real: RealG1 | None = None, log=None) -> FastAPI:
+def create_app(world: G1World | None = None, real: RealG1 | None = None, log=None, scene: str = "default") -> FastAPI:
     app = FastAPI(title="G1")
-    hub = G1Hub((lambda: world) if world is not None else G1World, real, log)
+    hub = G1Hub((lambda: world) if world is not None else (lambda: G1World(scene=scene)), real, log)
     if world is not None:
         world.start()
     agent = G1Agent(hub, log)
+    # what the head camera sees, segmented and measured: simulator = exact depth, real = stereo depth (when available)
+    perception = LivePerception(lambda: hub.body.head_rgbd(), BACKENDS, log)
 
     def guard(fn):
         """Run a body command; real-robot refusals come back as {ok: false, error} for the human / the page."""
@@ -361,7 +373,35 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
         agent.abort()
         return {"ok": True}
 
-    app.state.hub, app.state.agent = hub, agent
+    # ---- live perception (segmentation + distance / height of what the head camera sees)
+    @app.get("/api/perception")
+    def perception_get():
+        return perception.result()
+
+    @app.post("/api/perception")
+    def perception_set(body: PerceptionIn):
+        try:
+            return {"ok": True, **perception.configure(body.enabled, body.backend, body.period_s, body.prompts)}
+        except ValueError as e:
+            return {"ok": False, "error": str(e), **perception.status()}
+
+    @app.get("/api/perception.mjpg")
+    def perception_stream(view: str = "annotated"):
+        if view not in ("annotated", "depth"):
+            return Response(status_code=404)
+
+        def gen():
+            n = -1
+            while True:
+                n, jpeg = perception.frame(n, 2.0, view)
+                if jpeg is None:
+                    time.sleep(0.2)
+                    n = -1
+                    continue
+                yield b"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\n\r\n" % len(jpeg) + jpeg + b"\r\n"
+        return StreamingResponse(gen(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+    app.state.hub, app.state.agent, app.state.perception = hub, agent, perception
     return app
 
 
@@ -376,6 +416,7 @@ def main() -> int:
     ap.add_argument("--port", type=int, default=8766)
     ap.add_argument("--real", action="store_true", help="enable the REAL robot switch (a human launches this)")
     ap.add_argument("--iface", default=None, help="network interface wired to the G1 (or G1_IFACE in .env)")
+    ap.add_argument("--scene", default="default", choices=sorted(SCENES), help="simulator scene: default (two cylinders) or desk (office corner)")
     args = ap.parse_args()
 
     sys.path.insert(0, str(root / "src" / "dog"))
@@ -394,7 +435,7 @@ def main() -> int:
         m = mujoco.MjModel.from_xml_path(str(SCENE))
         lim = np.array([m.joint(n + "_joint").range for n in UPPER])
         real = RealG1(args.iface, log=log, limits=(lim[:, 0], lim[:, 1]))
-    app = create_app(real=real, log=log)
+    app = create_app(real=real, log=log, scene=args.scene)
     app.mount("/ui", StaticFiles(directory=root / "src" / "ui" / "static"), name="ui")
     hub = app.state.hub
     if real is not None and sys.stdin.isatty():

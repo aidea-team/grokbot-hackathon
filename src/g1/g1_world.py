@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -23,7 +24,12 @@ from PIL import Image  # noqa: E402
 
 from g1_policy import LstmPolicy  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "vision"))
+from rgbd import RGBD, Floor, Intrinsics  # noqa: E402
+
 SCENE = Path(__file__).parent / "assets" / "scene.xml"
+# "default": two coloured cylinders 4 m ahead (chat/camera tests). "desk": an office corner (desk, monitor, keyboard, chair) for perception.
+SCENES = {"default": SCENE, "desk": Path(__file__).parent / "assets" / "scene_desk.xml"}
 
 # Two interchangeable leg/whole-body controllers (both Unitree's, both in the simulator only):
 #   "gym12": unitree_rl_gym motion.pt, 12 leg joints, arms/waist held by PD at our targets (jog, gestures work); arms forward at ~90 deg
@@ -119,8 +125,12 @@ def gravity_in_body(quat: np.ndarray) -> np.ndarray:
 
 
 class G1World:
-    def __init__(self, width: int = 800, height: int = 450, head_size: tuple[int, int] = (640, 360), controller: str = "gym12"):
-        self.model = mujoco.MjModel.from_xml_path(str(SCENE))
+    def __init__(self, width: int = 800, height: int = 450, head_size: tuple[int, int] = (640, 360), controller: str = "gym12",
+                 scene: str = "default"):
+        if scene not in SCENES:
+            raise ValueError(f"scene {scene!r}: choose from {sorted(SCENES)}")
+        self.scene = scene
+        self.model = mujoco.MjModel.from_xml_path(str(SCENES[scene]))
         self.model.opt.timestep = SIM_DT
         self.data = mujoco.MjData(self.model)
         self.policy = LstmPolicy()
@@ -155,6 +165,9 @@ class G1World:
         self._damped = False
         self._jpeg: dict[str, bytes | None] = {"view": None, "head": None}
         self._frame_n = {"view": 0, "head": 0}
+        self._rgbd: RGBD | None = None  # head RGB + exact depth, rendered only when someone asks (head_rgbd)
+        self._rgbd_n = 0
+        self._rgbd_req = False
         self._cond = threading.Condition()
         self._stop = False
         self._last_view = {"view": time.monotonic(), "head": 0.0}  # a renderer idles when nobody is watching it
@@ -324,6 +337,16 @@ class G1World:
         n, _ = self.frame(-1, 0.1, "head")
         return self.frame(n, timeout, "head")[1]
 
+    def head_rgbd(self, timeout: float = 5.0) -> RGBD | None:
+        """Head camera RGB + exact metric depth from the SAME physics state, with the floor plane known from the camera pose.
+        Rendered on request (the depth pass costs ~60 ms at 640x360), so it costs nothing when perception is off."""
+        self._last_view["head"] = time.monotonic()  # wakes the renderer up
+        with self._cond:
+            n = self._rgbd_n
+            self._rgbd_req = True
+            self._cond.wait_for(lambda: self._rgbd_n > n or self._stop, timeout)
+            return self._rgbd if self._rgbd_n > n else None
+
     # ------------------------------------------------------------------ internals
     def _do_reset(self) -> None:
         m, d = self.model, self.data
@@ -373,6 +396,7 @@ class G1World:
         """Own thread (rendering costs ~50 ms/frame and must not slow the physics): draws a copy of the state."""
         r_view = mujoco.Renderer(self.model, height=self.height, width=self.width)  # GL context lives in this thread
         r_head = mujoco.Renderer(self.model, height=self.head_size[1], width=self.head_size[0])
+        r_depth = None  # created the first time perception asks for depth
         rd = mujoco.MjData(self.model)
         while not self._stop:
             t = time.monotonic()
@@ -389,10 +413,36 @@ class G1World:
                 self._publish("view", r_view.render())
             if want_head:
                 r_head.update_scene(rd, camera="head_cam")
-                self._publish("head", r_head.render())
+                rgb = r_head.render()
+                self._publish("head", rgb)
+                if self._rgbd_req:
+                    if r_depth is None:
+                        r_depth = mujoco.Renderer(self.model, height=self.head_size[1], width=self.head_size[0])
+                        r_depth.enable_depth_rendering()
+                    self._publish_rgbd(rgb, r_depth, rd, t)
             time.sleep(max(0.0, 1 / 25 - (time.monotonic() - t)))
         r_view.close()
         r_head.close()
+        if r_depth is not None:
+            r_depth.close()
+
+    def _publish_rgbd(self, rgb: np.ndarray, r_depth: "mujoco.Renderer", rd: "mujoco.MjData", t: float) -> None:
+        t0 = time.perf_counter()
+        r_depth.update_scene(rd, camera="head_cam")
+        z = r_depth.render().astype(np.float32)
+        far = self.model.vis.map.zfar * self.model.stat.extent
+        z[z >= 0.99 * far] = np.nan  # sky / nothing hit
+        cid = self.model.camera("head_cam").id
+        R = rd.cam_xmat[cid].reshape(3, 3)  # columns: camera axes (x right, y up, z backward) in the world
+        up = np.array([R[2, 0], -R[2, 1], -R[2, 2]])  # world up in OpenCV camera axes (y down, z forward)
+        w, h = self.head_size
+        frame = RGBD(rgb.copy(), z, Intrinsics.from_fovy(float(self.model.cam_fovy[cid]), w, h),
+                     Floor(up, float(rd.cam_xpos[cid][2]), "sim"), t, "sim", self._rgbd_n + 1,
+                     {"depth_ms": round((time.perf_counter() - t0) * 1000, 1)})
+        with self._cond:
+            self._rgbd, self._rgbd_n, self._rgbd_req = frame, self._rgbd_n + 1, False
+            self._rgbd_pose = rd.qpos.copy()  # the exact state of that frame (tests rebuild ground-truth masks from it)
+            self._cond.notify_all()
 
     def _step_upper(self, dt: float, now: float) -> None:
         """Called once per control tick (50 Hz): advance jog / preset and move the target toward the goal."""
