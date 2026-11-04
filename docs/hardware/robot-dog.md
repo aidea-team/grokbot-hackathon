@@ -265,6 +265,15 @@ Metodi disponibili in `SportClient`: `Damp, BalanceStand, StopMove, StandUp, Sta
 - **Community:** `Bin4ry/free-dog-sdk` funziona con high-level e low-level su Air, Pro, Max ed EDU via UDP. Il README avverte che **non include le safety features** dello SDK originale.
 - Rete: hotspot del cane, password di default `00000000` (dal README), cane su `192.168.12.1`, PC su `192.168.12.x`.
 - Il modulo `go1pylib` (PyPI) offre un wrapper più semplice basato su MQTT. ⚠️ Non provato.
+- **SSH** (credenziali di fabbrica dai manuali Trossen e MYBOTSHOP, ⚠️ non ancora provate sul cane del museo):
+
+  | Modulo | Dal Wi-Fi del cane | Dalla rete interna `192.168.123.x` | Utente / password |
+  |---|---|---|---|
+  | Raspberry Pi (gestisce Wi-Fi, app, MQTT) | `ssh pi@192.168.12.1` | `192.168.123.161` | `pi` / `123` |
+  | Jetson Nano 1/2/3 (camere) | passando dalla Pi | `192.168.123.13` / `.14` / `.15` | `unitree` / `123` |
+  | MCU motori | – | `192.168.123.10` | niente SSH |
+
+  Da Windows con WSL2 in NAT si raggiunge `192.168.12.1` passando dal Wi-Fi di Windows: basta che **Windows** sia collegato all'hotspot `Unitree_Go…`. Se `pi` / `123` viene rifiutato, provare `unitree` / `123` (segnalato sul forum MYBOTSHOP).
 
 ```python
 # free-dog-sdk, high-level: estratto dagli esempi del repo
