@@ -257,7 +257,9 @@ Metodi disponibili in `SportClient`: `Damp, BalanceStand, StopMove, StandUp, Sta
 
 ---
 
-## 2. Unitree Go1 (se il museo ha un modello più vecchio)
+## 2. Unitree Go1 (✅ è il cane del museo, confermato il 2026-11-04)
+
+> Driver pronto in [`src/dog/`](../../src/dog/README.md). `free-dog-sdk` viene clonato in `vendor/` da `scripts/setup.sh`. Il suo `requirements.txt` fissa `numpy==1.23.5`, che non si installa su Python 3.12: l'SDK importa solo `crcmod`, quindi installiamo solo quello. `HIGH_WIFI_DEFAULTS` contiene un IP locale `192.168.12.14`, ma la lib non fa `bind`, quindi l'IP del PC non conta.
 
 - **Ufficiale:** `unitree_legged_sdk` (v3.8.x per Go1), pensato per la EDU.
 - **Community:** `Bin4ry/free-dog-sdk` funziona con high-level e low-level su Air, Pro, Max ed EDU via UDP. Il README avverte che **non include le safety features** dello SDK originale.

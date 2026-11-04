@@ -61,7 +61,7 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 - Imagine: immagini sincrone (`grok-imagine-image-2.0`), video asincroni (`request_id` + polling `GET /v1/videos/{id}`, 1–15 s, edit ≤ 8,7 s solo con `grok-imagine-video`).
 
 **Hardware** (modelli non pubblicati: confermare al giro di mer 9:00)
-- Cane robot (forse Xiaomi CyberDog, ⚠️ da snippet di stampa), simulatore di volo (3 schermi, piattaforma mobile), simulatore di guida, alcuni droni, **braccio robotico** (solo sul sito). Il museo ha anche un Ultimate 64 con REST API e il "chattralino" (telefoni a disco + ChatGPT).
+- Cane robot: **Unitree Go1** (confermato sul posto il 4/11; driver in `src/dog/`, SDK `free-dog-sdk` in `vendor/` via `scripts/setup.sh`), simulatore di volo (3 schermi, piattaforma mobile), simulatore di guida, alcuni droni, **braccio robotico** (solo sul sito). Il museo ha anche un Ultimate 64 con REST API e il "chattralino" (telefoni a disco + ChatGPT).
 - C64 ↔ LLM: bridge già provato in VICE (monitor binario, porta 6502), vedi [docs/hardware/retro-machines.md](docs/hardware/retro-machines.md).
 - Se il cane è un Unitree Go2: WebRTC con `unitree_webrtc_connect`, serve la **chiave AES** del proprietario, un solo client alla volta, comandi di velocità da ripetere in loop, **mai `Damp`**.
 - Se i droni sono Tello: comandi UDP testuali, `stop` = hover, `emergency` = motori spenti; atterra da solo dopo 15 s senza comandi (keepalive); collegati al Tello si perde Internet.
@@ -86,4 +86,5 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 
 ## Stato
 
+- 2026-11-04: setup del team con `./scripts/setup.sh` (venv Python 3.12, `free-dog-sdk` fissato in `vendor/`, `.env`). Hello world del Go1: `python src/dog/walk1m.py` (mock) / `--real` (lo lancia un umano). Provato solo in mock e contro un finto cane UDP.
 - 2026-11-03: ricerca completata, nessun codice. Idea non ancora scelta (le 3 scommesse: *Il trucco nuovo*, *Mayday*, *Hackerato con un A4*; vedi [docs/ideas/ideas.md](docs/ideas/ideas.md)).

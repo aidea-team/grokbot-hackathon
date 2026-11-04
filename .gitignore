@@ -13,3 +13,8 @@ recordings/
 *.mp4
 .claude/worktrees/
 .claude/settings.local.json
+
+# SDK di terze parti clonati da scripts/setup.sh
+vendor/
+# log locali (committare a mano solo quelli usati come evidenza)
+logs/
