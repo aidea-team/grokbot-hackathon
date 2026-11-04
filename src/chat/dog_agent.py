@@ -5,8 +5,8 @@ model the frame + odometry + the log of previous steps, and let it reason and ch
 (a tool call) or `finish`. Execute it, look again, repeat. A new message sent while a mission runs is handed
 to the running mission at its next step.
 
-The body it drives is chosen by the RobotHub: the MuJoCo simulator (all of src/sim/dog_world.py's actions, no
-safety layer, virtual world) or the real Go1 (only the whitelisted tools of real_body.RealBody, every command
+The body it drives is chosen by the RobotHub: the MuJoCo simulator (driven with the same Go1 commands as the real dog, no
+safety layer, virtual world) or the real Go1 (the same commands as the simulator, every command
 checked by its deterministic validator, kill switch, watchdog). The agent never talks to hardware directly.
 
 Progress is published as events (user / step / final / note / error) that the web UI polls.
@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 
 import cameras
 import jev
-from dog_world import ACTIONS
+import commands
 from real_body import DISARMED, HALTED, RealBody
 from scene import describe
 from settings import Settings, SettingsStore
@@ -35,7 +35,6 @@ from settings import Settings, SettingsStore
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL = "gpt-4o-mini"
 HISTORY_MISSIONS = 8  # past missions (goal + final message) kept in the prompt
-HIDDEN_ACTIONS = {"go_to"}  # blind long moves: the dog must navigate by sight, one atomic step at a time
 MAX_EVENTS, MAX_FRAMES = 1000, 400
 
 SYSTEM_PROMPT = """Sei un cane robot Unitree Go1 che vive in un simulatore 3D. Sai di essere un cane robot, ma sei \
@@ -49,7 +48,7 @@ stimati rispetto al punto di partenza), il log dei passi già fatti e l'obiettiv
 il passo successivo. Non pianificare sequenze lunghe alla cieca.
 - In ogni chiamata compila `thought`: 1-3 frasi con ciò che vedi, a che punto sei rispetto all'obiettivo e perché \
 scegli quell'azione.
-- Passi piccoli: walk di solito 0,3-1 m (anche meno vicino a un oggetto), turn di 15-45°. Per allinearti a un \
+- Passi piccoli: walk di solito 0,3-1 m (anche meno vicino a un oggetto; per i tratti lunghi alza speed_mps fino a circa 0,8), turn di 15-45°. Per allinearti a un \
 bersaglio: se è a sinistra nell'immagine gira a sinistra (gradi positivi), se è a destra gira a destra (negativi).
 - Se l'immagine è vuota (solo pavimento e cielo, nessun oggetto riconoscibile) o hai perso il bersaglio, non \
 camminare alla cieca: gira gradualmente (turn di 30-45°) guardando dopo ogni rotazione finché lo ritrovi. Se hai \
@@ -59,10 +58,11 @@ per ricordare cosa hai già visto e dove.
 messaggio breve e fattuale (cosa hai fatto o visto). Se la richiesta è impossibile o ambigua, chiama `finish` e \
 spiegalo.
 - Il mondo ha fisica vera: gli oggetti sono solidi, quelli leggeri si spostano se li spingi o li urti, e quelli \
-fissi ti bloccano. Puoi passare solo dove c'è davvero spazio (dentro un tunnel, sotto una barra bassa, attraverso \
-un'apertura saltando con la traiettoria giusta) o saltarci sopra. Se un'azione ti fa urtare qualcosa il log lo \
-segnala: non insistere nella stessa direzione, aggira l'ostacolo o cambia approccio. Un salto o un salto mortale che \
-urta o atterra male ti fa cadere: il log dice «SEI CADUTO» e il comando successivo ti rialza da solo.
+fissi ti bloccano. Puoi passare solo dove c'è davvero spazio. Se un'azione ti fa urtare qualcosa il log lo segnala: non insistere \
+nella stessa direzione, aggira l'ostacolo o cambia approccio. Comandi e movimento sono gli stessi del cane vero e a \
+circuito aperto (velocità × tempo): walk e turn non correggono la rotta e, da sdraiato o da caduto, non fanno nulla. \
+Se il log dice «SEI CADUTO» usa `recovery`, se sei sdraiato `stand_up`. Un salto mortale che urta o atterra male ti \
+fa cadere davvero.
 - Sei bloccato SOLO se il log lo dice (BLOCCATO / hai toccato un oggetto). Un oggetto che vedi ma che non hai \
 toccato non ti blocca: non concludere che il passaggio è chiuso solo a vista. Non rimpicciolire i passi all'infinito: \
 se la strada è libera avanza di 0,5-1 m; vicino a un oggetto avvicinati ma poi decidi (aggira, passa sotto/dentro, \
@@ -145,9 +145,8 @@ class AgentError(Exception):
 
 
 def build_tools(mode: str = "sim", thought: bool = True) -> list[dict]:
-    """Tool list for the model. Real mode: ONLY the whitelist of RealBody, with its limits in the schema."""
-    specs = (RealBody.tool_specs() if mode == "real"
-             else {n: s for n, s in ACTIONS.items() if n not in HIDDEN_ACTIONS})
+    """Tool list for the model: the Go1 command set (src/dog/commands.py), identical in sim and real."""
+    specs = commands.tool_specs()  # the SAME commands in the simulator and on the real dog
     tools = []
     for name, spec in specs.items():
         params = copy.deepcopy(spec["parameters"])
@@ -210,8 +209,7 @@ class DogAgent:
 
     def _jev_tools(self, mode: str) -> dict[str, str]:
         """tool name -> description, from the same specs the LLM brain sees (so the whitelist is the same)."""
-        specs = (RealBody.tool_specs() if mode == "real"
-                 else {n: s for n, s in ACTIONS.items() if n not in HIDDEN_ACTIONS})
+        specs = commands.tool_specs()
         return {**{n: s["description"] for n, s in specs.items()}, "finish": FINISH_TOOL["description"]}
 
     @property
@@ -461,7 +459,7 @@ class DogAgent:
         elif hit:
             feedback.append("hai toccato un oggetto solido")
         if fell:
-            feedback.append("SEI CADUTO (il prossimo comando ti rialza)")
+            feedback.append("SEI CADUTO (usa recovery per rialzarti)")
         if feedback:
             self._emit("note", text=" · ".join(feedback).capitalize() + ".", epoch=epoch)
             self._log("physics_feedback", n=n, action=label, object=hit, stuck=stuck, crash=crash, fell=fell)

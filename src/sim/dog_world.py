@@ -16,7 +16,6 @@ No safety limits here (virtual world), only numeric sanity checks. Nothing here 
 """
 from __future__ import annotations
 
-import inspect
 import io
 import math
 import os
@@ -69,8 +68,9 @@ MODES: dict[str, dict[str, float]] = {
     "air": dict(v=0.0, yaw=0.0, pitch=0.0, roll=0.0, full=0.0),  # free flight
     "land": dict(v=0.4, yaw=0.4, pitch=0.5, roll=0.6, full=0.0),
     "getup": dict(v=1.0, yaw=1.0, pitch=0.0, roll=0.0, full=1.0),
+    "limp": dict(v=0.0, yaw=0.0, pitch=0.0, roll=0.0, full=0.0),  # DAMPING: no help at all
 }
-KV, FMAX = 60.0, 30.0  # trunk speed tracking: N per (m/s), force cap
+KV, KI, FMAX = 60.0, 250.0, 30.0  # trunk speed tracking: N per (m/s), N per (m/s*s) integral (the firmware regulates speed itself), force cap
 KW, TZMAX = 6.0, 25.0  # yaw rate tracking (feet planted on the floor resist turning)
 KP, KD, TMAX = 100.0, 6.0, 40.0  # pitch/roll stabiliser: Nm/rad, Nm/(rad/s), torque cap
 KFULL = 60.0  # self-righting torque (get_up only)
@@ -98,22 +98,17 @@ def leg_ik(x: float, z: float) -> tuple[float, float]:
     return beta - theta2 / 2, theta2
 
 
-# ---------------------------------------------------------------- action registry
+# ---------------------------------------------------------------- behaviours
+# The simulator does NOT have its own command language any more: it receives what the real dog receives
+# (src/dog/commands.py -> SimDriver): a velocity (vx, vyaw) and/or a Go1 high-level MODE. Each mode that makes the
+# dog do something on its own is a generator here, started on the rising edge of the mode (like the dog's firmware).
 
-ACTIONS: dict[str, dict] = {}
+BEHAVIORS: dict[str, Callable] = {}
 
 
-def num(desc: str) -> dict:
-    return {"type": "number", "description": desc}
-
-
-def action(name: str, description: str, properties: dict | None = None, required: tuple = ()):
+def behavior(mode: str):
     def deco(fn):
-        ACTIONS[name] = {
-            "fn": fn,
-            "description": description,
-            "parameters": {"type": "object", "properties": properties or {}, "required": list(required)},
-        }
+        BEHAVIORS[mode] = fn
         return fn
     return deco
 
@@ -168,77 +163,6 @@ def stand_up(d: "DogSim") -> Gen:
 
 # ---------------------------------------------------------------- actions
 
-@action("walk", "Cammina in avanti (distanza positiva) o indietro (negativa), mantenendo la direzione corrente. "
-        "Per correre usa speed_mps alto. Se incontra un ostacolo solido si ferma contro di esso.",
-        {"distance_m": num("Metri da percorrere, negativo = indietro"),
-         "speed_mps": num("Velocità in m/s (default 0.8, camminata ~0.8, corsa 1.5-2)")},
-        required=("distance_m",))
-def walk(d, distance_m: float, speed_mps: float = 0.8) -> Gen:
-    yield from stand_up(d)
-    speed = abs(speed_mps) or 0.8  # no software cap: the trot generator and the trunk force cap what is physically reachable
-    direction = 1.0 if distance_m >= 0 else -1.0
-    target, heading = abs(distance_m), d.yaw
-    hx, hy = math.cos(heading), math.sin(heading)
-    x0, y0 = d.x, d.y
-    t, history = 0.0, []
-    d.set_mode("stand")
-    while True:
-        s = ((d.x - x0) * hx + (d.y - y0) * hy) * direction
-        remaining = target - s
-        if remaining <= 0.02:
-            break
-        d.v_cmd = direction * speed * min(1.0, 0.2 + remaining / 0.3)
-        d.w_cmd = max(-0.6, min(0.6, 2.0 * wrap(heading - d.yaw)))  # hold the heading
-        t += d.dt
-        history.append((t, s))
-        if t > 1.2:  # stuck: less than 12% of the commanded progress in the last second
-            t_old, s_old = next((h for h in history if h[0] >= t - 1.0), history[0])
-            if (s - s_old) < 0.12 * speed * (t - t_old) and d.support_props():
-                d.stuck = True
-                break
-        if t > target / max(0.05, speed) * 3 + 4:  # never walk forever
-            break
-        yield
-    d.v_cmd = d.w_cmd = 0.0
-    yield from wait(d, 0.4)
-
-
-@action("turn", "Gira su sé stesso: gradi positivi = a sinistra (antiorario), negativi = a destra.",
-        {"degrees": num("Angolo in gradi (360 = giro completo)"),
-         "rate_dps": num("Velocità angolare in gradi/s (default 90)")},
-        required=("degrees",))
-def turn(d, degrees: float, rate_dps: float = 90.0) -> Gen:
-    yield from stand_up(d)
-    rate = math.radians(abs(rate_dps) or 90.0)
-    direction = 1.0 if degrees >= 0 else -1.0
-    remaining, prev, t = math.radians(abs(degrees)), d.yaw, 0.0
-    limit = remaining / max(0.05, rate) * 3 + 4  # never turn forever
-    d.set_mode("stand")
-    while remaining > 0.015 and t < limit:
-        d.w_cmd = direction * rate * min(1.0, 0.15 + remaining / 0.4)
-        d.v_cmd = 0.0
-        yield
-        t += d.dt
-        remaining -= direction * wrap(d.yaw - prev)
-        prev = d.yaw
-    d.w_cmd = 0.0
-    yield from wait(d, 0.35)
-
-
-@action("go_to", "Va al punto (x, y) del mondo: si gira verso il punto e ci cammina. "
-        "Origine (0,0) = punto di partenza, +x = davanti all'avvio, +y = sinistra.",
-        {"x_m": num("Coordinata x in metri"), "y_m": num("Coordinata y in metri"),
-         "speed_mps": num("Velocità in m/s (default 0.8)")},
-        required=("x_m", "y_m"))
-def go_to(d, x_m: float, y_m: float, speed_mps: float = 0.8) -> Gen:
-    dx, dy = x_m - d.x, y_m - d.y
-    dist = math.hypot(dx, dy)
-    if dist < 1e-3:
-        return
-    yield from turn(d, math.degrees(wrap(math.atan2(dy, dx) - d.yaw)))
-    yield from walk(d, dist, speed_mps)
-
-
 def _hop(d: "DogSim", height: float, travel: float, flip: float, spin_deg: float) -> Gen:
     """Crouch, push off (launch velocity), then free physics in flight, landing and, if needed, a fall."""
     yield from stand_up(d)
@@ -275,103 +199,49 @@ def _hop(d: "DogSim", height: float, travel: float, flip: float, spin_deg: float
         d.crashed = True
 
 
-@action("jump", "Salto sul posto o in avanti, con eventuale giravolta in aria. Se urta qualcosa cade davvero.",
-        {"height_m": num("Altezza dell'apice in metri (default 1.0)"),
-         "forward_m": num("Metri percorsi in avanti durante il salto (default 0)"),
-         "spin_deg": num("Giravolta in aria in gradi, es. 360 (default 0)")})
-def jump(d, height_m: float = 1.0, forward_m: float = 0.0, spin_deg: float = 0.0) -> Gen:
-    yield from _hop(d, height_m, forward_m, 0.0, spin_deg)
+@behavior("JUMPYAW")
+def jump_yaw(d) -> Gen:
+    """JUMPYAW: a jump on the spot with a 90 degree yaw turn in the air (parameters are our guess of the firmware's)."""
+    yield from _hop(d, 0.6, 0.0, 0.0, 90.0)
 
 
-@action("jump_yaw", "Salto con giravolta in aria sul posto (come la modalità JUMPYAW del Go1): salta e ruota di yaw_deg.",
-        {"yaw_deg": num("Rotazione in aria in gradi, positivo = a sinistra (default 90)"),
-         "height_m": num("Altezza dell'apice in metri (default 0.6)")})
-def jump_yaw(d, yaw_deg: float = 90.0, height_m: float = 0.6) -> Gen:
-    yield from _hop(d, height_m, 0.0, 0.0, yaw_deg)
+@behavior("BACKFLIP")
+def backflip(d) -> Gen:
+    """BACKFLIP: one full backward somersault. A bad landing makes the dog fall for real."""
+    yield from _hop(d, 0.9, -0.3, -1.0, 0.0)
 
 
-@action("backflip", "Salto mortale all'indietro (rotazione di 360° in aria). Se sbaglia l'atterraggio cade.",
-        {"height_m": num("Altezza dell'apice in metri (default 0.9)"),
-         "travel_m": num("Spostamento durante il salto, negativo = indietro (default -0.3)")})
-def backflip(d, height_m: float = 0.9, travel_m: float = -0.3) -> Gen:
-    yield from _hop(d, height_m, travel_m, -1.0, 0.0)
-
-
-@action("frontflip", "Salto mortale in avanti (rotazione di 360° in aria). Se sbaglia l'atterraggio cade.",
-        {"height_m": num("Altezza dell'apice in metri (default 0.9)"),
-         "travel_m": num("Spostamento in avanti durante il salto (default 0.6)")})
-def frontflip(d, height_m: float = 0.9, travel_m: float = 0.6) -> Gen:
-    yield from _hop(d, height_m, travel_m, 1.0, 0.0)
-
-
-@action("stand", "Mettiti in piedi (anche da caduto).")
-def stand(d) -> Gen:
-    if d.tilt() > 0.7:
+@behavior("STAND_UP")
+def stand_up_mode(d) -> Gen:
+    if d.tilt() > 0.7:  # fallen over: needs the self-righting routine
         yield from get_up(d)
     else:
         yield from go_pose(d, "stand", 1.0)
+    d._leg_rates[:] = GAIT_RATE
 
 
-@action("sit", "Siediti.")
-def sit(d) -> Gen:
-    yield from stand_up(d)
-    yield from go_pose(d, "sit", 1.2)
+@behavior("RECOVERY")
+def recovery(d) -> Gen:
+    yield from get_up(d)
+    d._leg_rates[:] = GAIT_RATE
 
 
-@action("lie_down", "Sdraiati a pancia in giù.")
+@behavior("STAND_DOWN")
 def lie_down(d) -> Gen:
     yield from stand_up(d)
     yield from go_pose(d, "lie_down", 1.4)
 
 
-@action("bow", "Fai un inchino (muso giù, posteriore in alto).")
-def bow(d) -> Gen:
-    yield from stand_up(d)
-    yield from go_pose(d, "bow", 1.2)
-
-
-@action("wave_paw", "Siediti e saluta / dai la zampa agitando la zampa anteriore destra.",
-        {"seconds": num("Durata in secondi (default 3)")})
-def wave_paw(d, seconds: float = 3.0) -> Gen:
-    yield from stand_up(d)
-    yield from go_pose(d, "sit", 1.2)
-    seconds, t = max(seconds, 0.6), 0.0
-    base = POSES["sit"][FR]
-    while t < seconds:
-        t += d.dt
-        ramp = min(1.0, t / 0.4) * min(1.0, max(0.0, (seconds - t) / 0.4))
-        raised = (0.0, -0.3, -1.3 + 0.4 * math.sin(2 * math.pi * 3 * t))
-        d.goal_leg(FR, lerp(base, raised, smooth(ramp)), rate=20.0)
-        yield
-    d.goal_leg(FR, base, rate=6.0)
-    yield from wait(d, 0.5)
-
-
-@action("wiggle", "Scodinzola: scuoti il posteriore a destra e sinistra.",
-        {"seconds": num("Durata in secondi (default 2)")})
-def wiggle(d, seconds: float = 2.0) -> Gen:
-    yield from stand_up(d)
-    seconds, t = max(seconds, 0.5), 0.0
-    while t < seconds:
-        t += d.dt
-        ramp = min(1.0, t / 0.2) * min(1.0, max(0.0, (seconds - t) / 0.2))
-        d.w_cmd = 2.4 * ramp * math.sin(2 * math.pi * 3 * t)
-        yield
-    d.w_cmd = 0.0
-    yield from wait(d, 0.3)
-
-
-@action("dance", "Balla: style 1 = dondola su e giù e scodinzola, style 2 = ondeggia di lato alzando una zampa.",
-        {"style": num("1 o 2 (default 1)"), "seconds": num("Durata in secondi (default 8)")})
-def dance(d, style: float = 1.0, seconds: float = 8.0) -> Gen:
+def _dance(d, style: int) -> Gen:
+    """Dances while its mode is still being sent (like the firmware: stop sending, the dance ends)."""
     yield from stand_up(d)
     d.set_mode("stand")
-    seconds, t = max(seconds, 1.0), 0.0
+    t = 0.0
     base = POSES["stand"]
-    while t < seconds:
+    while d.requested_mode() == f"DANCE{style}" and t < 120.0:
         t += d.dt
-        ramp = min(1.0, t / 0.4) * min(1.0, max(0.0, (seconds - t) / 0.4))
-        if int(style) == 2:  # sway: yaw swings and the front-right paw goes up on the beat
+        ramp = min(1.0, t / 0.4)
+        if style == 2:  # sway: yaw swings and the front-right paw goes up on the beat
             d.w_cmd = 1.6 * ramp * math.sin(2 * math.pi * 1.0 * t)
             beat = max(0.0, math.sin(2 * math.pi * 2.0 * t))
             d.goal_leg(FR, lerp(base[FR], (0.0, -0.3, -1.3), smooth(ramp * beat)), rate=20.0)
@@ -386,27 +256,29 @@ def dance(d, style: float = 1.0, seconds: float = 8.0) -> Gen:
     d._leg_rates[:] = GAIT_RATE
 
 
-@action("straight_hand", "Allunga in avanti la zampa anteriore destra e tienila tesa (modalità STRAIGHTHAND del Go1).",
-        {"seconds": num("Durata in secondi (default 3)")})
-def straight_hand(d, seconds: float = 3.0) -> Gen:
+@behavior("DANCE1")
+def dance1(d) -> Gen:
+    yield from _dance(d, 1)
+
+
+@behavior("DANCE2")
+def dance2(d) -> Gen:
+    yield from _dance(d, 2)
+
+
+@behavior("STRAIGHTHAND")
+def straight_hand(d) -> Gen:
+    """Front-right paw stretched forward while the mode is on (the dog's own duration is unknown to us)."""
     yield from stand_up(d)
     d.set_mode("stand")
     d.goal_leg(FR, (0.0, 0.2, -0.9), rate=8.0)
-    yield from wait(d, max(seconds, 0.5))
+    t = 0.0
+    while d.requested_mode() == "STRAIGHTHAND" and t < 60.0:
+        t += d.dt
+        yield
     d.goal_leg(FR, STAND, rate=6.0)
     yield from wait(d, 0.6)
-
-
-@action("recovery", "Rialzati da caduto (rimettiti dritto e in piedi).")
-def recovery(d) -> Gen:
-    yield from get_up(d)
     d._leg_rates[:] = GAIT_RATE
-
-
-def _recover(d: "DogSim") -> Gen:
-    """After a stop: stop moving and get back to a normal standing pose from wherever the dog is."""
-    d.v_cmd = d.w_cmd = 0.0
-    yield from stand_up(d)
 
 
 # ---------------------------------------------------------------- the world
@@ -458,21 +330,20 @@ class DogSim:
         self.touched_action: set[str] = set()
         self.stuck = False
         self.crashed = False
-        self.last_block: str | None = None  # first prop touched during the last finished action
-        self.last_stuck = False
-        self.last_crash = False
-        self.last_fell = False
 
-        self._queue: queue.Queue = queue.Queue()
+        # what the dog's high-level interface receives (set by SimDriver from any thread, read by the physics thread)
+        self._cmd = {"vx": 0.0, "vyaw": 0.0, "mode": "IDLE"}
+        self._last_mode = "IDLE"  # mode seen in the previous frame: behaviours start on the rising edge
+        self._ignored_vel_logged = False
+        self._limp = False
+        self._vint = np.zeros(2)  # integral of the trunk velocity error
         self._gen: Gen | None = None
-        self._current: str | None = None
-        self._stop_req = False
+        self._beh: str | None = None
         self._reset_req = False
         self._quit = threading.Event()
-        self._next_id = 0
-        self._done = 0
-        self._pending: list[str] = []
         self._lock = threading.Lock()
+        self._clock = threading.Condition()  # notified after every physics frame: SimDriver sleeps on sim time
+        self._gain0 = (self.model.actuator_gainprm[:, 0].copy(), self.model.actuator_biasprm[:, 1].copy())
         self._captures: queue.Queue = queue.Queue()
         self._renderers: dict[tuple[int, int], mujoco.Renderer] = {}  # created lazily, in the sim thread
         self._acc = 0.0
@@ -531,53 +402,41 @@ class DogSim:
         self.data.qvel[3:6] = omega_body
 
     # -------- thread-safe API
-    def submit(self, name: str, args: dict | None = None) -> dict:
-        spec = ACTIONS.get(name)
-        if spec is None:
-            return {"ok": False, "error": f"unknown command {name!r}", "available": sorted(ACTIONS)}
-        args = dict(args or {})
-        params = inspect.signature(spec["fn"]).parameters
-        clean = {}
-        for key, value in args.items():
-            if key not in list(params)[1:]:
-                return {"ok": False, "error": f"{name}: unknown argument {key!r}"}
-            try:
-                value = float(value)
-            except (TypeError, ValueError):
-                return {"ok": False, "error": f"{name}.{key}: not a number: {value!r}"}
-            if not math.isfinite(value):
-                return {"ok": False, "error": f"{name}.{key}: not finite"}
-            clean[key] = value
-        try:
-            inspect.signature(spec["fn"]).bind(None, **clean)
-        except TypeError as e:
-            return {"ok": False, "error": f"{name}: {e}"}
-        label = f"{name}({', '.join(f'{k}={v:g}' for k, v in clean.items())})"
+    def set_command(self, vx: float | None = None, vyaw: float | None = None, mode: str | None = None) -> None:
+        """The simulated UDP link: what Go1Driver would put on the wire (velocity and/or high-level mode)."""
         with self._lock:
-            self._next_id += 1
-            cmd_id = self._next_id
-            self._pending.append(label)
-        self._queue.put((cmd_id, name, clean, label))
-        self._log("sim_command_queued", id=cmd_id, command=label)
-        return {"ok": True, "id": cmd_id, "queued": label, "queue_length": self._queue.qsize() + (1 if self._gen else 0)}
+            if vx is not None:
+                self._cmd["vx"], self._cmd["vyaw"] = float(vx), float(vyaw or 0.0)
+            if mode is not None:
+                self._cmd["mode"] = mode
 
-    def clear(self) -> None:
-        """Stop everything: drop the queue and abort the current action."""
-        self._stop_req = True
+    def requested_mode(self) -> str:
+        with self._lock:
+            return self._cmd["mode"]
 
-    def is_idle(self) -> bool:
-        return self._gen is None and self._queue.empty()
+    @property
+    def sim_time(self) -> float:
+        return float(self.data.time)
 
-    def capture(self, width: int = 512, height: int = 384, camera: str = "front",
-                wait_idle: bool = False, timeout: float = 120.0) -> bytes | None:
+    def wait_sim_time(self, seconds: float, timeout: float = 5.0) -> None:
+        """Block the calling thread until `seconds` of simulated time have passed (or the sim was reset/quit)."""
+        t0 = self.sim_time
+        deadline = time.monotonic() + timeout
+        with self._clock:
+            while self.sim_time - t0 < seconds and self.sim_time >= t0 and not self._quit.is_set():
+                left = deadline - time.monotonic()
+                if left <= 0:
+                    break
+                self._clock.wait(min(0.05, left))
+
+    def begin_command(self) -> None:
+        """Called by SimBody before each tool: reset the per-command feedback (touched props, crash)."""
+        self.touched_action, self.crashed = set(), False
+
+    def capture(self, width: int = 512, height: int = 384, camera: str = "front") -> bytes | None:
         """JPEG from the dog's camera, or None. Thread-safe; the frame is rendered by the sim thread.
 
-        wait_idle=True first waits until every queued command has finished (the dog "looks" after moving).
         """
-        if wait_idle:
-            deadline = time.monotonic() + timeout
-            while not self.is_idle() and time.monotonic() < deadline:
-                time.sleep(0.1)
         req = _Capture(width, height, cameras.get(camera).mj)
         self._captures.put(req)
         if not req.done.wait(10.0):
@@ -598,14 +457,11 @@ class DogSim:
         self._quit.set()
 
     def snapshot(self) -> dict:
-        with self._lock:
-            pending = list(self._pending)
         fallen = self.tilt() > 0.9
         return {
             "x": round(self.x, 2), "y": round(self.y, 2), "yaw_deg": round(math.degrees(wrap(self.yaw))),
             "z": round(self.z, 2), "posture": "caduto" if fallen else self.posture,
-            "current": self._current, "queue": pending[1:] if self._current else pending,
-            "done": self._done, "time_scale": self.time_scale,
+            "time_scale": self.time_scale,
             "viewer": bool(self.viewer) and self.viewer.is_running() if not self.headless else None,
         }
 
@@ -640,6 +496,8 @@ class DogSim:
         """Advance by dt seconds: run the current action, run the physics, then serve camera requests."""
         self._advance(dt)
         self._serve_captures()
+        with self._clock:
+            self._clock.notify_all()
 
     def _serve_captures(self) -> None:
         while True:
@@ -662,59 +520,84 @@ class DogSim:
             req.done.set()
 
     def _advance(self, dt: float) -> None:
+        """One frame: read what the (simulated) UDP link carries, run a behaviour or the velocity controller, physics."""
         self.dt = dt
         if self._reset_req:
-            self._reset_req = self._stop_req = False
-            while not self._queue.empty():
-                self._queue.get_nowait()
-            with self._lock:
-                self._pending.clear()
-            self._gen, self._current = None, None
+            self._reset_req = False
+            self._gen, self._beh = None, None
             self._init_state()
             self._log("sim_reset")
-        if self._stop_req:
-            self._stop_req = False
-            while not self._queue.empty():
-                self._queue.get_nowait()
-            with self._lock:
-                self._pending.clear()
-            self._current = None
-            self._gen = _recover(self)
-            self._log("sim_stop")
-        if self._gen is None:
+        with self._lock:
+            cmd = dict(self._cmd)
+        mode = cmd["mode"]
+        edge = mode != self._last_mode
+        self._last_mode = mode
+
+        if mode == "DAMPING":  # motors off while this mode is sent; nothing else runs
+            if not self._limp:
+                self._set_limp(True)
+            self._gen, self._beh = None, None
+            self.v_cmd = self.w_cmd = 0.0
+            self._physics(dt)
+            return
+        if self._limp:
+            self._set_limp(False)
+
+        if self._gen is None and edge and mode in BEHAVIORS:
+            self._gen, self._beh = BEHAVIORS[mode](self), mode
+            self.touched_action = set(self.touched_action)
+            self._log("sim_mode_start", mode=mode)
+        if self._gen is not None:  # a behaviour owns the dog until it finishes, whatever is sent meanwhile
             try:
-                cmd_id, name, args, label = self._queue.get_nowait()
-            except queue.Empty:
-                self._physics(dt)
-                return
-            self._current = label
-            self.touched_action, self.stuck, self.crashed = set(), False, False
-            self._gen = ACTIONS[name]["fn"](self, **args)
-            self._log("sim_command_start", id=cmd_id, command=label)
-        try:
-            next(self._gen)
-        except StopIteration:
-            self._finish()
-        except Exception as e:  # a broken action must not kill the simulator
-            self._log("sim_command_error", command=self._current, error=repr(e))
-            self._finish()
-            self._gen = _recover(self)
+                next(self._gen)
+            except StopIteration:
+                self._finish()
+            except Exception as e:  # a broken behaviour must not kill the simulator
+                self._log("sim_behavior_error", mode=self._beh, error=repr(e))
+                self._finish()
+        else:
+            self._velocity_control(cmd["vx"], cmd["vyaw"])
         self._physics(dt)
 
     def _finish(self) -> None:
-        if self._current:
-            with self._lock:
-                if self._pending:
-                    self._pending.pop(0)
-            self._done += 1
-            touched = sorted(self.touched_action)
-            self.last_block = touched[0] if touched else None
-            self.last_stuck, self.last_crash = self.stuck, self.crashed
-            self.last_fell = self.tilt() > 0.9
-            self._log("sim_command_done", command=self._current, touched=touched, stuck=self.stuck,
-                      crashed=self.crashed, fell=self.last_fell)
-        self._current, self._gen = None, None
+        self._log("sim_mode_done", mode=self._beh, fell=self.tilt() > 0.9)
+        self._gen, self._beh = None, None
         self.v_cmd = self.w_cmd = 0.0
+        self.lift = 0.0
+
+    def _velocity_control(self, vx: float, vyaw: float) -> None:
+        """VEL_WALK / IDLE: the trot generator follows (vx, vyaw) open loop, exactly as the dog would."""
+        moving = abs(vx) > 1e-6 or abs(vyaw) > 1e-6
+        standing = self.posture == "stand" and self.tilt() < 0.7 and self.z > 0.2
+        if moving and not standing:  # ASSUMPTION (unverified on the Go1): a velocity from lying / fallen does nothing
+            if not self._ignored_vel_logged:
+                self._log("sim_velocity_ignored", posture=self.posture, tilt=round(self.tilt(), 2))
+                self._ignored_vel_logged = True
+            moving = False
+        if standing:
+            self._ignored_vel_logged = False
+        if moving:
+            self.set_mode("stand")
+            self.v_cmd, self.w_cmd = vx, vyaw
+            self._leg_rates[:] = GAIT_RATE
+        else:
+            self.v_cmd = self.w_cmd = 0.0
+
+    def _set_limp(self, on: bool) -> None:
+        """DAMPING: zero the position actuators' stiffness (kp) so the legs go slack; restore it when leaving."""
+        m = self.model
+        if on:
+            m.actuator_gainprm[:, 0] = 0.0
+            m.actuator_biasprm[:, 1] = 0.0
+            self.set_mode("limp")
+            self.posture = "damped"
+        else:
+            m.actuator_gainprm[:, 0], m.actuator_biasprm[:, 1] = self._gain0
+            self.q_des = self.data.qpos[7:19].copy()  # no snap: start from where the legs are
+            self.q_goal = self.q_des.copy()
+            self.set_mode("pose")
+        self._limp = on
+        self._log("sim_limp", on=on)
 
     # -------- physics
     def _init_state(self) -> None:
@@ -730,7 +613,11 @@ class DogSim:
         self.set_mode("stand")
         self.v_cmd = self.w_cmd = self.lift = self.phase = 0.0
         self.posture = "stand"
-        self.last_block, self.last_stuck, self.last_crash, self.last_fell = None, False, False, False
+        self._vint = np.zeros(2)
+        self._cmd.update(vx=0.0, vyaw=0.0, mode="IDLE")
+        self._last_mode = "IDLE"
+        if self._limp:
+            self._set_limp(False)
         self._acc = 0.0
         mujoco.mj_forward(m, d)
 
@@ -796,7 +683,9 @@ class DogSim:
         v_des = self.v_cmd * np.array([math.cos(yaw), math.sin(yaw)])
         force = np.zeros(3)
         if g["v"] > 0:
-            f = g["v"] * KV * (v_des - d.qvel[0:2])
+            err = v_des - d.qvel[0:2]
+            self._vint = np.clip(self._vint + err * self.model.opt.timestep, -0.3, 0.3) if self.v_cmd != 0 else self._vint * 0.98
+            f = g["v"] * (KV * err + KI * self._vint)
             n = float(np.linalg.norm(f))
             force[:2] = f * (min(1.0, FMAX * g["v"] / n) if n > 1e-9 else 1.0)
         force[2] = self.lift * self.mass * G

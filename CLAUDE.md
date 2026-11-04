@@ -86,6 +86,8 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 
 ## Stato
 
+- 2026-11-04 (notte): **il simulatore riceve gli stessi comandi del cane vero** (review di un collega: avevamo reimplementato le primitive). `src/dog/commands.py` è l'unica definizione di tool/validazione/esecuzione, usata da `RealBody` e da `SimBody` (`src/sim/sim_body.py`) tramite il driver (`Go1Driver` / `SimDriver`); il mondo MuJoCo (`DogSim`) interpreta velocità e modi Go1. Spariti dal simulatore i comandi inventati (`go_to`, `sit`, `bow`, `wave_paw`, `wiggle`, `jump`, `frontflip`, `walk` a ciclo chiuso). **Scenario rifatto**: 2 m vuoti, scala + impalcatura, piattaforme colorate ai lati, 5 barriere crescenti e una persona a grandezza reale dietro.
+
 - 2026-11-04 (sera): **guardrail numerici rimossi di proposito** (driver `src/dog/driver.py`, `src/chat/real_body.py`, prompt dell'agente): niente range su distanze/velocità/angoli, niente geofence, niente batteria minima, tutte le primitive Go1 esposte (dance, jump_yaw, backflip, damping…). Francesco riscrive i guardrail; restano kill switch, watchdog, stato HALTED, armamento umano, mock-first e il divieto di lanciare `--real` da parte di Claude. Simulatore: scale + impalcatura raggiungibile solo dalle scale, palla leggera, nuove primitive `jump_yaw`/`dance`/`straight_hand`/`recovery`, render veloce (`FAST_RENDER`), rotolamento dei props.
 
 - 2026-11-04: setup del team con `./scripts/setup.sh` (venv Python 3.12, `free-dog-sdk` fissato in `vendor/`, `.env`). Hello world del Go1: `python src/dog/walk1m.py` (mock) / `--real` (lo lancia un umano). Provato solo in mock e contro un finto cane UDP.

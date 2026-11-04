@@ -81,6 +81,13 @@ class _BaseDriver:
         """Kill switch entry point: lock-free, callable from any thread."""
         self.halt_event.set()
 
+    # Clock hooks: wall time for the dog, simulated time for SimDriver (so slow-mo / fast-forward stay consistent).
+    def now(self) -> float:
+        return time.monotonic()
+
+    def sleep(self, seconds: float) -> None:
+        time.sleep(seconds)
+
     def walk(self, vx: float, vyaw: float, seconds: float) -> WalkResult:
         ok, reason = validate_walk(vx, vyaw, seconds)
         self.log.event("walk_request", driver=self.name, vx=vx, vyaw=vyaw, seconds=seconds,
@@ -89,16 +96,16 @@ class _BaseDriver:
             return WalkResult(False, reason)
         if self.halt_event.is_set():
             return WalkResult(False, "halted")
-        t0 = time.monotonic()
+        t0 = self.now()
         try:
-            while (elapsed := time.monotonic() - t0) < seconds:
+            while (elapsed := self.now() - t0) < seconds:
                 if self.halt_event.is_set():
                     break
                 self._send_velocity(vx, vyaw)
-                time.sleep(LOOP_DT)
+                self.sleep(LOOP_DT)
         finally:
             self.stop()
-        elapsed = time.monotonic() - t0
+        elapsed = self.now() - t0
         interrupted = self.halt_event.is_set()
         self.log.event("walk_done", driver=self.name, elapsed_s=round(elapsed, 3),
                        interrupted=interrupted)
@@ -117,16 +124,16 @@ class _BaseDriver:
         self.log.event("primitive_request", driver=self.name, primitive=name, mode=mode, seconds=seconds)
         if self.halt_event.is_set():
             return WalkResult(False, "halted")
-        t0 = time.monotonic()
+        t0 = self.now()
         try:
-            while time.monotonic() - t0 < seconds:
+            while self.now() - t0 < seconds:
                 if self.halt_event.is_set():
                     break
                 self._send_mode(mode)
-                time.sleep(LOOP_DT)
+                self.sleep(LOOP_DT)
         finally:
             self.stop()
-        elapsed = time.monotonic() - t0
+        elapsed = self.now() - t0
         interrupted = self.halt_event.is_set()
         self.log.event("primitive_done", driver=self.name, primitive=name, elapsed_s=round(elapsed, 3),
                        interrupted=interrupted)
@@ -146,10 +153,10 @@ class _BaseDriver:
         return True
 
     def stop(self) -> None:
-        t0 = time.monotonic()
-        while time.monotonic() - t0 < STOP_S:
+        t0 = self.now()
+        while self.now() - t0 < STOP_S:
             self._send_idle()
-            time.sleep(LOOP_DT)
+            self.sleep(LOOP_DT)
         self.log.event("stop", driver=self.name)
 
     # implemented by subclasses

@@ -65,7 +65,9 @@ mjpython src/chat/app.py # macOS; Linux/Windows: python. Apre http://127.0.0.1:8
 
 Lo switch **mock · MuJoCo / real · cane** è in alto a destra.
 
-**Mock (default): MuJoCo con fisica vera.** `src/sim/dog_world.py` simula con `mj_step`: gravità, contatti, attrito, urti, cadute, oggetti leggeri che si spostano (`src/sim/scene.py`: ostacolo, cerchio, tunnel, slalom, forme). Cosa è fisica e cosa è controllo: le zampe sono i servo PD del modello Menagerie guidati da un trotto con cinematica inversa; un **stabilizzatore limitato** sul tronco tiene l'assetto e la velocità mentre cammina (si spegne se il cane si ribalta, quindi un cane caduto resta caduto); nei salti e nei flip il tronco riceve la velocità di lancio e da lì in poi è fisica libera, quindi un atterraggio sbagliato fa cadere davvero. Per la camminata nessuna policy RL: non c'era.
+**Mock (default): MuJoCo con fisica vera, stessi comandi del cane vero.** Il simulatore non ha un suo linguaggio di comandi: riceve **esattamente quello che riceverebbe il Go1**. I tool (`src/dog/commands.py`: `walk`, `turn`, `stand`, `stand_up`, `lie_down`, `recovery`, `backflip`, `jump_yaw`, `straight_hand`, `dance`, `damping`) diventano chiamate al driver (`walk(vx, vyaw, secondi)`, `primitive(modo, secondi)`) con lo **stesso codice** per cane e simulatore; il `SimDriver` (`src/sim/sim_driver.py`) mette sul "filo" simulato una velocità o un modo Go1 (STAND_UP, BACKFLIP, JUMPYAW, DANCE1/2, DAMPING…) e `src/sim/dog_world.py` li interpreta come farebbe il firmware: a catena aperta (velocità × tempo, niente correzioni di rotta), i modi partono sul fronte di salita e il cane li finisce da sé. Cosa è fisica e cosa è controllo: le zampe sono i servo PD del modello Menagerie guidati da un trotto con cinematica inversa; un **stabilizzatore limitato** sul tronco segue la velocità e tiene l'assetto (si spegne se il cane si ribalta); nei salti e nei flip il tronco riceve la velocità di lancio e da lì è fisica libera. ⚠️ Assunzioni non verificate sul cane: una velocità da sdraiato/caduto non fa nulla (serve `stand_up`/`recovery`), i parametri di salto/flip/giravolta. In più il simulatore dà un feedback fisico che il cane vero non ha (oggetto toccato, bloccato, caduto).
+
+**Il mondo (`src/sim/scene.py`, ricostruito il 4/11).** Cane all'origine verso +x: **2 m di pavimento vuoto**, poi una **scala** (8 gradini da 5 cm) che porta a una **impalcatura** (piattaforma a 0,4 m, parapetti su tre lati: ci si sale solo dalla scala); **ai lati** piattaforme colorate basse; **dietro** 5 barriere di altezza crescente (0,10→0,60 m) e una **persona in piedi a grandezza reale** (1,75 m); una palla leggera che rotola.
 
 **Real: il cane vero, solo se lo vuole una persona.** Non basta cliccare:
 1. `mjpython src/chat/app.py --real` lo lancia **un umano**, sul Wi-Fi del cane, e deve scrivere `go` nel terminale. Senza `--real` lo switch è rifiutato e le webcam reali non sono raggiungibili.
@@ -80,6 +82,7 @@ Lo switch **mock · MuJoCo / real · cane** è in alto a destra.
 
 ```bash
 python tests/test_real_safety.py   # 14 test: tool inesistenti, argomenti malformati, nessun limite numerico, tutte le primitive, kill switch, watchdog, armamento
+python tests/test_sim.py           # il simulatore riceve gli stessi comandi del cane, il mondo, la scala, le primitive
 python tests/test_chat_modes.py    # lo switch mock/real via API: senza --real è rifiutato, serve la conferma, stop = HALTED fino al riarmo
 ```
 

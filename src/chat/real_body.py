@@ -24,6 +24,7 @@ import time
 from typing import Callable
 
 import cameras
+import commands
 
 WATCHDOG_S = 3.0  # no browser heartbeat for this long while moving -> halt
 
@@ -44,12 +45,8 @@ def _secs(default: float) -> dict:
 
 class RealBody:
     name = "real"
-    # name -> (driver primitive, arguments it accepts). walk / turn / stand are handled apart.
-    PRIMITIVE_TOOLS = {
-        "stand_up": "stand_up", "lie_down": "lie_down", "recovery": "recovery", "backflip": "backflip",
-        "jump_yaw": "jump_yaw", "straight_hand": "straight_hand", "damping": "damping",
-    }
-    TOOLS = ("walk", "turn", "stand", *PRIMITIVE_TOOLS, "dance")
+    TOOLS = commands.TOOLS
+    PRIMITIVE_TOOLS = commands.PRIMITIVE_TOOLS
 
     def __init__(self, driver_factory: Callable, log, camera=None, watchdog_s: float = WATCHDOG_S,
                  extra_cameras: dict | None = None):
@@ -77,30 +74,8 @@ class RealBody:
     # ------------------------------------------------------------------ what the model is allowed to see
     @classmethod
     def tool_specs(cls) -> dict[str, dict]:
-        """Tools the model sees (name -> description + JSON schema). No min/max: there are no limits."""
-        def spec(desc, props=None, required=()):
-            return {"description": desc,
-                    "parameters": {"type": "object", "properties": props or {}, "required": list(required)}}
-        return {
-            "walk": spec("Cammina in avanti (distanza positiva) o indietro (negativa), poi si ferma da solo. "
-                         "Il cane è vero.",
-                         {"distance_m": _num("Metri da percorrere, negativo = indietro"),
-                          "speed_mps": _num("Velocità in m/s (default 0.2)")}, ("distance_m",)),
-            "turn": spec("Gira su sé stesso: gradi positivi = a sinistra, negativi = a destra.",
-                         {"degrees": _num("Angolo in gradi"),
-                          "rate_dps": _num("Velocità angolare in gradi/s (default 25)")}, ("degrees",)),
-            "stand": spec("Resta fermo in piedi per un secondo (per osservare senza muoverti)."),
-            "stand_up": spec("Alzati in piedi (modalità STAND_UP).", {"seconds": _secs(2)}),
-            "lie_down": spec("Sdraiati (modalità STAND_DOWN).", {"seconds": _secs(3)}),
-            "recovery": spec("Rialzati da caduto (modalità RECOVERY).", {"seconds": _secs(4)}),
-            "backflip": spec("Salto mortale all'indietro (modalità BACKFLIP).", {"seconds": _secs(4)}),
-            "jump_yaw": spec("Salto con giravolta in aria (modalità JUMPYAW).", {"seconds": _secs(4)}),
-            "straight_hand": spec("Allunga la zampa anteriore (modalità STRAIGHTHAND).", {"seconds": _secs(4)}),
-            "dance": spec("Balla (modalità DANCE1 o DANCE2).",
-                          {"style": _num("1 o 2 (default 1)"), "seconds": _secs(15)}),
-            "damping": spec("Spegne i motori: il cane si affloscia a terra (modalità DAMPING).",
-                            {"seconds": _secs(2)}),
-        }
+        """Tools the model sees: the same definition as the simulator (src/dog/commands.py). No min/max."""
+        return commands.tool_specs()
 
     # ------------------------------------------------------------------ arming / disarming (human-triggered)
     def arm(self) -> dict:
@@ -164,47 +139,15 @@ class RealBody:
         """Deterministic verdict: (ok, reason, clean_args). Independent of the model and of the schema."""
         if name not in self.TOOLS:
             return False, f"tool {name!r} non consentito sul cane vero (ammessi: {', '.join(self.TOOLS)})", {}
-        if not isinstance(args, dict):
-            return False, "gli argomenti devono essere un oggetto", {}
-        accepted = {"walk": {"distance_m", "speed_mps"}, "turn": {"degrees", "rate_dps"}, "stand": set(),
-                    "dance": {"style", "seconds"}}.get(name, {"seconds"})
-        for key, value in args.items():
-            if key not in accepted:
-                return False, f"{name}: argomento sconosciuto {key!r}", {}
-            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
-                return False, f"{name}.{key}: deve essere un numero finito", {}
+        ok, reason, clean = commands.validate_args(name, args)
+        if not ok:
+            return False, reason, {}
         if self.state == DISARMED:
             return False, "cane non armato", {}
         if self.state == HALTED:
             return False, "cane FERMATO dal kill switch: serve un nuovo arm esplicito da parte di un umano", {}
         if self.state == MOVING or not self._q.empty():
             return False, "un'azione è già in corso (una alla volta)", {}
-        if name == "stand":
-            return True, "ok", {}
-        if name == "walk":
-            if "distance_m" not in args:
-                return False, "walk: manca distance_m", {}
-            speed = float(args.get("speed_mps", 0.2))
-            if speed == 0:
-                return False, "walk: speed_mps non può essere 0", {}
-            return True, "ok", {"distance_m": float(args["distance_m"]), "speed_mps": abs(speed)}
-        if name == "turn":
-            if "degrees" not in args:
-                return False, "turn: manca degrees", {}
-            rate = float(args.get("rate_dps", 25.0))
-            if rate == 0:
-                return False, "turn: rate_dps non può essere 0", {}
-            return True, "ok", {"degrees": float(args["degrees"]), "rate_dps": abs(rate)}
-        clean = {}
-        if "seconds" in args:
-            if float(args["seconds"]) <= 0:
-                return False, f"{name}: seconds deve essere > 0", {}
-            clean["seconds"] = float(args["seconds"])
-        if name == "dance":
-            style = int(args.get("style", 1))
-            if style not in (1, 2):
-                return False, "dance: style deve essere 1 o 2", {}
-            clean["style"] = float(style)
         return True, "ok", clean
 
     def submit(self, name: str, args: dict | None = None) -> dict:
@@ -214,7 +157,7 @@ class RealBody:
         self._event("real_verdict", tool=name, ok=ok, reason=reason)
         if not ok:
             return {"ok": False, "error": reason}
-        label = f"{name}({', '.join(f'{k}={v:g}' for k, v in clean.items())})"
+        label = commands.label(name, clean)
         with self._lock:
             if self.state != IDLE:  # re-check under the lock: a kill may have just happened
                 return {"ok": False, "error": "cane non pronto (fermato o già in movimento)"}
@@ -292,27 +235,15 @@ class RealBody:
             self._event("real_exec_start", command=label)
             t0 = time.monotonic()
             try:
+                res = commands.execute(driver, name, args)  # same code path as the simulator
                 if name == "walk":
-                    vx = math.copysign(args["speed_mps"], args["distance_m"])
-                    secs = abs(args["distance_m"]) / args["speed_mps"]
-                    res = driver.walk(vx, 0.0, secs)
-                    moved = vx * (res.elapsed_s if res.interrupted else secs)
+                    moved = math.copysign(args["speed_mps"], args["distance_m"]) * (
+                        res.elapsed_s if res.interrupted else abs(args["distance_m"]) / args["speed_mps"])
                     self.x += moved * math.cos(self.yaw)
                     self.y += moved * math.sin(self.yaw)
                 elif name == "turn":
                     vyaw = math.copysign(math.radians(args["rate_dps"]), args["degrees"])
-                    secs = abs(args["degrees"]) / args["rate_dps"]
-                    res = driver.walk(0.0, vyaw, secs)
-                    self.yaw += vyaw * (res.elapsed_s if res.interrupted else secs)
-                elif name in self.PRIMITIVE_TOOLS or name == "dance":
-                    prim = f"dance{int(args['style'])}" if name == "dance" else self.PRIMITIVE_TOOLS[name]
-                    res = driver.primitive(prim, args.get("seconds"))
-                else:  # stand: stay still for 1 s (keeps sending idle)
-                    t_end = time.monotonic() + 1.0
-                    while time.monotonic() < t_end and not driver.halt_event.is_set():
-                        driver.drive(0.0, 0.0)
-                        time.sleep(0.02)
-                    res = None
+                    self.yaw += vyaw * (res.elapsed_s if res.interrupted else abs(args["degrees"]) / args["rate_dps"])
                 self._event("real_exec_done", command=label, ok=bool(res.ok) if res else True,
                             reason=res.reason if res else "ok", elapsed_s=round(time.monotonic() - t0, 2),
                             x=round(self.x, 3), y=round(self.y, 3), yaw=round(self.yaw, 3))

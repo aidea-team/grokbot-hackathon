@@ -31,7 +31,9 @@ import cameras  # noqa: E402
 import uvicorn  # noqa: E402
 from driver import Go1Driver, JsonlLog  # noqa: E402
 from dog_agent import AgentError, DogAgent  # noqa: E402
-from dog_world import ACTIONS, DogSim  # noqa: E402
+import commands  # noqa: E402
+from dog_world import DogSim  # noqa: E402
+from sim_body import SimBody  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
@@ -195,7 +197,7 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
 
     @app.get("/api/commands")
     def commands():
-        return {name: spec["description"] for name, spec in ACTIONS.items()}
+        return {name: spec["description"] for name, spec in commands.tool_specs().items()}
 
     return app
 
@@ -210,7 +212,8 @@ def main() -> int:
 
     load_dotenv(ROOT / ".env")
     log = JsonlLog(ROOT / "logs" / f"chat-{time.strftime('%Y%m%d')}.jsonl")
-    sim = DogSim(headless=args.headless, log=log)
+    world = DogSim(headless=args.headless, log=log)  # the MuJoCo physics, viewer and cameras
+    sim = SimBody(world, log)  # the simulated dog as a body: same commands as the real one
 
     real = None
     if args.real:
@@ -240,13 +243,14 @@ def main() -> int:
     print(f"chat:  http://127.0.0.1:{args.port}  [{'REAL switch enabled' if real else 'simulator only'}]\n"
           f"log:   {log.path}\nCtrl+C per fermare tutto")
     try:
-        sim.run()  # main thread: owns the viewer
+        world.run()  # main thread: owns the viewer
     except KeyboardInterrupt:
         pass
     finally:
         if real is not None:
             real.shutdown()  # halts and disarms
         sim.shutdown()
+        world.shutdown()
         server.should_exit = True
     return 0
 

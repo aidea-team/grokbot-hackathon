@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app import create_app  # noqa: E402
 from dog_agent import DogAgent  # noqa: E402
 from dog_world import DogSim  # noqa: E402
+from sim_body import SimBody  # noqa: E402
 from driver import MockDriver  # noqa: E402
 from hub import RobotHub  # noqa: E402
 from real_body import RealBody  # noqa: E402
@@ -39,7 +40,7 @@ class ListLog:
 
 def build(real_enabled: bool):
     log = ListLog()
-    sim = DogSim(headless=True, log=log)
+    sim = SimBody(DogSim(headless=True, log=log), log)
     real = RealBody(lambda lg: MockDriver(lg), log, camera=FakeCam()) if real_enabled else None
     hub = RobotHub(sim, real, log)
     return TestClient(create_app(hub, sim, DogAgent(hub, log))), hub, log
