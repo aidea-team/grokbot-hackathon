@@ -31,7 +31,7 @@ import cameras  # noqa: E402
 import uvicorn  # noqa: E402
 from driver import Go1Driver, JsonlLog  # noqa: E402
 from dog_agent import AgentError, DogAgent  # noqa: E402
-import commands  # noqa: E402
+import commands as go1_commands  # noqa: E402  (a route below is also called `commands`)
 from dog_world import DogSim  # noqa: E402
 from sim_body import SimBody  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
@@ -197,7 +197,7 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
 
     @app.get("/api/commands")
     def commands():
-        return {name: spec["description"] for name, spec in commands.tool_specs().items()}
+        return {name: spec["description"] for name, spec in go1_commands.tool_specs().items()}
 
     return app
 

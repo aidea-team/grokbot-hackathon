@@ -88,6 +88,14 @@ def test_agent_tools_in_real_mode_are_all_the_go1_primitives_without_limits():
             assert "minimum" not in prop and "maximum" not in prop, "numeric limits must not be in the schema"
 
 
+def test_commands_route_lists_the_go1_command_set():
+    client, _, _ = build(real_enabled=False)
+    r = client.get("/api/commands")
+    assert r.status_code == 200
+    assert set(r.json()) == {"walk", "turn", "stand", "stand_up", "lie_down", "recovery", "backflip", "jump_yaw",
+                             "straight_hand", "dance", "damping"}
+
+
 def test_heartbeat_comes_from_event_polls():
     client, hub, _ = build(real_enabled=True)
     client.post("/api/mode", json={"mode": "real", "confirm": True})
