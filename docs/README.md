@@ -82,6 +82,7 @@
 | File | Contenuto |
 |---|---|
 | [sam3.md](vision/sam3.md) | SAM 3 su Roboflow serverless: come chiamarlo, cosa torna indietro (maschere a poligoni, niente bbox), risultato sulla scrivania |
+| [g1-desk-demo.md](vision/g1-desk-demo.md) | Piano della demo "il G1 va alla scrivania": solo immagine vs immagine + SAM 3, worker di percezione, dashboard, WASD sull'altro robot (progetto, nessun codice) |
 
 ### [hardware/](hardware/README.md): SDK e integrazione dell'hardware
 Vedi [hardware/README.md](hardware/README.md): cane robot, droni, braccio, simulatori di volo e guida, cockpit come controller, macchine d'epoca, architettura LLM → robot.
