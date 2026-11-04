@@ -146,6 +146,55 @@ def test_both_mode_sends_the_same_command_to_the_real_dog_and_the_simulator():
         stop.set()
 
 
+def test_manual_mode_runs_primitives_and_wasd_on_the_simulator_and_the_real_dog():
+    client, hub, _ = build(real_enabled=True)
+    stop = _step_world(hub)
+    try:
+        # simulator: every primitive button is the same command the chat would send, with default values
+        for name, args in (("stand", {}), ("stand_up", {}), ("dance", {"style": 1}), ("backflip", {}), ("damping", {})):
+            r = client.post("/api/manual", json={"command": name, "args": args}).json()
+            assert r["ok"], (name, r)
+            t0 = time.monotonic()
+            while not hub.body.is_idle() and time.monotonic() - t0 < 60:
+                time.sleep(0.02)
+        assert not client.post("/api/manual", json={"command": "frontflip", "args": {}}).json()["ok"]
+        x0 = hub.sim.snapshot()["x"]
+        client.post("/api/manual", json={"command": "recovery", "args": {}})
+        while not hub.body.is_idle():
+            time.sleep(0.02)
+        for _ in range(20):  # hold W for ~1.5 s (the page repeats the target every 150 ms)
+            client.post("/api/teleop", json={"fwd": 1, "turn": 0, "speed": 0.2, "rate": 25})
+            time.sleep(0.15)
+        assert hub.sim.snapshot()["x"] > x0 + 0.05, "WASD moved the simulated dog"
+        client.post("/api/teleop", json={"fwd": 0, "turn": 0})
+        time.sleep(0.3)
+        # the real dog (mock driver): same endpoints, same states
+        client.post("/api/mode", json={"mode": "real", "confirm": True})
+        assert client.post("/api/manual", json={"command": "stand_up", "args": {}}).json()["ok"]
+        t0 = time.monotonic()
+        while not hub.body.is_idle() and time.monotonic() - t0 < 30:
+            time.sleep(0.02)
+        for _ in range(10):
+            client.post("/api/teleop", json={"fwd": 1, "turn": 1, "speed": 0.2, "rate": 25})
+            time.sleep(0.1)
+        assert hub.real.state == "MOVING" and hub.real.x > 0.0
+        client.post("/api/teleop", json={"fwd": 0, "turn": 0})
+        time.sleep(0.4)
+        assert hub.real.state == "IDLE", "releasing the keys must stop the dog"
+        # silence = watchdog stop even if the browser never sends the release
+        client.post("/api/teleop", json={"fwd": 1, "turn": 0})
+        time.sleep(1.0)
+        assert hub.real.state == "IDLE", "no message for 0.4 s must stop the dog"
+        # the kill switch latches and manual driving is refused after it
+        client.post("/api/teleop", json={"fwd": 1, "turn": 0})
+        time.sleep(0.2)
+        client.post("/api/stop")
+        assert hub.real.state == "HALTED"
+        assert not client.post("/api/manual", json={"command": "stand_up", "args": {}}).json()["ok"]
+    finally:
+        stop.set()
+
+
 def test_both_mode_is_refused_without_the_real_switch():
     client, hub, _ = build(real_enabled=False)
     r = client.post("/api/mode", json={"mode": "both", "confirm": True}).json()

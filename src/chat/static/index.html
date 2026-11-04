@@ -55,6 +55,25 @@
   #armpanel label { display: flex; gap: var(--space-2); align-items: flex-start; margin: 6px 0; cursor: pointer; }
   #armpanel .row { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
 
+  /* manual mode */
+  .manual { flex: 1; min-width: 320px; min-height: 0; overflow-y: auto; padding: var(--space-4) 0; }
+  .manual[hidden] { display: none; }
+  .manual h2 { margin: 0 0 var(--space-2); font-size: var(--fs-18, 18px); }
+  .keys { display: grid; grid-template-columns: repeat(3, 72px); grid-template-rows: repeat(2, 72px); gap: 6px; margin: var(--space-4) 0; }
+  .keys button { font-size: 22px; font-weight: 600; touch-action: none; user-select: none; }
+  .keys button.on { background: var(--accent); color: #fff; }
+  .keys .k-w { grid-column: 2; grid-row: 1; } .keys .k-a { grid-column: 1; grid-row: 2; }
+  .keys .k-s { grid-column: 2; grid-row: 2; } .keys .k-d { grid-column: 3; grid-row: 2; }
+  .keys small { display: block; font-size: 11px; font-weight: 400; opacity: .7; }
+  .mrow { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; margin-bottom: var(--space-4); }
+  .mrow label { display: flex; gap: var(--space-2); align-items: center; font-size: var(--fs-14); color: var(--fg-2); }
+  .mrow input { width: 72px; }
+  .prims { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--space-2); }
+  .prims button { text-align: left; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; }
+  .prims small { font-size: 11px; opacity: .7; white-space: normal; }
+  #manual-msg { margin-top: var(--space-4); min-height: 1.4em; }
+  body[data-ui="manual"] .chat { display: none; }
+
   /* cameras: big */
   /* the right side fills the whole height of the page: main camera takes what the two small ones leave */
   .eyes { width: clamp(440px, 50vw, 860px); flex: none; align-self: stretch; min-height: 0; padding: var(--space-4) 0 var(--space-4); display: flex; flex-direction: column; }
@@ -87,6 +106,10 @@
         <button id="m-sim" class="btn btn--sm btn--violet" title="Simulatore MuJoCo (fisica vera, nessun rischio)">mock · MuJoCo</button>
         <button id="m-real" class="btn btn--sm btn--ghost" title="Cane Unitree Go1 vero (serve --real all'avvio e una conferma)">real · cane</button>
         <button id="m-both" class="btn btn--sm btn--ghost" title="Gli stessi comandi al cane vero E al simulatore (serve --real all'avvio e una conferma)">both · cane + mock</button>
+      </div>
+      <div class="modeswitch" role="group" aria-label="interfaccia">
+        <button id="u-chat" class="btn btn--sm btn--violet" title="Parli al cane in chat">chat</button>
+        <button id="u-manual" class="btn btn--sm btn--ghost" title="Controllo manuale: WASD + un pulsante per ogni primitiva del Go1">manuale</button>
       </div>
       <div class="modeswitch" role="group" aria-label="cervello">
         <button id="b-llm" class="btn btn--sm btn--violet" title="Agente OpenAI con ragionamento (Responses API): lento, scrive il thought">LLM</button>
@@ -129,6 +152,23 @@
         <textarea id="input" class="edit-input" rows="1" placeholder="Scrivi un comando…  (Invio invia, Maiusc+Invio va a capo)" autofocus></textarea>
         <button type="submit" class="btn btn--md btn--primary">invia</button>
       </form>
+    </section>
+    <section class="manual" id="manual" hidden>
+      <h2>Controllo manuale</h2>
+      <p class="note">Tieni premuto <b>W A S D</b> (o le frecce): W/S avanti/indietro, A/D gira a sinistra/destra. Al rilascio il cane si ferma. <b>Esc</b> = STOP.</p>
+      <div class="keys" id="keys">
+        <button class="btn btn--lg btn--ghost k-w" data-k="w">W<small>avanti</small></button>
+        <button class="btn btn--lg btn--ghost k-a" data-k="a">A<small>sinistra</small></button>
+        <button class="btn btn--lg btn--ghost k-s" data-k="s">S<small>indietro</small></button>
+        <button class="btn btn--lg btn--ghost k-d" data-k="d">D<small>destra</small></button>
+      </div>
+      <div class="mrow">
+        <label>velocità m/s <input id="m-speed" type="number" step="0.05" min="0.05" value="0.2" class="edit-input"></label>
+        <label>rotazione °/s <input id="m-rate" type="number" step="5" min="5" value="25" class="edit-input"></label>
+      </div>
+      <h2>Primitive del Go1 (valori di default)</h2>
+      <div class="prims" id="prims"></div>
+      <div id="manual-msg" class="note"></div>
     </section>
     <aside class="eyes">
       <div id="maintile" class="tile main"><img id="mainimg" alt=""><span class="tag" id="maintag"></span><div class="nosig">nessun segnale</div></div>
@@ -308,6 +348,75 @@ $("arm-go").onclick = async () => {
   document.querySelectorAll(".chk").forEach(c => c.checked = false);
   if (!d.ok) $("arm-go").disabled = true;
 };
+
+/* ---------------------------------------------------------------- manual mode (WASD + one button per Go1 primitive) */
+// Same commands the chat sends (src/dog/commands.py), with their default values. WASD = hold-to-move: the page repeats
+// the target every 150 ms and the server stops the dog if it hears nothing for 0.4 s.
+const PRIMS = [  // [tool, args, label, default, danger]
+  ["stand", {}, "stand", "fermo 1 s"], ["stand_up", {}, "stand_up", "2 s"], ["lie_down", {}, "lie_down", "3 s"],
+  ["recovery", {}, "recovery", "rialzati · 4 s"], ["straight_hand", {}, "straight_hand", "zampa tesa · 4 s"],
+  ["jump_yaw", {}, "jump_yaw", "salto + 90° · 4 s", true], ["backflip", {}, "backflip", "salto mortale · 4 s", true],
+  ["dance", { style: 1 }, "dance 1", "15 s"], ["dance", { style: 2 }, "dance 2", "15 s"],
+  ["damping", {}, "damping", "motori spenti · 2 s", true],
+];
+const held = new Set();
+let teleTimer = null;
+function teleState() {
+  const fwd = (held.has("w") ? 1 : 0) - (held.has("s") ? 1 : 0);
+  const turn = (held.has("a") ? 1 : 0) - (held.has("d") ? 1 : 0);
+  return { fwd, turn, speed: parseFloat($("m-speed").value) || 0.2, rate: parseFloat($("m-rate").value) || 25 };
+}
+function sendTele() {
+  post("/api/teleop", teleState()).then(r => r.json()).then(d => { if (d && d.ok === false) manualMsg(d.error, true); }).catch(() => {});
+  document.querySelectorAll("#keys button").forEach(b => b.classList.toggle("on", held.has(b.dataset.k)));
+}
+function setHeld(k, down) {
+  const had = held.has(k);
+  if (down) held.add(k); else held.delete(k);
+  if (had === down) return;
+  sendTele();
+  if (held.size && !teleTimer) teleTimer = setInterval(sendTele, 150);
+  if (!held.size && teleTimer) { clearInterval(teleTimer); teleTimer = null; }
+}
+function releaseAll() { [...held].forEach(k => setHeld(k, false)); }
+function manualMsg(text, bad) { const m = $("manual-msg"); m.textContent = text || ""; m.style.color = bad ? "var(--aidea-danger)" : ""; }
+const KEYMAP = { w: "w", arrowup: "w", s: "s", arrowdown: "s", a: "a", arrowleft: "a", d: "d", arrowright: "d" };
+addEventListener("keydown", (e) => {
+  if (document.body.dataset.ui !== "manual" || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName)) return;
+  const k = KEYMAP[e.key.toLowerCase()];
+  if (k) { e.preventDefault(); setHeld(k, true); }
+});
+addEventListener("keyup", (e) => { const k = KEYMAP[e.key.toLowerCase()]; if (k) setHeld(k, false); });
+addEventListener("blur", releaseAll);
+document.querySelectorAll("#keys button").forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener("pointerdown", (e) => { e.preventDefault(); setHeld(k, true); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => setHeld(k, false)));
+});
+$("prims").replaceChildren(...PRIMS.map(([tool, args, label, hint, danger]) => {
+  const b = el("button", "btn btn--md " + (danger ? "btn--danger" : "btn--ghost"));
+  b.append(el("span", "", label), el("small", "", hint));
+  b.onclick = async () => {
+    const realLike = st.mode === "real" || st.mode === "both";
+    if (danger && realLike && !confirm(`${label} sul cane VERO. Spazio libero e telecomando in mano?`)) return;
+    manualMsg(`${label}…`);
+    const d = await (await post("/api/manual", { command: tool, args })).json();
+    manualMsg(d.ok ? `${d.queued || label} in esecuzione` : `rifiutato: ${d.error}`, !d.ok);
+  };
+  return b;
+}));
+function setUi(ui) {
+  document.body.dataset.ui = ui;
+  $("manual").hidden = ui !== "manual";
+  $("u-chat").className = "btn btn--sm " + (ui === "chat" ? "btn--violet" : "btn--ghost");
+  $("u-manual").className = "btn btn--sm " + (ui === "manual" ? "btn--violet" : "btn--ghost");
+  if (ui === "manual") { post("/api/abort").catch(() => {}); } else releaseAll();
+  manualMsg("");
+}
+$("u-chat").onclick = () => setUi("chat");
+$("u-manual").onclick = () => setUi("manual");
+document.body.dataset.ui = "chat";
 
 /* ---------------------------------------------------------------- kill switch */
 const doStop = async () => { const d = await (await post("/api/stop")).json(); applyMode(d); };

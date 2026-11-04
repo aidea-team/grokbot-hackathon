@@ -27,6 +27,12 @@ class BothBody:
             r = {**r, "sim_error": s.get("error", "refused")}
         return r
 
+    def teleop_tick(self, vx: float, vyaw: float, dt: float) -> bool:
+        if not self.real.teleop_tick(vx, vyaw, dt):
+            return False  # refused by the real dog: the simulator does not move either
+        self.sim.teleop_tick(vx, vyaw, dt)
+        return True
+
     def is_idle(self) -> bool:
         return self.real.is_idle() and self.sim.is_idle()
 

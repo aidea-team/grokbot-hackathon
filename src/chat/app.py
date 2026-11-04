@@ -65,6 +65,18 @@ class ModeIn(BaseModel):
     confirm: bool = False
 
 
+class ManualIn(BaseModel):
+    command: str
+    args: dict = {}
+
+
+class TeleopIn(BaseModel):
+    fwd: float = 0.0  # -1 / 0 / 1
+    turn: float = 0.0  # -1 / 0 / 1, positive = left
+    speed: float = 0.2  # m/s (the command default)
+    rate: float = 25.0  # deg/s (the command default)
+
+
 def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
     app = FastAPI(title="Chat col cane")
     app.mount("/ui", StaticFiles(directory=UI_STATIC), name="ui")  # design system aidea (src/ui/static)
@@ -104,6 +116,36 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
     def state():
         hub.heartbeat()
         return {**hub.body.snapshot(), **agent.status(), **hub.status()}
+
+    @app.post("/api/abort")
+    def abort_mission(request: Request):
+        """End the running mission without the kill switch (used when switching to manual mode)."""
+        _log_call(request)
+        agent.abort()
+        return {"ok": True}
+
+    @app.post("/api/manual")
+    def manual(body: ManualIn, request: Request):
+        """Manual mode: one Go1 command with its default values (the same commands the chat sends)."""
+        _log_call(request)
+        if agent.status().get("running"):
+            return {"ok": False, "error": "c'è una missione in corso: fermala prima (STOP) o torna alla chat"}
+        hub.heartbeat()
+        result = hub.body.submit(body.command, body.args)
+        hub.log.event("manual_command", command=body.command, args=body.args, ok=result.get("ok"),
+                      reason=result.get("error")) if hub.log is not None else None
+        return result
+
+    @app.post("/api/teleop")
+    def teleop(body: TeleopIn):
+        """Manual mode: hold-to-move (WASD). The browser repeats this while a key is held; silence for 0.4 s = stop."""
+        if agent.status().get("running"):
+            return {"ok": False, "error": "missione in corso"}
+        hub.heartbeat()
+        fwd = max(-1.0, min(1.0, float(body.fwd)))
+        turn = max(-1.0, min(1.0, float(body.turn)))
+        hub.teleop(fwd, turn, body.speed, body.rate)
+        return {"ok": True}
 
     @app.post("/api/mode")
     def set_mode(body: ModeIn, request: Request):

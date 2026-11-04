@@ -7,7 +7,9 @@ battery and enters IDLE. Switching back to the simulator disarms the dog.
 """
 from __future__ import annotations
 
+import math
 import threading
+import time
 
 from both_body import BothBody
 from real_body import DISARMED, RealBody, RealError
@@ -21,6 +23,9 @@ class RobotHub:
     def __init__(self, sim, real: RealBody | None = None, log=None):
         self.sim, self.real, self.log = sim, real, log
         self._both = BothBody(sim, real) if real is not None else None
+        self._tele = (0.0, 0.0, 0.0)
+        self._tele_lock = threading.Lock()
+        self._tele_thread: threading.Thread | None = None
         self.mode = "sim"  # "sim" | "real" | "both" (the same commands to the real dog and to the simulator)
         self._lock = threading.Lock()
 
@@ -64,6 +69,36 @@ class RobotHub:
                 raise HubError(f"modalità sconosciuta: {mode!r}")
         self._event("mode_switch", mode=self.mode)
         return self.status()
+
+    # ------------------------------------------------------------------ manual driving (WASD)
+    TELEOP_DT = 0.02  # s between velocity ticks
+    TELEOP_FRESH_S = 0.4  # no update from the browser for this long -> stop (watchdog)
+
+    def teleop(self, fwd: float, turn: float, speed: float, rate_dps: float) -> None:
+        """Set the manual target: fwd, turn in {-1, 0, 1}; speed m/s, rate deg/s. Called repeatedly while keys are held."""
+        with self._tele_lock:
+            self._tele = (fwd * abs(speed), turn * math.radians(abs(rate_dps)), time.monotonic())
+            if self._tele_thread is None or not self._tele_thread.is_alive():
+                self._tele_thread = threading.Thread(target=self._teleop_loop, daemon=True, name="teleop")
+                self._tele_thread.start()
+
+    def _teleop_loop(self) -> None:
+        active = False
+        while True:
+            time.sleep(self.TELEOP_DT)
+            with self._tele_lock:
+                vx, vyaw, t = self._tele
+            fresh = time.monotonic() - t < self.TELEOP_FRESH_S
+            if not fresh or (vx == 0.0 and vyaw == 0.0):
+                vx = vyaw = 0.0
+            body = self.body
+            if not hasattr(body, "teleop_tick"):
+                continue
+            if vx or vyaw:
+                active = body.teleop_tick(vx, vyaw, self.TELEOP_DT)
+            elif active:
+                body.teleop_tick(0.0, 0.0, self.TELEOP_DT)  # back to idle once
+                active = False
 
     def kill(self, source: str) -> None:
         """Stop whatever is being driven. On the real dog it latches HALTED until a human re-arms."""

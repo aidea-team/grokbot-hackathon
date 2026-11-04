@@ -46,8 +46,11 @@ def tool_specs() -> dict[str, dict]:
         "stand_up": spec("Alzati in piedi (modalità STAND_UP).", {"seconds": _secs(2)}),
         "lie_down": spec("Sdraiati (modalità STAND_DOWN).", {"seconds": _secs(3)}),
         "recovery": spec("Rialzati da caduto (modalità RECOVERY).", {"seconds": _secs(4)}),
-        "backflip": spec("Salto mortale all'indietro (modalità BACKFLIP).", {"seconds": _secs(4)}),
-        "jump_yaw": spec("Salto con giravolta in aria (modalità JUMPYAW).", {"seconds": _secs(4)}),
+        "backflip": spec("Salto mortale all'indietro con rotazione completa (modalità BACKFLIP). Solo se te lo "
+                         "chiedono esplicitamente: per un normale «salta» usa jump_yaw.", {"seconds": _secs(4)}),
+        "jump_yaw": spec("SALTA sul posto: è il salto del Go1 (modalità JUMPYAW), con una mezza giravolta in aria "
+                         "(circa 90°). Il Go1 non ha un salto senza rotazione: per «salta» usa questo.",
+                         {"seconds": _secs(4)}),
         "straight_hand": spec("Allunga la zampa anteriore (modalità STRAIGHTHAND).", {"seconds": _secs(4)}),
         "dance": spec("Balla (modalità DANCE1 o DANCE2).",
                       {"style": _num("1 o 2 (default 1)"), "seconds": _secs(15)}),

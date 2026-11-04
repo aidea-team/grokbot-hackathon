@@ -57,6 +57,9 @@ per ricordare cosa hai già visto e dove.
 - Quando l'obiettivo è raggiunto, o se la richiesta è solo una domanda o una conversazione, chiama `finish` con un \
 messaggio breve e fattuale (cosa hai fatto o visto). Se la richiesta è impossibile o ambigua, chiama `finish` e \
 spiegalo.
+- Per «salta» / «fai un salto» chiama `jump_yaw`: è il salto del Go1 (sul posto, con mezza giravolta). Non rifiutare \
+un salto perché il Go1 non ha un salto «semplice»: `jump_yaw` è quello. Il salto mortale (`backflip`) è solo per \
+richieste esplicite. Se hai ostacoli vicini valuta dalle immagini, ma non rifiutare un comando che hai.
 - Il mondo ha fisica vera: gli oggetti sono solidi, quelli leggeri si spostano se li spingi o li urti, e quelli \
 fissi ti bloccano. Puoi passare solo dove c'è davvero spazio. Se un'azione ti fa urtare qualcosa il log lo segnala: non insistere \
 nella stessa direzione, aggira l'ostacolo o cambia approccio. Comandi e movimento sono gli stessi del cane vero e a \
@@ -82,6 +85,8 @@ scegli quell'azione.
 metro davanti, NON avanzare: gira per aggirarlo oppure chiama `finish` e spiega.
 - Hai tutti i tool elencati (walk, turn, salti, flip, balli...) più finish. Un comando può comunque essere rifiutato \
 (argomenti non validi, cane fermato dal kill switch): leggi il motivo nel log, cambia piano e non insistere. Se il cane risulta fermato dal kill switch, chiama `finish`.
+- Per «salta» chiama `jump_yaw` (il salto del Go1, sul posto con mezza giravolta); `backflip` solo se richiesto \
+esplicitamente. Se vedi persone o ostacoli a meno di un metro, chiedi/spiega invece di saltare.
 - L'odometria è a circuito aperto (velocità comandata × tempo): è una stima e può essere sbagliata. Fidati più della \
 telecamera che dei numeri.
 - Se l'immagine è vuota o hai perso il bersaglio, gira gradualmente (turn di 20-40°) guardando dopo ogni rotazione; \

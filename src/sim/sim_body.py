@@ -60,6 +60,13 @@ class SimBody:
         with self._lock:
             return self._current is None and self._q.empty() and not self._pending
 
+    def teleop_tick(self, vx: float, vyaw: float, dt: float) -> bool:
+        """Manual (WASD) driving: one velocity tick straight to the driver, like the real dog. Refused while a
+        command is running (one thing at a time)."""
+        if not self.is_idle():
+            return False
+        return self.driver.drive(vx, vyaw)
+
     def clear(self) -> None:
         """STOP: drop the queue, abort the running command; the dog holds still."""
         while not self._q.empty():

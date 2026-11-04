@@ -70,6 +70,7 @@ class RealBody:
         self._quit = threading.Event()
         self._threads: list[threading.Thread] = []
         self._cam_held = False
+        self._teleop = False  # True while the manual WASD mode is driving (state is MOVING then)
 
     # ------------------------------------------------------------------ what the model is allowed to see
     @classmethod
@@ -95,6 +96,7 @@ class RealBody:
             self.driver, self.battery = driver, soc
             self.x = self.y = self.yaw = 0.0
             self._current, self._heartbeat = None, time.monotonic()
+            self._teleop = False
             self.state = IDLE
         self._quit.clear()
         if not self._cam_held:
@@ -150,6 +152,33 @@ class RealBody:
             return False, "un'azione è già in corso (una alla volta)", {}
         return True, "ok", clean
 
+    def teleop_tick(self, vx: float, vyaw: float, dt: float) -> bool:
+        """Manual (WASD) driving: one velocity tick. (0, 0) goes back to IDLE. Same states as any command: refused when
+        DISARMED / HALTED / busy with a command; the watchdog and the kill switch apply as always."""
+        moving = bool(vx or vyaw)
+        with self._lock:
+            if self.state == IDLE and moving:
+                self.state, self._teleop, self._current = MOVING, True, "manuale"
+            elif not (self._teleop and self.state == MOVING):
+                return False
+        driver = self.driver
+        if driver is None:
+            return False
+        if not moving:
+            driver.drive(0.0, 0.0)
+            with self._lock:
+                if self._teleop:
+                    self._teleop = False
+                    if self.state == MOVING:
+                        self.state, self._current = IDLE, None
+            return True
+        if not driver.drive(vx, vyaw):
+            return False
+        self.yaw += vyaw * dt
+        self.x += vx * math.cos(self.yaw) * dt
+        self.y += vx * math.sin(self.yaw) * dt
+        return True
+
     def submit(self, name: str, args: dict | None = None) -> dict:
         args = args if args is not None else {}
         ok, reason, clean = self.validate(name, args)
@@ -168,6 +197,7 @@ class RealBody:
     def kill(self, source: str = "web", halted: bool = True) -> None:
         """Kill switch. Does not wait for any lock held by the motion thread: sets HALTED, halts the driver."""
         driver = self.driver
+        self._teleop = False
         if halted and self.state != DISARMED:
             self.state = HALTED  # plain assignment: atomic, no lock
         if driver is not None:
