@@ -9,3 +9,9 @@ python-dotenv    # carica .env
 # Il suo requirements.txt fissa numpy==1.23.5, che non si installa su Python 3.12:
 # l'SDK in realtà importa solo crcmod, quindi installiamo solo quello.
 crcmod==1.7
+
+# Simulatore fisico MuJoCo: modelli Go1 / UR5e da mujoco_menagerie, clonato in vendor/ da scripts/setup.sh.
+mujoco>=3.2
+
+# Immagini della telecamera del cane (JPEG)
+pillow
