@@ -4,8 +4,9 @@
 - Go1Driver: high-level commands over UDP via free-dog-sdk (vendor/free-dog-sdk, see
   scripts/setup.sh). Works on Go1 Air/Pro/Edu connected to the dog's Wi-Fi hotspot.
 
-Safety (see .claude/skills/robot-safety): hard limits are enforced here in validate_walk(),
-not only in callers. DAMPING / BACKFLIP / JUMPYAW etc. are intentionally not exposed.
+NO numeric limits here on purpose (2026-11-04): velocities, durations and the Go1 high-level modes (dance,
+jumpYaw, backflip, damping...) all go through. The guardrails are being rewritten by the team: until then
+only sanity checks (finite numbers, positive duration) and the halt() kill switch exist at this level.
 """
 from __future__ import annotations
 
@@ -20,10 +21,20 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# Hard limits (deliberately conservative for a museum floor).
-MAX_VX = 0.4  # m/s, forward/backward
-MAX_VYAW = 0.6  # rad/s
-MAX_WALK_S = 10.0  # max duration of a single walk command
+# Go1 high-level "primitives" (MotorModeHigh) and how long we keep sending the mode. DURATIONS ARE ESTIMATES,
+# not verified on the dog (nobody has run them yet): the dog finishes the move on its own, we only keep the
+# mode on the wire. Adjust at the first human-supervised test.
+PRIMITIVES: dict[str, tuple[str, float]] = {
+    "stand_up": ("STAND_UP", 2.0),
+    "lie_down": ("STAND_DOWN", 3.0),
+    "recovery": ("RECOVERY", 4.0),
+    "backflip": ("BACKFLIP", 4.0),
+    "jump_yaw": ("JUMPYAW", 4.0),
+    "straight_hand": ("STRAIGHTHAND", 4.0),
+    "dance1": ("DANCE1", 15.0),
+    "dance2": ("DANCE2", 15.0),
+    "damping": ("DAMPING", 2.0),
+}
 LOOP_DT = 0.002  # 500 Hz, as in free-dog-sdk examples
 STOP_S = 0.5  # how long we keep sending zero velocity when stopping
 
@@ -46,12 +57,8 @@ class JsonlLog:
 def validate_walk(vx: float, vyaw: float, seconds: float) -> tuple[bool, str]:
     if not all(math.isfinite(v) for v in (vx, vyaw, seconds)):
         return False, "non-finite argument"
-    if abs(vx) > MAX_VX:
-        return False, f"|vx|={abs(vx)} > {MAX_VX} m/s"
-    if abs(vyaw) > MAX_VYAW:
-        return False, f"|vyaw|={abs(vyaw)} > {MAX_VYAW} rad/s"
-    if not 0 < seconds <= MAX_WALK_S:
-        return False, f"seconds={seconds} not in (0, {MAX_WALK_S}]"
+    if seconds <= 0:
+        return False, f"seconds={seconds} must be > 0"
     return True, "ok"
 
 
@@ -98,6 +105,33 @@ class _BaseDriver:
         return WalkResult(not interrupted, "halted" if interrupted else "ok",
                           round(elapsed, 3), interrupted)
 
+    def primitive(self, name: str, seconds: float | None = None) -> WalkResult:
+        """Run one of PRIMITIVES: keep sending its mode for `seconds` (default from PRIMITIVES), then idle.
+        halt() interrupts it like a walk."""
+        if name not in PRIMITIVES:
+            return WalkResult(False, f"unknown primitive {name!r}")
+        mode, default_s = PRIMITIVES[name]
+        seconds = default_s if seconds is None else seconds
+        if not math.isfinite(seconds) or seconds <= 0:
+            return WalkResult(False, f"seconds={seconds} must be a finite number > 0")
+        self.log.event("primitive_request", driver=self.name, primitive=name, mode=mode, seconds=seconds)
+        if self.halt_event.is_set():
+            return WalkResult(False, "halted")
+        t0 = time.monotonic()
+        try:
+            while time.monotonic() - t0 < seconds:
+                if self.halt_event.is_set():
+                    break
+                self._send_mode(mode)
+                time.sleep(LOOP_DT)
+        finally:
+            self.stop()
+        elapsed = time.monotonic() - t0
+        interrupted = self.halt_event.is_set()
+        self.log.event("primitive_done", driver=self.name, primitive=name, elapsed_s=round(elapsed, 3),
+                       interrupted=interrupted)
+        return WalkResult(not interrupted, "halted" if interrupted else "ok", round(elapsed, 3), interrupted)
+
     def drive(self, vx: float, vyaw: float) -> bool:
         """One teleop tick: validated velocity (or idle when both are 0). Caller loops and owns the
         watchdog. Returns False if refused (invalid or halted); then idle is sent."""
@@ -123,6 +157,7 @@ class _BaseDriver:
     def close(self) -> None: ...
     def _send_velocity(self, vx: float, vyaw: float) -> None: ...
     def _send_idle(self) -> None: ...
+    def _send_mode(self, mode: str) -> None: ...
 
 
 class MockDriver(_BaseDriver):
@@ -149,6 +184,9 @@ class MockDriver(_BaseDriver):
         self._integrate(vx, vyaw)
 
     def _send_idle(self) -> None:
+        self._integrate(0.0, 0.0)
+
+    def _send_mode(self, mode: str) -> None:
         self._integrate(0.0, 0.0)
 
     def pose(self) -> dict:
@@ -210,6 +248,14 @@ class Go1Driver(_BaseDriver):
     def _send_idle(self) -> None:
         c = self.cmd
         c.mode = self._Mode.IDLE  # stand still (NOT DAMPING: that would drop the dog)
+        c.gaitType = self._Gait.IDLE
+        c.velocity = [0.0, 0.0]
+        c.yawSpeed = 0.0
+        self.conn.send(c.buildCmd())
+
+    def _send_mode(self, mode: str) -> None:
+        c = self.cmd
+        c.mode = getattr(self._Mode, mode)
         c.gaitType = self._Gait.IDLE
         c.velocity = [0.0, 0.0]
         c.yawSpeed = 0.0

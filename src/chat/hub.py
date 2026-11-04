@@ -70,7 +70,6 @@ class RobotHub:
             "mode": self.mode, "real_enabled": self.real_enabled, "real_state": real_state,
             "armed": real_state not in (None, DISARMED) and self.mode == "real",
             "battery": self.real.battery if self.real is not None else None,
-            "geofence_m": self.real.geofence_m if self.real is not None else None,
         }
 
     def _event(self, kind: str, **fields) -> None:

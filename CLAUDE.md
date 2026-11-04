@@ -78,13 +78,15 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 ## Regole di lavoro in questa repo
 
 - **Lingua:** docs e README in italiano; codice, identificatori e commenti tecnici in inglese.
-- **Sicurezza hardware:** Grok pianifica, l'hardware esegue. L'LLM chiama solo primitive in whitelist; un validatore deterministico (limiti, geofence) sta tra LLM e robot; kill switch locale (tastiera/voce) sempre attivo e indipendente dall'LLM. Provare sempre prima su mock/simulatore. Vedi [docs/hardware/llm-robot-architecture.md](docs/hardware/llm-robot-architecture.md).
+- **Sicurezza hardware:** Grok pianifica, l'hardware esegue. L'LLM chiama solo primitive in whitelist; un validatore deterministico (limiti, geofence) deve stare tra LLM e robot (**oggi rimosso di proposito, Francesco lo riscrive: vedi Stato**); kill switch locale (tastiera/voce) sempre attivo e indipendente dall'LLM. Provare sempre prima su mock/simulatore. Vedi [docs/hardware/llm-robot-architecture.md](docs/hardware/llm-robot-architecture.md).
 - **Segreti:** `XAI_API_KEY` e altre chiavi solo in `.env` (ignorato da git). Mai committare chiavi, token Twilio o la chiave AES del cane.
 - **Misurare:** la giuria vuole risultati quantitativi. Loggare latenze, tool call e successi/fallimenti in file (JSONL) fin dal primo prototipo.
 - **Codice del progetto:** quando scegliamo l'idea, il codice va in `src/` (o in una cartella col nome del progetto) con il suo README; aggiornare questo file con la scelta fatta e il comando per avviare la demo.
 - **Docs vive:** se una cosa nei docs si rivela sbagliata sul posto (modello hardware, endpoint, comportamento), correggi il file e togli il ⚠️.
 
 ## Stato
+
+- 2026-11-04 (sera): **guardrail numerici rimossi di proposito** (driver `src/dog/driver.py`, `src/chat/real_body.py`, prompt dell'agente): niente range su distanze/velocità/angoli, niente geofence, niente batteria minima, tutte le primitive Go1 esposte (dance, jump_yaw, backflip, damping…). Francesco riscrive i guardrail; restano kill switch, watchdog, stato HALTED, armamento umano, mock-first e il divieto di lanciare `--real` da parte di Claude. Simulatore: scale + impalcatura raggiungibile solo dalle scale, palla leggera, nuove primitive `jump_yaw`/`dance`/`straight_hand`/`recovery`, render veloce (`FAST_RENDER`), rotolamento dei props.
 
 - 2026-11-04: setup del team con `./scripts/setup.sh` (venv Python 3.12, `free-dog-sdk` fissato in `vendor/`, `.env`). Hello world del Go1: `python src/dog/walk1m.py` (mock) / `--real` (lo lancia un umano). Provato solo in mock e contro un finto cane UDP.
 - 2026-11-03: ricerca completata, nessun codice. Idea non ancora scelta (le 3 scommesse: *Il trucco nuovo*, *Mayday*, *Hackerato con un A4*; vedi [docs/ideas/ideas.md](docs/ideas/ideas.md)).

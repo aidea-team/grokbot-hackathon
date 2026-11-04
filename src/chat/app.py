@@ -220,8 +220,7 @@ def main() -> int:
             raise SystemExit("aborted: real dog not enabled")
         import cams  # read-only camera relay (needs ffmpeg), started only while someone looks
         real = RealBody(lambda lg: Go1Driver(lg), log, camera=cams.relay(1),
-                        extra_cameras={c.name: cams.relay(c.n) for c in cameras.CAMERAS if c.name != "front"},
-                        geofence_m=float(os.environ.get("REAL_GEOFENCE_M") or 2.0))
+                        extra_cameras={c.name: cams.relay(c.n) for c in cameras.CAMERAS if c.name != "front"})
     hub = RobotHub(sim, real, log)
     agent = DogAgent(hub, log)
 

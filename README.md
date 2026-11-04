@@ -69,8 +69,8 @@ Lo switch **mock · MuJoCo / real · cane** è in alto a destra.
 
 **Real: il cane vero, solo se lo vuole una persona.** Non basta cliccare:
 1. `mjpython src/chat/app.py --real` lo lancia **un umano**, sul Wi-Fi del cane, e deve scrivere `go` nel terminale. Senza `--real` lo switch è rifiutato e le webcam reali non sono raggiungibili.
-2. Nel browser, REAL richiede la checklist spuntata (cane in piedi con spazio, nessuno vicino, telecomando in mano) e il click su "arma e collega": si connette, controlla la batteria (≥ 20%) ed entra in `IDLE`.
-3. Il modello vede **solo** `walk` (−0,3…0,5 m, 0,05…0,3 m/s), `turn` (±45°, 10…30°/s), `stand` e `finish`: niente salti, flip, posture. I limiti sono nello schema **e** nel validatore (`src/chat/real_body.py`), e il driver ha i suoi (`src/dog/driver.py`). Una azione alla volta, geofence a stima di odometria (`REAL_GEOFENCE_M`, default 2 m), al massimo `DOG_MAX_STEPS_REAL` passi (20). L'odometria è a circuito aperto: una stima.
+2. Nel browser, REAL richiede la checklist spuntata (cane in piedi con spazio, nessuno vicino, telecomando in mano) e il click su "arma e collega": si connette (la batteria viene solo mostrata) ed entra in `IDLE`.
+3. **Nessun limite numerico, di proposito (4/11): i guardrail li riscrive il team.** Il modello vede tutte le primitive del Go1: `walk`, `turn`, `stand`, `stand_up`, `lie_down`, `recovery`, `backflip`, `jump_yaw`, `straight_hand`, `dance` (stile 1|2), `damping` e `finish`. Gli argomenti sono controllati solo nel tipo (numeri finiti); non ci sono né range, né geofence, né batteria minima, né tetto di velocità nel driver (`src/dog/driver.py`, `PRIMITIVES`: **le durate dei modi sono stime non verificate sul cane**). Restano una azione alla volta, `DOG_MAX_STEPS_REAL` passi per missione (20) e odometria a circuito aperto. ⚠️ `backflip`, `jump_yaw`, `dance` e `damping` non sono mai stati provati sul cane vero.
 4. **Kill switch indipendenti dal modello:** pulsante STOP (grande, nel banner rosso) o Esc nel browser, **INVIO nel terminale**. Dopo lo stop il cane resta `HALTED` finché una persona non lo riarma. Watchdog: se il browser tace per 3 s mentre il cane si muove, si ferma. Il telecomando fisico resta comunque in mano a qualcuno.
 5. Tutto finisce in `logs/chat-AAAAMMGG.jsonl` (proposta, verdetto, esecuzione, kill) e `logs/dog-*.jsonl`.
 
@@ -79,7 +79,7 @@ Lo switch **mock · MuJoCo / real · cane** è in alto a destra.
 **Test** (nessuno tocca il cane: usano `MockDriver`):
 
 ```bash
-python tests/test_real_safety.py   # 14 test avversari sul validatore: tool vietati, argomenti fuori range, geofence, kill switch, watchdog, batteria
+python tests/test_real_safety.py   # 14 test: tool inesistenti, argomenti malformati, nessun limite numerico, tutte le primitive, kill switch, watchdog, armamento
 python tests/test_chat_modes.py    # lo switch mock/real via API: senza --real è rifiutato, serve la conferma, stop = HALTED fino al riarmo
 ```
 

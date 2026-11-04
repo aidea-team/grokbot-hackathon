@@ -25,8 +25,8 @@ STATIC = Path(__file__).resolve().parent / "static"
 UI_STATIC = Path(__file__).resolve().parents[1] / "ui" / "static"
 DISTANCE_M = 0.5
 SPEED_MS = 0.2  # open loop: the real distance is approximate (ramp-up/down, floor)
-TELEOP_VX = 0.2  # m/s while W/S is held (driver hard limit is 0.4)
-TELEOP_VYAW = 0.5  # rad/s while A/D is held (driver hard limit is 0.6)
+TELEOP_VX = 0.2  # m/s while W/S is held
+TELEOP_VYAW = 0.5  # rad/s while A/D is held
 TELEOP_WATCHDOG_S = 0.4  # no message from the browser for this long -> stand still
 TELEOP_DT = 0.01
 

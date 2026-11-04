@@ -24,6 +24,8 @@ BOX, SPHERE, CYL, ELLIPSOID = (
     mujoco.mjtGeom.mjGEOM_ELLIPSOID,
 )
 
+FAST_RENDER = True  # False brings back shadows, floor reflection and antialiasing (nicer, ~4x slower per frame)
+
 ORANGE = (0.95, 0.45, 0.10, 1.0)
 RED = (0.85, 0.15, 0.15, 1.0)
 BLUE = (0.20, 0.40, 0.90, 1.0)
@@ -49,6 +51,11 @@ LANDMARKS: list[tuple[str, float, float]] = [
     ("torre di 3 cubi (verde, arancione, rosso), si può far crollare", -1.5, -2.0),
     ("uovo verde (ellissoide)", 6.0, -2.6),
     ("cilindro bianco basso (pouf)", 7.5, 2.4),
+    ("palla arancione piccola e leggerissima (raggio 0,12 m, rotola lontano al minimo urto)", 5.0, 1.6),
+    ("scala di 8 gradini larga 1 m (alzata 0,05 m, pedata 0,20 m) da x=8,4 a x=10, centrata su y=+3,5, che sale "
+     "verso +x fino all'impalcatura", 9.2, 3.5),
+    ("impalcatura: piattaforma 2 m x 1,8 m a 0,4 m di quota, da x=10 a x=12 e da y=+2,6 a y=+4,4, con parapetti "
+     "su tre lati: ci si sale solo dalla scala", 11.0, 3.5),
 ]
 
 
@@ -59,13 +66,16 @@ def describe() -> str:
 _ids = itertools.count(1)
 
 
-def _geom(parent, kind, size, pos, rgba, label, quat=None, mass=None):
+def _geom(parent, kind, size, pos, rgba, label, quat=None, mass=None, roll=None):
     s = list(size) + [0.0] * (3 - len(size))
     g = parent.add_geom(name=f"{label}_{next(_ids)}", type=kind, size=s, pos=list(pos), rgba=list(rgba))
     if quat is not None:
         g.quat = list(quat)
     if mass is not None:
         g.mass = mass
+    if roll is not None:  # rolling resistance (m): without it a ball rolls almost forever. condim 6 enables it
+        g.condim = 6
+        g.friction = [1.0, 0.005, roll]
     return g
 
 
@@ -130,6 +140,40 @@ def _finish(spec, x, half_w=0.8, h=1.1):
         _geom(w, BOX, (0.02, cell_half, 0.08), (x, y, h), WHITE if i % 2 else (0.1, 0.1, 0.1, 1.0), "finish")
 
 
+def _stairs(spec, x0, x1, yc, half_w=0.5, n=8, rise=0.05):
+    """Solid steps climbing towards +x: step i spans x0+i*tread..x1 and is (i+1)*rise tall."""
+    w = spec.worldbody
+    tread = (x1 - x0) / n
+    for i in range(n):
+        xa = x0 + i * tread
+        h = (i + 1) * rise
+        _geom(w, BOX, ((x1 - xa) / 2, half_w, h / 2), ((xa + x1) / 2, yc, h / 2), (0.62, 0.62, 0.66, 1.0), "stairs")
+
+
+def _scaffold(spec, x0, x1, y0, y1, h=0.4):
+    """Raised platform on poles. Rails on the three sides other than x0 (where the stairs arrive), so the only way up
+    is the stairs; the platform deck is thin so the dog can also not squeeze under the rails."""
+    w = spec.worldbody
+    xc, yc, hx, hy = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2, (y1 - y0) / 2
+    steel = (0.55, 0.57, 0.60, 1.0)
+    _geom(w, BOX, (hx, hy, 0.03), (xc, yc, h - 0.03), (0.75, 0.62, 0.40, 1.0), "scaffold")  # deck, top at z=h
+    for x in (x0 + 0.05, x1 - 0.05):
+        for y in (y0 + 0.05, y1 - 0.05):  # legs
+            _geom(w, CYL, (0.03, (h - 0.06) / 2), (x, y, (h - 0.06) / 2), steel, "scaffold")
+    for y in (y0 + 0.05, y1 - 0.05):  # cross braces under the deck
+        _geom(w, BOX, (hx, 0.015, 0.015), (xc, y, 0.15), steel, "scaffold")
+    for x in (x1 - 0.05,):
+        _geom(w, BOX, (0.015, hy, 0.015), (x, yc, 0.15), steel, "scaffold")
+    rail_z = (h + 0.18, h + 0.36)
+    for z in rail_z:  # long sides (y0, y1) and the back (x1)
+        for y in (y0 + 0.02, y1 - 0.02):
+            _geom(w, BOX, (hx, 0.015, 0.015), (xc, y, z), steel, "scaffold")
+        _geom(w, BOX, (0.015, hy, 0.015), (x1 - 0.02, yc, z), steel, "scaffold")
+    for x, y in ((x0 + 0.02, y0 + 0.02), (x0 + 0.02, y1 - 0.02), (x1 - 0.02, y0 + 0.02), (x1 - 0.02, y1 - 0.02),
+                 (xc, y0 + 0.02), (xc, y1 - 0.02)):  # posts
+        _geom(w, CYL, (0.015, 0.19), (x, y, h + 0.19), steel, "scaffold")
+
+
 def _quat(rows) -> list:
     q = np.zeros(4)
     mujoco.mju_mat2Quat(q, np.array(rows, dtype=float).flatten())
@@ -163,11 +207,22 @@ def build_model() -> mujoco.MjModel:
     _slalom(spec, (8.5, 10.0, 11.5, 13.0))
     _finish(spec, 15.0)
     _geom(_free_body(spec, "cube", (2.5, 2.2, 0.25)), BOX, (0.25, 0.25, 0.25), (0, 0, 0), BLUE, "cube", mass=1.5)
-    _geom(_free_body(spec, "ball", (1.5, -2.0, 0.35)), SPHERE, (0.35,), (0, 0, 0), YELLOW, "ball", mass=0.6)
+    _geom(_free_body(spec, "ball", (1.5, -2.0, 0.35)), SPHERE, (0.35,), (0, 0, 0), YELLOW, "ball", mass=0.6, roll=0.01)
     _geom(_free_body(spec, "column", (-2.0, 1.5, 0.6)), CYL, (0.3, 0.6), (0, 0, 0), PURPLE, "column", mass=2.0)
     for i, c in enumerate((GREEN, ORANGE, RED)):
         _geom(_free_body(spec, "tower", (-1.5, -2.0, 0.2 + 0.4 * i)), BOX, (0.2, 0.2, 0.2), (0, 0, 0), c, "tower",
               mass=0.5)
-    _geom(_free_body(spec, "egg", (6.0, -2.6, 0.42)), ELLIPSOID, (0.3, 0.3, 0.42), (0, 0, 0), GREEN, "egg", mass=1.0)
-    _geom(_free_body(spec, "pouf", (7.5, 2.4, 0.15)), CYL, (0.4, 0.15), (0, 0, 0), WHITE, "pouf", mass=1.5)
-    return spec.compile()
+    _geom(_free_body(spec, "egg", (6.0, -2.6, 0.42)), ELLIPSOID, (0.3, 0.3, 0.42), (0, 0, 0), GREEN, "egg", mass=1.0, roll=0.02)
+    _geom(_free_body(spec, "pouf", (7.5, 2.4, 0.15)), CYL, (0.4, 0.15), (0, 0, 0), WHITE, "pouf", mass=1.5, roll=0.01)
+    spec.option.integrator = mujoco.mjtIntegrator.mjINT_IMPLICITFAST  # stabler with the PD leg actuators
+    _stairs(spec, 8.4, 10.0, 3.5)
+    _scaffold(spec, 10.0, 12.0, 2.6, 4.4)
+    _geom(_free_body(spec, "feather", (5.0, 1.6, 0.12)), SPHERE, (0.12,), (0, 0, 0), ORANGE, "feather", mass=0.05,
+          roll=0.003)
+    model = spec.compile()
+    if FAST_RENDER:
+        # Measured on the 3 dog cameras: shadows + floor reflection + MSAA = 39 ms/frame, without = 10 ms.
+        model.light_castshadow[:] = 0  # no shadow maps (the biggest cost)
+        model.mat_reflectance[:] = 0  # floor mirror = a second render pass
+        model.vis.quality.offsamples = 0  # no antialiasing on offscreen (camera) frames
+    return model

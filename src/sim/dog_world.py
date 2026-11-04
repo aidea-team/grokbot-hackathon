@@ -48,6 +48,8 @@ FR, FL, RR, RL = range(4)
 LINK = 0.213  # thigh and calf length (m)
 Z_FOOT = -0.265  # standing foot height below the thigh joint
 Z_START = 0.28
+SWING_LIFT, SWING_SHAPE = 0.09, 1.0  # foot clearance in the swing phase (m) and how early it rises (<1 = earlier)
+GAIT_RATE = 12.0  # joint target slew (rad/s) while walking: pose changes leave it lower (3-6), which cripples the trot
 FRAME_DT = 1 / 60
 HOPS = {"jump", "backflip", "frontflip"}
 JOINT_MIN = np.array([-0.863, -0.686, -2.818] * 4)
@@ -161,6 +163,7 @@ def stand_up(d: "DogSim") -> Gen:
     elif d.posture != "stand" or d.z < 0.2:  # sitting / lying / bowing: just stand up
         yield from go_pose(d, "stand", 1.0)
     d.set_mode("stand")
+    d._leg_rates[:] = GAIT_RATE
 
 
 # ---------------------------------------------------------------- actions
@@ -172,7 +175,7 @@ def stand_up(d: "DogSim") -> Gen:
         required=("distance_m",))
 def walk(d, distance_m: float, speed_mps: float = 0.8) -> Gen:
     yield from stand_up(d)
-    speed = min(abs(speed_mps) or 0.8, 2.5)  # the trot generator and trunk force cap what is physically reachable
+    speed = abs(speed_mps) or 0.8  # no software cap: the trot generator and the trunk force cap what is physically reachable
     direction = 1.0 if distance_m >= 0 else -1.0
     target, heading = abs(distance_m), d.yaw
     hx, hy = math.cos(heading), math.sin(heading)
@@ -206,7 +209,7 @@ def walk(d, distance_m: float, speed_mps: float = 0.8) -> Gen:
         required=("degrees",))
 def turn(d, degrees: float, rate_dps: float = 90.0) -> Gen:
     yield from stand_up(d)
-    rate = min(math.radians(abs(rate_dps) or 90.0), 3.0)
+    rate = math.radians(abs(rate_dps) or 90.0)
     direction = 1.0 if degrees >= 0 else -1.0
     remaining, prev, t = math.radians(abs(degrees)), d.yaw, 0.0
     limit = remaining / max(0.05, rate) * 3 + 4  # never turn forever
@@ -280,6 +283,13 @@ def jump(d, height_m: float = 1.0, forward_m: float = 0.0, spin_deg: float = 0.0
     yield from _hop(d, height_m, forward_m, 0.0, spin_deg)
 
 
+@action("jump_yaw", "Salto con giravolta in aria sul posto (come la modalità JUMPYAW del Go1): salta e ruota di yaw_deg.",
+        {"yaw_deg": num("Rotazione in aria in gradi, positivo = a sinistra (default 90)"),
+         "height_m": num("Altezza dell'apice in metri (default 0.6)")})
+def jump_yaw(d, yaw_deg: float = 90.0, height_m: float = 0.6) -> Gen:
+    yield from _hop(d, height_m, 0.0, 0.0, yaw_deg)
+
+
 @action("backflip", "Salto mortale all'indietro (rotazione di 360° in aria). Se sbaglia l'atterraggio cade.",
         {"height_m": num("Altezza dell'apice in metri (default 0.9)"),
          "travel_m": num("Spostamento durante il salto, negativo = indietro (default -0.3)")})
@@ -349,6 +359,48 @@ def wiggle(d, seconds: float = 2.0) -> Gen:
         yield
     d.w_cmd = 0.0
     yield from wait(d, 0.3)
+
+
+@action("dance", "Balla: style 1 = dondola su e giù e scodinzola, style 2 = ondeggia di lato alzando una zampa.",
+        {"style": num("1 o 2 (default 1)"), "seconds": num("Durata in secondi (default 8)")})
+def dance(d, style: float = 1.0, seconds: float = 8.0) -> Gen:
+    yield from stand_up(d)
+    d.set_mode("stand")
+    seconds, t = max(seconds, 1.0), 0.0
+    base = POSES["stand"]
+    while t < seconds:
+        t += d.dt
+        ramp = min(1.0, t / 0.4) * min(1.0, max(0.0, (seconds - t) / 0.4))
+        if int(style) == 2:  # sway: yaw swings and the front-right paw goes up on the beat
+            d.w_cmd = 1.6 * ramp * math.sin(2 * math.pi * 1.0 * t)
+            beat = max(0.0, math.sin(2 * math.pi * 2.0 * t))
+            d.goal_leg(FR, lerp(base[FR], (0.0, -0.3, -1.3), smooth(ramp * beat)), rate=20.0)
+        else:  # bounce: squat and rise twice a second while wiggling
+            squat = 0.5 + 0.5 * math.sin(2 * math.pi * 2.0 * t)
+            d.goal_legs([lerp(STAND, CROUCH, 0.7 * squat * ramp)] * 4, rate=12.0)
+            d.w_cmd = 1.8 * ramp * math.sin(2 * math.pi * 1.0 * t)
+        yield
+    d.w_cmd = 0.0
+    d.goal_legs(POSES["stand"], rate=6.0)
+    yield from wait(d, 0.6)
+    d._leg_rates[:] = GAIT_RATE
+
+
+@action("straight_hand", "Allunga in avanti la zampa anteriore destra e tienila tesa (modalità STRAIGHTHAND del Go1).",
+        {"seconds": num("Durata in secondi (default 3)")})
+def straight_hand(d, seconds: float = 3.0) -> Gen:
+    yield from stand_up(d)
+    d.set_mode("stand")
+    d.goal_leg(FR, (0.0, 0.2, -0.9), rate=8.0)
+    yield from wait(d, max(seconds, 0.5))
+    d.goal_leg(FR, STAND, rate=6.0)
+    yield from wait(d, 0.6)
+
+
+@action("recovery", "Rialzati da caduto (rimettiti dritto e in piedi).")
+def recovery(d) -> Gen:
+    yield from get_up(d)
+    d._leg_rates[:] = GAIT_RATE
 
 
 def _recover(d: "DogSim") -> Gen:
@@ -725,7 +777,7 @@ class DogSim:
                 x, z = stride / 2 - stride * (p / duty), Z_FOOT
             else:  # swing
                 u = (p - duty) / (1 - duty)
-                x, z = -stride / 2 + stride * u, Z_FOOT + 0.06 * math.sin(math.pi * u)
+                x, z = -stride / 2 + stride * u, Z_FOOT + SWING_LIFT * math.sin(math.pi * u) ** SWING_SHAPE
             th1, th2 = leg_ik(x, z)
             out[3 * i: 3 * i + 3] = (0.0, th1, th2)
         return out

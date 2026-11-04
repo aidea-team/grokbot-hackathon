@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -30,7 +31,9 @@ class FakeCam:
 
 
 class ListLog:
-    def __init__(self): self.events = []
+    def __init__(self):
+        self.events = []
+        self.path = Path(tempfile.mkdtemp()) / "log.jsonl"  # DogAgent keeps its settings.json next to the log
     def event(self, kind, **f): self.events.append({"event": kind, **f})
 
 
@@ -75,14 +78,13 @@ def test_stop_in_real_mode_latches_halted_until_rearm():
     assert r["ok"] and r["real_state"] == "IDLE"
 
 
-def test_agent_tools_in_real_mode_are_only_the_whitelist():
-    client, hub, _ = build(real_enabled=True)
-    agent = DogAgent(hub)
-    assert [t["name"] for t in agent._tools["real"]] == ["walk", "turn", "stand", "finish"]
-    for t in agent._tools["real"][:2]:
+def test_agent_tools_in_real_mode_are_all_the_go1_primitives_without_limits():
+    from dog_agent import build_tools
+    names = [t["name"] for t in build_tools("real")]
+    assert names[-1] == "finish" and set(names[:-1]) == set(RealBody.TOOLS)
+    for t in build_tools("real"):
         for prop in t["parameters"]["properties"].values():
-            if prop.get("type") == "number":
-                assert "minimum" in prop and "maximum" in prop, "limits must be in the schema too"
+            assert "minimum" not in prop and "maximum" not in prop, "numeric limits must not be in the schema"
 
 
 def test_heartbeat_comes_from_event_polls():

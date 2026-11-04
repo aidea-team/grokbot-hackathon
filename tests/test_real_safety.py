@@ -3,7 +3,7 @@
     python tests/test_real_safety.py        # plain runner, prints the refusal rate
     python -m pytest tests                  # if pytest is installed
 
-Everything the model could send that is not a short, bounded walk/turn must be refused.
+No numeric limits (removed on purpose): only malformed / unknown commands are refused; kill switch, watchdog and arming stay.
 """
 from __future__ import annotations
 
@@ -46,60 +46,72 @@ def wait_idle(body, timeout=8.0):
     assert body.is_idle(), "body still busy"
 
 
-# ----------------------------------------------------------------------------- whitelist / argument limits
-FORBIDDEN_TOOLS = ["jump", "backflip", "frontflip", "sit", "lie_down", "bow", "wave_paw", "wiggle", "go_to",
-                   "run", "damp", "emergency", "land", "takeoff", "set_velocity", "shell", "eval", "exec",
-                   "", "WALK", "walk ", "__import__"]
-BAD_WALK = [{"distance_m": 5}, {"distance_m": 0.51}, {"distance_m": -0.31}, {"distance_m": 0}, {"distance_m": 0.01},
-            {"distance_m": float("nan")}, {"distance_m": float("inf")}, {"distance_m": -float("inf")},
+# ----------------------------------------------------------------------------- tools / arguments
+# There are NO numeric limits (removed on purpose, the team rewrites the guardrails). What must still be refused:
+# tools that do not exist, unknown arguments, non-numeric / non-finite values, missing required ones.
+UNKNOWN_TOOLS = ["jump", "frontflip", "sit", "bow", "wave_paw", "wiggle", "go_to", "run", "damp", "emergency", "land",
+                 "takeoff", "set_velocity", "shell", "eval", "exec", "", "WALK", "walk ", "__import__"]
+BAD_WALK = [{"distance_m": float("nan")}, {"distance_m": float("inf")}, {"distance_m": -float("inf")},
             {"distance_m": "1"}, {"distance_m": True}, {"distance_m": None}, {"distance_m": [1]},
-            {"distance_m": 0.3, "speed_mps": 1.0}, {"distance_m": 0.3, "speed_mps": 0.4},
-            {"distance_m": 0.3, "speed_mps": 0.01}, {"distance_m": 0.3, "speed_mps": -0.2},
-            {"distance_m": 0.3, "speed_mps": float("nan")}, {"distance_m": 0.3, "vx": 5},
-            {"distance_m": 0.3, "seconds": 100}, {}, {"speed_mps": 0.2}]
-BAD_TURN = [{"degrees": 180}, {"degrees": 46}, {"degrees": -46}, {"degrees": 360}, {"degrees": 1},
-            {"degrees": float("nan")}, {"degrees": "45"}, {"degrees": 30, "rate_dps": 100},
-            {"degrees": 30, "rate_dps": 5}, {"degrees": 30, "rate_dps": float("inf")}, {"degrees": 30, "vyaw": 3},
-            {}, {"rate_dps": 20}]
+            {"distance_m": 0.3, "speed_mps": float("nan")}, {"distance_m": 0.3, "speed_mps": 0},
+            {"distance_m": 0.3, "vx": 5}, {"distance_m": 0.3, "seconds": 100}, {}, {"speed_mps": 0.2}]
+BAD_TURN = [{"degrees": float("nan")}, {"degrees": "45"}, {"degrees": 30, "rate_dps": float("inf")},
+            {"degrees": 30, "rate_dps": 0}, {"degrees": 30, "vyaw": 3}, {}, {"rate_dps": 20}]
+PRIMITIVES = ["stand_up", "lie_down", "recovery", "backflip", "jump_yaw", "straight_hand", "dance", "damping"]
 
 
-def test_forbidden_tools_are_refused():
+def test_unknown_tools_are_refused():
     body, log = make()
-    for name in FORBIDDEN_TOOLS:
+    for name in UNKNOWN_TOOLS:
         r = body.submit(name, {})
         assert not r["ok"], f"{name!r} was accepted"
     assert body.state == IDLE and "real_exec_start" not in log.kinds()
 
 
-def test_out_of_range_and_malformed_arguments_are_refused():
+def test_malformed_arguments_are_refused():
     body, log = make()
     for args in BAD_WALK:
         assert not body.submit("walk", args)["ok"], f"walk {args} accepted"
     for args in BAD_TURN:
         assert not body.submit("turn", args)["ok"], f"turn {args} accepted"
-    for bad in (None, [], "x", 5):
-        assert not body.submit("walk", bad)["ok"] or bad is None  # None is treated as {} -> missing distance
-    assert body.state == IDLE and body.driver is not None
-    assert "real_exec_start" not in log.kinds(), "something reached the driver"
+    for name in PRIMITIVES:
+        assert not body.submit(name, {"nope": 1})["ok"], f"{name} accepted an unknown argument"
+        assert not body.submit(name, {"seconds": float("nan")})["ok"]
+        assert not body.submit(name, {"seconds": -1})["ok"]
+    assert not body.submit("dance", {"style": 3})["ok"]
+    assert body.state == IDLE and "real_exec_start" not in log.kinds(), "something reached the driver"
 
 
-def test_stand_with_arguments_is_refused():
+def test_no_numeric_limits():
     body, _ = make()
-    assert not body.submit("stand", {"seconds": 99})["ok"]
+    for name, args in (("walk", {"distance_m": 50, "speed_mps": 3.0}), ("turn", {"degrees": 720, "rate_dps": 400}),
+                       ("walk", {"distance_m": -20, "speed_mps": 2.0})):
+        r = body.submit(name, args)
+        assert r["ok"], f"{name} {args} refused: {r}"
+        body.kill("test")  # do not wait for 50 m of mock walking
+        body.arm()
 
 
-def test_limits_in_the_schema_match_the_validator():
+def test_every_primitive_is_exposed_and_reaches_the_driver():
     specs = RealBody.tool_specs()
-    assert set(specs) == set(RealBody.TOOLS) == {"walk", "turn", "stand"}
-    props = specs["walk"]["parameters"]["properties"]
-    assert (props["distance_m"]["minimum"], props["distance_m"]["maximum"]) == RealBody.WALK_DIST
-    assert (props["speed_mps"]["minimum"], props["speed_mps"]["maximum"]) == RealBody.WALK_SPEED
-    props = specs["turn"]["parameters"]["properties"]
-    assert (props["degrees"]["minimum"], props["degrees"]["maximum"]) == RealBody.TURN_DEG
-    assert (props["rate_dps"]["minimum"], props["rate_dps"]["maximum"]) == RealBody.TURN_RATE
-    # the real limits must stay inside the driver's own hard limits
-    from driver import MAX_VX, MAX_VYAW
-    assert RealBody.WALK_SPEED[1] <= MAX_VX and math.radians(RealBody.TURN_RATE[1]) <= MAX_VYAW
+    assert set(specs) == set(RealBody.TOOLS) == {"walk", "turn", "stand", *PRIMITIVES}
+    for tool in specs.values():
+        for prop in tool["parameters"]["properties"].values():
+            assert "minimum" not in prop and "maximum" not in prop, "limits crept back into the schema"
+    for name in PRIMITIVES:
+        body, log = make()
+        r = body.submit(name, {"seconds": 0.1, **({"style": 2} if name == "dance" else {})})
+        assert r["ok"], f"{name}: {r}"
+        wait_idle(body)
+        assert log.kinds().count("real_exec_done") == 1 and body.state == IDLE
+
+
+def test_primitive_names_map_to_go1_modes():
+    from driver import PRIMITIVES as DRIVER_PRIMS
+    expect = {"stand_up": "STAND_UP", "lie_down": "STAND_DOWN", "recovery": "RECOVERY", "backflip": "BACKFLIP",
+              "jump_yaw": "JUMPYAW", "straight_hand": "STRAIGHTHAND", "dance1": "DANCE1", "dance2": "DANCE2",
+              "damping": "DAMPING"}
+    assert {k: v[0] for k, v in DRIVER_PRIMS.items()} == expect
 
 
 # ----------------------------------------------------------------------------- state machine
@@ -121,16 +133,6 @@ def test_valid_commands_run_and_one_at_a_time():
     wait_idle(body)
     assert abs(body.x - 0.1) < 0.02 and abs(math.degrees(body.yaw) - 10) < 1.5
     assert log.kinds().count("real_exec_done") == 2
-
-
-def test_geofence_blocks_walking_out():
-    body, _ = make(geofence_m=0.5)
-    assert body.submit("walk", {"distance_m": 0.3, "speed_mps": 0.3})["ok"]
-    wait_idle(body)
-    r = body.submit("walk", {"distance_m": 0.3, "speed_mps": 0.3})
-    assert not r["ok"] and "geofence" in r["error"]
-    assert body.submit("walk", {"distance_m": -0.3, "speed_mps": 0.3})["ok"], "walking back inside must stay possible"
-    wait_idle(body)
 
 
 # ----------------------------------------------------------------------------- kill switch / watchdog
@@ -186,14 +188,10 @@ class DeadDriver(MockDriver):
         raise ConnectionError("no packets")
 
 
-def test_low_battery_does_not_arm():
+def test_low_battery_still_arms_and_reports_it():
     body = RealBody(lambda lg: LowBatteryDriver(lg), ListLog())
-    try:
-        body.arm()
-        raise AssertionError("armed with 10% battery")
-    except RealError:
-        pass
-    assert body.state == DISARMED
+    body.arm()  # the minimum-battery check was removed with the other guardrails
+    assert body.state == IDLE and body.battery == 10
 
 
 def test_no_connection_does_not_arm():
@@ -214,8 +212,8 @@ def test_disarm_then_everything_refused():
 
 def test_every_decision_is_logged():
     body, log = make()
-    body.submit("backflip", {})
-    body.submit("walk", {"distance_m": 9})
+    body.submit("frontflip", {})
+    body.submit("walk", {"distance_m": float("nan")})
     verdicts = [e for e in log.events if e["event"] == "real_verdict"]
     assert len(verdicts) == 2 and not any(v["ok"] for v in verdicts)
     assert all("reason" in v for v in verdicts)
@@ -231,7 +229,7 @@ if __name__ == "__main__":
         except Exception as e:  # noqa: BLE001
             failed += 1
             print(f"FAIL  {name}: {type(e).__name__}: {e}")
-    n_bad = len(FORBIDDEN_TOOLS) + len(BAD_WALK) + len(BAD_TURN)
+    n_bad = len(UNKNOWN_TOOLS) + len(BAD_WALK) + len(BAD_TURN)
     print(f"\n{len(tests) - failed}/{len(tests)} tests passed; adversarial inputs refused: {n_bad}/{n_bad}"
           if not failed else f"\n{failed} FAILED")
     sys.exit(1 if failed else 0)

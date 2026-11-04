@@ -38,6 +38,8 @@
 
   form { display: flex; gap: var(--space-2); padding: var(--space-3) 0 var(--space-6); }
   form .edit-input { flex: 1; width: auto; font-size: var(--fs-16); padding: 11px 14px; }
+  form textarea.edit-input { resize: none; max-height: 160px; font-family: inherit; line-height: 1.4; }
+  form button { align-self: flex-end; }
 
   /* mock / real switch */
   .modeswitch { display: inline-flex; gap: 0; }
@@ -54,23 +56,24 @@
   #armpanel .row { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
 
   /* cameras: big */
-  .eyes { width: clamp(440px, 50vw, 860px); flex: none; align-self: flex-start; padding-top: var(--space-4); }
+  /* the right side fills the whole height of the page: main camera takes what the two small ones leave */
+  .eyes { width: clamp(440px, 50vw, 860px); flex: none; align-self: stretch; min-height: 0; padding: var(--space-4) 0 var(--space-4); display: flex; flex-direction: column; }
   .tile { position: relative; background: #000; border: 1px solid var(--border); overflow: hidden; }
   .tile img { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
-  .tile.main { aspect-ratio: 4 / 3; }
-  .tile.small { aspect-ratio: 4 / 3; cursor: pointer; }
+  .tile.main { flex: 1 1 0; min-height: 0; }
+  .tile.small { aspect-ratio: 4 / 3; max-height: 22vh; cursor: pointer; }
   .tile.small:hover { border-color: var(--border-strong); }
   .tile .tag { position: absolute; left: 8px; top: 8px; padding: 2px 8px; font-size: var(--fs-12); background: rgba(10, 10, 18, 0.75); color: var(--fg-2); }
   .tile .nosig { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: var(--space-4); color: var(--fg-3); font-size: var(--fs-14); }
   .tile.off .nosig { display: flex; }
-  .smalls { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
-  .eyes .cap { margin-top: 6px; }
+  .smalls { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
+  .eyes .cap { flex: none; margin-top: 6px; }
 
   @media (max-width: 960px) {
     .app { padding: 0 var(--space-4); }
     .body { flex-direction: column-reverse; gap: 0; }
     .eyes { width: 100%; padding-top: var(--space-3); }
-    .tile.main { aspect-ratio: 16 / 9; }
+    .tile.main { flex: none; aspect-ratio: 16 / 9; }
   }
 </style>
 </head>
@@ -107,8 +110,8 @@
     <button id="stop-big" class="btn btn--lg btn--danger">STOP</button>
   </div>
   <div id="armpanel" class="notice notice--danger" hidden>
-    <strong>Passare al cane vero?</strong> Si collega al Go1 e il modello potrà muoverlo con passi corti (max 0,5 m / 45°),
-    solo walk, turn e stand, dentro un geofence. Spunta tutto per armare.
+    <strong>Passare al cane vero?</strong> Si collega al Go1 e il modello potrà muoverlo **senza limiti software**
+    (walk, turn, salti, flip, balli, damping…). Spunta tutto per armare.
     <label><input type="checkbox" class="chk"> Il cane è acceso, in piedi, con almeno 1,5 m liberi intorno.</label>
     <label><input type="checkbox" class="chk"> Nessuna persona (soprattutto bambini) vicino al cane.</label>
     <label><input type="checkbox" class="chk"> Ho il telecomando fisico in mano e posso premere Stop (anche Esc o INVIO nel terminale).</label>
@@ -122,7 +125,7 @@
     <section class="chat">
       <div id="log"></div>
       <form id="form" autocomplete="off">
-        <input type="text" id="input" class="edit-input" placeholder="Scrivi un comando…" autofocus>
+        <textarea id="input" class="edit-input" rows="1" placeholder="Scrivi un comando…  (Invio invia, Maiusc+Invio va a capo)" autofocus></textarea>
         <button type="submit" class="btn btn--md btn--primary">invia</button>
       </form>
     </section>
@@ -223,7 +226,7 @@ function applyMode(s) {
     $("realtext").textContent = halted
       ? "Il kill switch ha fermato il cane: non riceve più comandi finché un umano non lo riarma."
       : `Il cane si muove davvero${s.battery != null ? " (batteria " + s.battery + "%)" : ""}. Telecomando in mano. ` +
-        `Stato: ${s.real_state === "MOVING" ? "in movimento" : "pronto"} · geofence ${s.geofence_m} m. Esc = stop.`;
+        `Stato: ${s.real_state === "MOVING" ? "in movimento" : "pronto"} · Esc = stop.`;
     $("rearm").hidden = !halted;
   }
   if (prev !== s.mode || !camsMounted) mountCams(s.mode);
@@ -324,10 +327,16 @@ async function pollState() {
   } catch { bar.textContent = "server non raggiungibile"; }
 }
 
+// Enter sends, Shift+Enter inserts a newline (and never sends)
+const fit = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };
+input.addEventListener("input", fit);
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); }
+});
 $("form").onsubmit = async (e) => {
   e.preventDefault();
   const text = input.value.trim(); if (!text) return;
-  input.value = "";
+  input.value = ""; fit();
   const d = await (await post("/api/chat", { message: text })).json();
   if (d.error) render({ type: "error", text: d.error });
   input.focus();

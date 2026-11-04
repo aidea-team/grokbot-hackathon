@@ -15,7 +15,7 @@ import threading
 import time
 from pathlib import Path
 
-from driver import MAX_VX, MAX_WALK_S, Go1Driver, JsonlLog, MockDriver
+from driver import Go1Driver, JsonlLog, MockDriver
 
 
 def main() -> int:
@@ -24,7 +24,7 @@ def main() -> int:
     p.add_argument("--sim", action="store_true",
                    help="show the dog in the MuJoCo viewer (macOS: run with mjpython)")
     p.add_argument("--distance", type=float, default=1.0, help="meters (default 1.0)")
-    p.add_argument("--speed", type=float, default=0.2, help=f"m/s, max {MAX_VX} (default 0.2)")
+    p.add_argument("--speed", type=float, default=0.2, help="m/s (default 0.2)")
     args = p.parse_args()
 
     try:
@@ -72,13 +72,7 @@ def main() -> int:
     print(f"walking {args.distance} m at {args.speed} m/s ({seconds:.1f} s)...")
     t0 = time.monotonic()
     try:
-        # The validator caps a single command at MAX_WALK_S: chain commands for long distances.
-        res, remaining = None, seconds
-        while remaining > 1e-6:
-            res = driver.walk(args.speed, 0.0, min(remaining, MAX_WALK_S))
-            if not res.ok:
-                break
-            remaining -= MAX_WALK_S
+        res = driver.walk(args.speed, 0.0, seconds)
     except KeyboardInterrupt:
         driver.halt()
         driver.stop()

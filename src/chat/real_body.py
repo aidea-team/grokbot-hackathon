@@ -1,17 +1,15 @@
-"""The real Go1 behind a deterministic safety layer. Grok plans, this code decides, a human can always stop.
+"""The real Go1 behind the kill switch. Grok plans, this code relays, a human can always stop.
 
 Used by the chat app only when it was launched by a human with `--real` and the human typed `go` in the
 terminal, and then only after an explicit "arm" click in the browser. No agent, test or CI ever starts it.
 
-Safety design (see .claude/skills/robot-safety and docs/hardware/llm-robot-architecture.md):
-- whitelist: the model can only call `walk`, `turn`, `stand` (+ `finish`, which is not a motion). No jumps,
-  flips, posture changes, raw velocities, DAMPING. Anything else is refused with {"ok": false, "error": ...};
-- limits twice: min/max in the JSON schema the model sees (tool_specs) AND here in validate(). The schema is only
-  a hint, validate() is the rule. The driver (src/dog/driver.py validate_walk) is a third, independent check;
+NO LIMITS ON PURPOSE (2026-11-04): all the numeric guardrails (distance/speed/angle ranges, geofence, minimum
+battery, short-step prompts) were removed so the team can design them from a clean slate. What is left is not
+a limit on what the dog may do, it is the machinery to stop it and to know who did what:
+- all the Go1 primitives are exposed: walk, turn, stand, stand_up, lie_down, recovery, backflip, jump_yaw,
+  straight_hand, dance (style 1|2), damping. Arguments are only checked for type (finite numbers);
 - state machine: DISARMED -> IDLE <-> MOVING, and HALTED after a kill switch (needs an explicit new arm);
 - one action at a time (a command while MOVING is refused), no queue of motions;
-- geofence by dead reckoning: a walk whose projected end point leaves the radius around the start is refused;
-- minimum battery at arm time;
 - kill switch: kill() is lock-free for the motion (sets HALTED, calls driver.halt()) and independent of the LLM;
 - watchdog: if the browser stops sending heartbeats while the dog moves, the dog is halted;
 - JSONL log of every proposal, verdict, execution, kill.
@@ -28,8 +26,6 @@ from typing import Callable
 import cameras
 
 WATCHDOG_S = 3.0  # no browser heartbeat for this long while moving -> halt
-GEOFENCE_M = 2.0  # radius around the arming point
-MIN_BATTERY = 20  # percent, at arm time
 
 DISARMED, IDLE, MOVING, HALTED = "DISARMED", "IDLE", "MOVING", "HALTED"
 
@@ -38,28 +34,31 @@ class RealError(Exception):
     """Arming failed (no connection, low battery...)."""
 
 
-def _num(desc: str, lo: float, hi: float) -> dict:
-    return {"type": "number", "description": desc, "minimum": lo, "maximum": hi}
+def _num(desc: str) -> dict:
+    return {"type": "number", "description": desc}
+
+
+def _secs(default: float) -> dict:
+    return _num(f"Per quanti secondi tenere il comando attivo (default {default:g})")
 
 
 class RealBody:
     name = "real"
-    TOOLS = ("walk", "turn", "stand")
-    WALK_DIST = (-0.3, 0.5)  # m per call (backwards is shorter: the camera looks forward)
-    WALK_SPEED = (0.05, 0.3)  # m/s (driver hard limit is 0.4)
-    TURN_DEG = (-45.0, 45.0)  # degrees per call
-    TURN_RATE = (10.0, 30.0)  # deg/s (driver hard limit is 0.6 rad/s = 34 deg/s)
-    MIN_WALK_M, MIN_TURN_DEG = 0.05, 3.0
+    # name -> (driver primitive, arguments it accepts). walk / turn / stand are handled apart.
+    PRIMITIVE_TOOLS = {
+        "stand_up": "stand_up", "lie_down": "lie_down", "recovery": "recovery", "backflip": "backflip",
+        "jump_yaw": "jump_yaw", "straight_hand": "straight_hand", "damping": "damping",
+    }
+    TOOLS = ("walk", "turn", "stand", *PRIMITIVE_TOOLS, "dance")
 
-    def __init__(self, driver_factory: Callable, log, camera=None, geofence_m: float = GEOFENCE_M,
-                 min_battery: int = MIN_BATTERY, watchdog_s: float = WATCHDOG_S,
+    def __init__(self, driver_factory: Callable, log, camera=None, watchdog_s: float = WATCHDOG_S,
                  extra_cameras: dict | None = None):
         """driver_factory(log) -> a driver with connect/walk/stop/halt/close (Go1Driver; MockDriver in tests).
         camera: an object with acquire()/release() and a .frame (latest JPEG bytes), e.g. cams.relay(1) (front).
         extra_cameras: {"down": relay(2), "side": relay(4)}: same names as src/sim/cameras.py."""
         self._factory, self.log, self.camera = driver_factory, log, camera
         self.cameras = {"front": camera, **(extra_cameras or {})}
-        self.geofence_m, self.min_battery, self.watchdog_s = geofence_m, min_battery, watchdog_s
+        self.watchdog_s = watchdog_s
         self.state = DISARMED
         self.driver = None
         self.battery: int | None = None
@@ -78,31 +77,29 @@ class RealBody:
     # ------------------------------------------------------------------ what the model is allowed to see
     @classmethod
     def tool_specs(cls) -> dict[str, dict]:
-        """Whitelisted tools with the same limits validate() enforces (name -> description + JSON schema)."""
+        """Tools the model sees (name -> description + JSON schema). No min/max: there are no limits."""
+        def spec(desc, props=None, required=()):
+            return {"description": desc,
+                    "parameters": {"type": "object", "properties": props or {}, "required": list(required)}}
         return {
-            "walk": {
-                "description": "Cammina in avanti (distanza positiva) o indietro (negativa) per un tratto BREVE, "
-                               "poi si ferma da solo. Il cane è vero: avvicinati con prudenza, passi corti.",
-                "parameters": {"type": "object",
-                               "properties": {
-                                   "distance_m": _num("Metri da percorrere: da -0.3 (indietro) a 0.5 (avanti)",
-                                                      *cls.WALK_DIST),
-                                   "speed_mps": _num("Velocità in m/s, da 0.05 a 0.3 (default 0.2)", *cls.WALK_SPEED)},
-                               "required": ["distance_m"]},
-            },
-            "turn": {
-                "description": "Gira su sé stesso di un angolo piccolo: gradi positivi = a sinistra, negativi = a destra.",
-                "parameters": {"type": "object",
-                               "properties": {
-                                   "degrees": _num("Angolo in gradi, da -45 a 45", *cls.TURN_DEG),
-                                   "rate_dps": _num("Velocità angolare in gradi/s, da 10 a 30 (default 25)",
-                                                    *cls.TURN_RATE)},
-                               "required": ["degrees"]},
-            },
-            "stand": {
-                "description": "Resta fermo in piedi per un secondo (per osservare senza muoverti).",
-                "parameters": {"type": "object", "properties": {}, "required": []},
-            },
+            "walk": spec("Cammina in avanti (distanza positiva) o indietro (negativa), poi si ferma da solo. "
+                         "Il cane è vero.",
+                         {"distance_m": _num("Metri da percorrere, negativo = indietro"),
+                          "speed_mps": _num("Velocità in m/s (default 0.2)")}, ("distance_m",)),
+            "turn": spec("Gira su sé stesso: gradi positivi = a sinistra, negativi = a destra.",
+                         {"degrees": _num("Angolo in gradi"),
+                          "rate_dps": _num("Velocità angolare in gradi/s (default 25)")}, ("degrees",)),
+            "stand": spec("Resta fermo in piedi per un secondo (per osservare senza muoverti)."),
+            "stand_up": spec("Alzati in piedi (modalità STAND_UP).", {"seconds": _secs(2)}),
+            "lie_down": spec("Sdraiati (modalità STAND_DOWN).", {"seconds": _secs(3)}),
+            "recovery": spec("Rialzati da caduto (modalità RECOVERY).", {"seconds": _secs(4)}),
+            "backflip": spec("Salto mortale all'indietro (modalità BACKFLIP).", {"seconds": _secs(4)}),
+            "jump_yaw": spec("Salto con giravolta in aria (modalità JUMPYAW).", {"seconds": _secs(4)}),
+            "straight_hand": spec("Allunga la zampa anteriore (modalità STRAIGHTHAND).", {"seconds": _secs(4)}),
+            "dance": spec("Balla (modalità DANCE1 o DANCE2).",
+                          {"style": _num("1 o 2 (default 1)"), "seconds": _secs(15)}),
+            "damping": spec("Spegne i motori: il cane si affloscia a terra (modalità DAMPING).",
+                            {"seconds": _secs(2)}),
         }
 
     # ------------------------------------------------------------------ arming / disarming (human-triggered)
@@ -119,10 +116,6 @@ class RealBody:
             self._event("real_arm_failed", reason=f"connect: {e}")
             raise RealError(f"NON connesso: {e}") from e
         soc = info.get("soc") if isinstance(info, dict) else None
-        if isinstance(soc, (int, float)) and soc < self.min_battery:
-            driver.close()
-            self._event("real_arm_failed", reason=f"battery {soc}% < {self.min_battery}%")
-            raise RealError(f"Batteria al {soc}%: sotto il minimo del {self.min_battery}%. Non armo.")
         with self._lock:
             self.driver, self.battery = driver, soc
             self.x = self.y = self.yaw = 0.0
@@ -139,7 +132,7 @@ class RealBody:
                              threading.Thread(target=self._watchdog, daemon=True, name="real-watchdog")]
             for t in self._threads:
                 t.start()
-        self._event("real_armed", battery=soc, geofence_m=self.geofence_m)
+        self._event("real_armed", battery=soc)
         return self.snapshot()
 
     def disarm(self) -> None:
@@ -173,9 +166,10 @@ class RealBody:
             return False, f"tool {name!r} non consentito sul cane vero (ammessi: {', '.join(self.TOOLS)})", {}
         if not isinstance(args, dict):
             return False, "gli argomenti devono essere un oggetto", {}
-        spec = {"walk": {"distance_m", "speed_mps"}, "turn": {"degrees", "rate_dps"}, "stand": set()}[name]
+        accepted = {"walk": {"distance_m", "speed_mps"}, "turn": {"degrees", "rate_dps"}, "stand": set(),
+                    "dance": {"style", "seconds"}}.get(name, {"seconds"})
         for key, value in args.items():
-            if key not in spec:
+            if key not in accepted:
                 return False, f"{name}: argomento sconosciuto {key!r}", {}
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
                 return False, f"{name}.{key}: deve essere un numero finito", {}
@@ -188,30 +182,30 @@ class RealBody:
         if name == "stand":
             return True, "ok", {}
         if name == "walk":
-            dist = float(args["distance_m"]) if "distance_m" in args else None
-            if dist is None:
+            if "distance_m" not in args:
                 return False, "walk: manca distance_m", {}
             speed = float(args.get("speed_mps", 0.2))
-            if not self.WALK_DIST[0] <= dist <= self.WALK_DIST[1] or abs(dist) < self.MIN_WALK_M:
-                return False, (f"walk: distance_m={dist:g} fuori limiti (|d| ≥ {self.MIN_WALK_M} e "
-                               f"da {self.WALK_DIST[0]} a {self.WALK_DIST[1]})"), {}
-            if not self.WALK_SPEED[0] <= speed <= self.WALK_SPEED[1]:
-                return False, f"walk: speed_mps={speed:g} fuori limiti ({self.WALK_SPEED[0]}-{self.WALK_SPEED[1]})", {}
-            nx, ny = self.x + dist * math.cos(self.yaw), self.y + dist * math.sin(self.yaw)
-            if math.hypot(nx, ny) > self.geofence_m:
-                return False, (f"walk: il punto di arrivo stimato ({nx:.2f}, {ny:.2f}) esce dal geofence di "
-                               f"{self.geofence_m:g} m: scegli un'altra direzione"), {}
-            return True, "ok", {"distance_m": dist, "speed_mps": speed}
-        deg = float(args["degrees"]) if "degrees" in args else None  # turn
-        if deg is None:
-            return False, "turn: manca degrees", {}
-        rate = float(args.get("rate_dps", 25.0))
-        if not self.TURN_DEG[0] <= deg <= self.TURN_DEG[1] or abs(deg) < self.MIN_TURN_DEG:
-            return False, (f"turn: degrees={deg:g} fuori limiti (|a| ≥ {self.MIN_TURN_DEG} e da "
-                           f"{self.TURN_DEG[0]:g} a {self.TURN_DEG[1]:g})"), {}
-        if not self.TURN_RATE[0] <= rate <= self.TURN_RATE[1]:
-            return False, f"turn: rate_dps={rate:g} fuori limiti ({self.TURN_RATE[0]:g}-{self.TURN_RATE[1]:g})", {}
-        return True, "ok", {"degrees": deg, "rate_dps": rate}
+            if speed == 0:
+                return False, "walk: speed_mps non può essere 0", {}
+            return True, "ok", {"distance_m": float(args["distance_m"]), "speed_mps": abs(speed)}
+        if name == "turn":
+            if "degrees" not in args:
+                return False, "turn: manca degrees", {}
+            rate = float(args.get("rate_dps", 25.0))
+            if rate == 0:
+                return False, "turn: rate_dps non può essere 0", {}
+            return True, "ok", {"degrees": float(args["degrees"]), "rate_dps": abs(rate)}
+        clean = {}
+        if "seconds" in args:
+            if float(args["seconds"]) <= 0:
+                return False, f"{name}: seconds deve essere > 0", {}
+            clean["seconds"] = float(args["seconds"])
+        if name == "dance":
+            style = int(args.get("style", 1))
+            if style not in (1, 2):
+                return False, "dance: style deve essere 1 o 2", {}
+            clean["style"] = float(style)
+        return True, "ok", clean
 
     def submit(self, name: str, args: dict | None = None) -> dict:
         args = args if args is not None else {}
@@ -282,7 +276,7 @@ class RealBody:
             "yaw_deg": round(math.degrees(math.atan2(math.sin(self.yaw), math.cos(self.yaw)))),
             "z": None, "posture": "in piedi", "current": self._current, "queue": [], "done": self._done,
             "time_scale": None, "viewer": None, "estimated": True, "battery": self.battery,
-            "real_state": self.state, "geofence_m": self.geofence_m,
+            "real_state": self.state,
         }
 
     # ------------------------------------------------------------------ threads
@@ -310,6 +304,9 @@ class RealBody:
                     secs = abs(args["degrees"]) / args["rate_dps"]
                     res = driver.walk(0.0, vyaw, secs)
                     self.yaw += vyaw * (res.elapsed_s if res.interrupted else secs)
+                elif name in self.PRIMITIVE_TOOLS or name == "dance":
+                    prim = f"dance{int(args['style'])}" if name == "dance" else self.PRIMITIVE_TOOLS[name]
+                    res = driver.primitive(prim, args.get("seconds"))
                 else:  # stand: stay still for 1 s (keeps sending idle)
                     t_end = time.monotonic() + 1.0
                     while time.monotonic() < t_end and not driver.halt_event.is_set():
