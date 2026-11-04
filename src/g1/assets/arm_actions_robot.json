@@ -1,0 +1,86 @@
+{
+ "source": "robot",
+ "actions": {
+  "release_arm": 99,
+  "turn_back_wave": 1,
+  "blow_kiss_with_both_hands": 11,
+  "blow_kiss_with_left_hand": 12,
+  "blow_kiss_with_right_hand": 13,
+  "both_hands_up": 15,
+  "clamp": 17,
+  "high_five": 18,
+  "hug": 19,
+  "make_heart_with_both_hands": 20,
+  "make_heart_with_right_hand": 21,
+  "refuse": 22,
+  "right_hand_up": 23,
+  "ultraman_ray": 24,
+  "wave_under_head": 25,
+  "wave_above_head": 26,
+  "shake_hand": 27,
+  "box_left_hand_win": 28,
+  "box_right_hand_win": 29,
+  "box_both_hand_win": 30,
+  "right_hand_on_heart": 33,
+  "both_hands_up_deviate_right": 34,
+  "forward_push": 36
+ },
+ "custom": [
+  {
+   "name": "grattapaalle",
+   "time": 6.0
+  },
+  {
+   "name": "Volevi2",
+   "time": 6.5
+  },
+  {
+   "name": "Fumare\nFumare",
+   "time": 7.1
+  },
+  {
+   "name": "Ombrello",
+   "time": 5.3
+  },
+  {
+   "name": "Waist_Drum_Dance",
+   "time": 9.5
+  },
+  {
+   "name": "Volevi",
+   "time": 6.1
+  },
+  {
+   "name": "Spin_discs",
+   "time": 6.9
+  },
+  {
+   "name": "Scratch_head",
+   "time": 8.1
+  },
+  {
+   "name": "2026-03-21_01:33:51",
+   "time": 3.5
+  },
+  {
+   "name": "Throw_money",
+   "time": 8.1
+  },
+  {
+   "name": "Abbraccio",
+   "time": 6.2
+  },
+  {
+   "name": "Wow",
+   "time": 7.6
+  },
+  {
+   "name": "BattiCunque",
+   "time": 5.4
+  },
+  {
+   "name": "Round",
+   "time": 9.4
+  }
+ ]
+}

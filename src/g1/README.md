@@ -24,3 +24,22 @@ Trascina l'immagine per ruotare la vista, rotella per lo zoom. Test: `python tes
 
 - Solo simulatore: nessun driver per il G1 vero (SDK Unitree `LocoClient`/DDS non toccato).
 - Nessuna integrazione con la chat/agente Grok: oggi è solo manuale. Il G1 vero ha 29 giunti e la sua policy di fabbrica: questa è la stessa famiglia di policy ma non quella del robot reale.
+
+## Robot vero: setup del Mac (solo locomozione)
+
+Per parlare con il G1 dal Mac serve **CycloneDDS 0.10.x**, la stessa serie del robot. Con la 11.x (quella che pip installa di default) la
+scoperta DDS non vede nessun servizio e ogni richiesta va in timeout (3102, `[ClientStub] send request error`): l'abbiamo misurato.
+
+```bash
+brew install bison cmake          # bison di sistema (2.3) troppo vecchio
+git clone --depth 1 --branch releases/0.10.x https://github.com/eclipse-cyclonedds/cyclonedds.git vendor/cyclonedds-src
+cmake -S vendor/cyclonedds-src -B vendor/cyclonedds-build -DCMAKE_INSTALL_PREFIX=$PWD/vendor/cyclonedds-install \
+      -DCMAKE_BUILD_TYPE=Release -DBISON_EXECUTABLE=$(brew --prefix bison)/bin/bison -DBUILD_TESTING=OFF -DENABLE_SSL=NO
+cmake --build vendor/cyclonedds-build --target install -j 8
+CYCLONEDDS_HOME=$PWD/vendor/cyclonedds-install .venv/bin/pip install "cyclonedds==0.10.2"
+.venv/bin/pip install --no-deps "git+https://github.com/unitreerobotics/unitree_sdk2_python.git"
+```
+
+- Verifica (solo ascolto, nessun comando): il Mac deve vedere ~26 partecipanti DDS e i topic `rt/lowstate`, `rt/api/sport/request`.
+- Il reale manda solo `Move`/`StopMove` (vedi `g1_real.py` e `tests/test_g1_real_safety.py`). Non cambia modalità, non usa basso livello.
+- Lettura dello stato (sola lettura): `LocoClient.GetFsmId()`; 1 = Damp, 500/501 = camminata (501 sul G1 EDU Plus/U2 a 29 giunti secondo fonti di terzi, da verificare sul robot).

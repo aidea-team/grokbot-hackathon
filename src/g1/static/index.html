@@ -7,133 +7,336 @@
 <title>g1 · aidea</title>
 <link rel="stylesheet" href="/ui/aidea.css">
 <style>
-  .app { height: calc(100% - 65px); display: flex; gap: var(--space-8); padding: var(--space-4) var(--space-10); }
-  .view { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-sunken); position: relative; }
-  .view img { max-width: 100%; max-height: 100%; display: block; cursor: grab; user-select: none; -webkit-user-drag: none; }
-  .view img:active { cursor: grabbing; }
-  .view .fell { position: absolute; top: var(--space-4); left: 50%; transform: translateX(-50%); }
-  .side { width: 300px; flex: none; display: flex; flex-direction: column; gap: var(--space-5); overflow-y: auto; }
-  .side h3 { margin: 0 0 var(--space-2); font-size: var(--fs-14); color: var(--fg-3); text-transform: uppercase; letter-spacing: .06em; }
-  .keys { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; }
-  .key { height: 56px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-strong); font-weight: 600; font-size: var(--fs-16); user-select: none; cursor: pointer; background: var(--bg-raised); }
+  .app { height: calc(100% - 65px); display: flex; gap: var(--space-6); padding: var(--space-4) var(--space-8); min-height: 0; }
+  .col { display: flex; flex-direction: column; min-height: 0; }
+  .center { flex: 1; min-width: 0; gap: var(--space-3); }
+  .views { flex: 1; min-height: 0; display: flex; gap: var(--space-3); }
+  .view { position: relative; flex: 1; min-width: 0; background: var(--bg-sunken); display: flex; align-items: center; justify-content: center; }
+  .view.head { flex: 0 0 38%; }
+  .view img { max-width: 100%; max-height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+  #cam { cursor: grab; }
+  .tag { position: absolute; top: 6px; left: 8px; font-size: var(--fs-12); color: var(--fg-2); background: rgba(0,0,0,.55); padding: 2px 8px; }
+  .nosig { position: absolute; color: var(--fg-3); font-size: var(--fs-14); text-align: center; padding: var(--space-4); }
+  .badge { position: absolute; top: 6px; right: 8px; }
+  .side { width: 310px; flex: none; overflow-y: auto; gap: var(--space-4); }
+  .side h3 { margin: 0 0 var(--space-2); font-size: var(--fs-12); color: var(--fg-3); text-transform: uppercase; letter-spacing: .06em; }
+  .keys { display: grid; grid-template-columns: repeat(3, 50px); gap: 5px; }
+  .key { height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border-strong); font-weight: 600; cursor: pointer; background: var(--bg-raised); user-select: none; }
+  .key small { font-weight: 400; font-size: 9px; color: var(--fg-3); }
   .key.on { background: rgba(143, 63, 255, 0.35); border-color: var(--accent); }
-  .key small { display: block; font-weight: 400; font-size: 10px; color: var(--fg-3); }
-  .key { flex-direction: column; }
+  .keyrow { display: flex; gap: var(--space-5); flex-wrap: wrap; }
   .row { display: flex; align-items: center; gap: var(--space-3); font-size: var(--fs-14); }
-  .row label { width: 92px; color: var(--fg-2); }
+  .row label { width: 78px; color: var(--fg-2); }
   .row input[type=range] { flex: 1; }
-  .row output { width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-3); }
-  .grid { display: grid; grid-template-columns: auto 1fr; gap: 2px var(--space-4); font-size: var(--fs-14); font-variant-numeric: tabular-nums; }
+  .row output { width: 44px; text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-3); }
+  .grid { display: grid; grid-template-columns: auto 1fr; gap: 1px var(--space-4); font-size: var(--fs-12); font-variant-numeric: tabular-nums; }
   .grid span:nth-child(odd) { color: var(--fg-3); }
-  .note { font-size: var(--fs-12); color: var(--fg-3); line-height: 1.5; }
+  .note { font-size: var(--fs-12); color: var(--fg-3); line-height: 1.5; margin: var(--space-2) 0 0; }
+  .presets { display: flex; flex-wrap: wrap; gap: 5px; }
+  .presets .btn { font-size: 11px; padding: 3px 8px; }
   .modeswitch { display: inline-flex; }
   .modeswitch .btn { border-radius: 0; }
   .modeswitch .btn + .btn { margin-left: -1px; }
-  @media (max-width: 900px) { .app { flex-direction: column; padding: var(--space-3); } .side { width: auto; } }
+  [data-mode="real"] #m-real { box-shadow: 0 0 0 1px var(--aidea-danger); }
+  body[data-lo="1"] .simonly { display: none; }
+  body[data-ctl="lab29"] .armsonly { display: none; }
+  .banner { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; padding: var(--space-2) var(--space-4); border: 1px solid var(--aidea-danger); color: var(--aidea-danger); font-size: var(--fs-14); }
+  .banner[hidden], #armpanel[hidden] { display: none; }
+  #armpanel { padding: var(--space-3) var(--space-4); border: 1px solid var(--aidea-danger); font-size: var(--fs-14); }
+  #armpanel label { display: flex; gap: var(--space-2); margin: 4px 0; cursor: pointer; }
+  .chat { height: 34%; min-height: 150px; display: flex; flex-direction: column; border-top: 1px solid var(--border); padding-top: var(--space-2); }
+  #log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: var(--fs-14); }
+  .user { align-self: flex-end; max-width: 80%; background: rgba(143, 63, 255, 0.12); border: 1px solid rgba(143, 63, 255, 0.35); padding: 4px 10px; }
+  .final { border-left: 3px solid var(--accent); padding-left: var(--space-3); }
+  .err { color: var(--aidea-danger); }
+  .step { display: grid; grid-template-columns: 80px 1fr; gap: var(--space-3); color: var(--fg-2); }
+  .step img { width: 80px; height: 45px; object-fit: cover; background: var(--bg-sunken); }
+  .step b { color: var(--fg-1); font-size: var(--fs-12); }
+  .step.bad b { color: var(--aidea-danger); }
+  form { display: flex; gap: var(--space-2); padding-top: var(--space-2); }
+  form input { flex: 1; font-size: var(--fs-14); padding: 8px 12px; }
+  @media (max-width: 1000px) { .app { flex-direction: column; overflow: auto; } .views { flex-direction: column; min-height: 420px; } .view.head { flex: 1; } .side { width: auto; } }
 </style>
 </head>
-<body>
+<body data-mode="sim">
 <header class="topnav">
   <div class="topnav__inner">
     <span class="topnav__brand"><img src="/ui/aidea-mark.svg" alt="aidea"><span class="topnav__brand-text">g1</span></span>
     <div id="status" class="topnav__status">connessione…</div>
     <div class="topnav__actions">
-      <div class="modeswitch" role="group" aria-label="robot">
-        <a class="btn btn--sm btn--ghost" href="/" title="Unitree Go1 (cane): chat e controllo manuale">Go1</a>
-        <a class="btn btn--sm btn--ghost" href="/" title="Unitree Go2: sulla pagina principale scegli Go2 dallo switch">Go2</a>
-        <button class="btn btn--sm btn--violet" title="Unitree G1 U2 (umanoide): simulatore MuJoCo con la policy di locomozione standard">G1 U2</button>
+      <span class="btn btn--sm btn--violet" style="pointer-events:none">G1 U2</span>
+      <select id="ctl" class="ui-select" title="Quale controller di Unitree fa camminare il G1 simulato"></select>
+      <label class="btn btn--sm btn--ghost" id="lo-label" title="Il simulatore accetta solo ciò che accetta il robot vero: camminata, modalità e gesti, ma non il movimento dei singoli giunti delle braccia (IJKL). Togli la spunta per usarlo nel simulatore." style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="lo" checked> come il reale</label>
+      <div class="modeswitch" role="group" aria-label="modalità">
+        <button id="m-sim" class="btn btn--sm btn--violet" title="Simulatore MuJoCo (nessun rischio)">mock · MuJoCo</button>
+        <button id="m-real" class="btn btn--sm btn--ghost" title="G1 vero (serve --real all'avvio e una conferma)">real · G1</button>
       </div>
     </div>
   </div>
 </header>
 <div class="app">
-  <div class="view"><img id="cam" alt="G1 in MuJoCo" draggable="false"><span id="fell" class="fell btn btn--sm btn--ghost" hidden>caduto: premi R</span></div>
-  <aside class="side">
+  <div class="col center">
+    <div id="banner" class="banner" hidden><strong>G1 VERO</strong><span id="bantext" style="flex:1"></span><button id="kill" class="btn btn--sm btn--ghost">STOP (Esc)</button></div>
+    <div id="armpanel" hidden>
+      <strong>Checklist per muovere il G1 vero</strong>
+      <label><input type="checkbox" class="chk"> Il robot è in piedi, in modalità camminata, con il telecomando in mano a un operatore.</label>
+      <label><input type="checkbox" class="chk"> Almeno 2 m liberi attorno, nessuno vicino.</label>
+      <label><input type="checkbox" class="chk"> So che i comandi vanno al robot vero e che Esc/Spazio/STOP lo fermano.</label>
+      <div style="display:flex; gap:8px; margin-top:8px"><button id="arm" class="btn btn--sm btn--violet" disabled>arma</button><button id="armcancel" class="btn btn--sm btn--ghost">annulla</button></div>
+    </div>
+    <div class="views">
+      <div class="view" id="mainview"><img id="cam" alt="vista 3D" draggable="false"><span class="tag" id="maintag">vista esterna (simulatore)</span><span id="fell" class="badge btn btn--sm btn--ghost" hidden>caduto: premi R</span></div>
+      <div class="view head"><img id="head" alt="telecamera testa"><span class="tag">cosa vede: telecamera testa</span><div class="nosig" id="nosig" hidden></div></div>
+    </div>
+    <div class="chat">
+      <div id="log"></div>
+      <form id="form"><input id="msg" class="edit-input" placeholder="Parla al G1 (es. «vai verso la porta e salutami»)" autocomplete="off"><button class="btn btn--sm btn--violet">invia</button><button type="button" id="abort" class="btn btn--sm btn--ghost">stop missione</button></form>
+    </div>
+  </div>
+  <aside class="col side">
     <section>
-      <h3>Movimento</h3>
-      <div class="keys" id="keys">
-        <div class="key" data-k="q">Q<small>sx</small></div><div class="key" data-k="w">W<small>avanti</small></div><div class="key" data-k="e">E<small>dx</small></div>
-        <div class="key" data-k="a">A<small>gira ←</small></div><div class="key" data-k="s">S<small>indietro</small></div><div class="key" data-k="d">D<small>gira →</small></div>
+      <h3>Camminata (policy standard)</h3>
+      <div class="keyrow">
+        <div class="keys">
+          <div class="key" data-k="q">Q<small>sx</small></div><div class="key" data-k="w">W<small>avanti</small></div><div class="key" data-k="e">E<small>dx</small></div>
+          <div class="key" data-k="a">A<small>gira ←</small></div><div class="key" data-k="s">S<small>indietro</small></div><div class="key" data-k="d">D<small>gira →</small></div>
+        </div>
+        <div class="keys simonly armsonly">
+          <div class="key" data-k="u">U<small>gomito +</small></div><div class="key" data-k="i">I<small>alza</small></div><div class="key" data-k="o">O<small>gomito −</small></div>
+          <div class="key" data-k="j">J<small>apri</small></div><div class="key" data-k="k">K<small>abbassa</small></div><div class="key" data-k="l">L<small>chiudi</small></div>
+        </div>
       </div>
-      <p class="note">Tieni premuto. Maiusc = più veloce · Spazio/Esc = stop · R = rialzati (reset). Trascina l'immagine per ruotare la vista, rotella per lo zoom.</p>
+      <p class="note">WASD/QE: cammina · IJKL: spalla · U/O: gomito · Y/H: spalla (rotazione) · Maiusc: più veloce · <b>Spazio/Esc: STOP</b> · R: Start / rialzati (sul reale chiede conferma).</p>
+    </section>
+    <section class="simonly armsonly">
+      <h3>Braccio da muovere</h3>
+      <div class="modeswitch" id="armsel"><button class="btn btn--sm btn--ghost" data-s="left">1 · sx</button><button class="btn btn--sm btn--ghost" data-s="right">2 · dx</button><button class="btn btn--sm btn--violet" data-s="both">3 · entrambe</button></div>
     </section>
     <section>
       <h3>Velocità</h3>
-      <div class="row"><label for="sp">avanti</label><input id="sp" type="range" min="0.1" max="0.8" step="0.05" value="0.4"><output id="spo"></output></div>
+      <div class="row"><label for="sp">avanti</label><input id="sp" type="range" min="0.1" max="1.0" step="0.05" value="0.4"><output id="spo"></output></div>
       <div class="row"><label for="tr">rotazione</label><input id="tr" type="range" min="0.2" max="1.0" step="0.05" value="0.6"><output id="tro"></output></div>
+      <div class="row simonly armsonly"><label for="jr">braccia</label><input id="jr" type="range" min="0.2" max="1" step="0.1" value="0.7"><output id="jro"></output></div>
+    </section>
+    <section class="armsonly">
+      <h3>Gesti con le mani (azioni dell'SDK)</h3>
+      <div class="presets" id="presets"></div>
+      <p class="note" id="presetsrc"></p>
+      <div id="customwrap" hidden>
+        <h3 style="margin-top:10px">Insegnate dall'app</h3>
+        <div class="presets" id="custom"></div>
+        <button class="btn btn--sm btn--ghost" id="customstop" style="margin-top:6px">Ferma azione insegnata</button>
+        <p class="note">Si eseguono per nome (solo sul robot vero) e non le offriamo alla chat.</p>
+      </div>
+      <p class="note">Sul robot vero sono le azioni integrate (<code>ExecuteAction</code> e <code>WaveHand</code>): non cambiano modalità, il robot deve essere fermo e finché durano la camminata non risponde. Nel simulatore sono nostre approssimazioni (con «come il reale» vale la stessa regola).</p>
+    </section>
+    <section>
+      <h3>Modalità del robot</h3>
+      <div style="display:flex; gap:6px; flex-wrap:wrap">
+        <button class="btn btn--sm btn--ghost fsm" data-id="500" title="LocoClient.Start (FSM 500)">Start (R)</button>
+        <button class="btn btn--sm btn--ghost fsm" data-id="501" title="Modalità di camminata (FSM 501: fonti di terzi, da verificare)">Camminata 501</button>
+        <button class="btn btn--sm btn--ghost fsm simonly" data-id="1" title="Damp (FSM 1): motori molli, il robot cede">Damp</button>
+        <button class="btn btn--sm btn--ghost fsm" data-id="3" title="Sit (FSM 3)">Siediti</button>
+        <button class="btn btn--sm btn--ghost fsm" data-id="706" title="Squat <-> StandUp (FSM 706)">Squat / in piedi</button>
+        <button class="btn btn--sm btn--ghost fsm simonly" data-id="702" title="Lie2StandUp (FSM 702): da sdraiato, schiena a terra su suolo duro e piano">Sdraiato → in piedi</button>
+        <button id="stop" class="btn btn--sm btn--ghost">stop</button>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
+        <button class="btn btn--sm btn--ghost" id="hi" title="HighStand: altezza massima">Alza</button>
+        <button class="btn btn--sm btn--ghost" id="lowh" title="LowStand: altezza minima">Abbassa</button>
+        <button class="btn btn--sm btn--ghost bal" data-m="0" title="SetBalanceMode 0 (in piedi, secondo una fonte)">Equilibrio 0</button>
+        <button class="btn btn--sm btn--ghost bal" data-m="1" title="SetBalanceMode 1 (passo di camminata, secondo una fonte)">Equilibrio 1</button>
+      </div>
+      <p class="note">Sul robot vero ogni cambio chiede conferma e la pagina rilegge l'FSM per dirti se è cambiato davvero. Non esiste developer mode né basso livello, e sul reale non ci sono Damp né Lie2StandUp. Nel simulatore valgono solo Start (e Damp se togli «come il reale»).</p>
     </section>
     <section>
       <h3>Stato</h3>
       <div class="grid" id="st"></div>
     </section>
-    <div style="display:flex; gap:var(--space-2)">
-      <button id="stop" class="btn btn--sm btn--ghost">stop</button>
-      <button id="reset" class="btn btn--sm btn--ghost">reset (R)</button>
-    </div>
-    <p class="note">Solo comandi di alto livello (velocità x, y, imbardata) eseguiti dalla policy di locomozione standard di Unitree (<code>unitree_rl_gym</code>, LSTM) su un G1 a 12 giunti delle gambe, come nel loro <code>deploy_mujoco</code>. Nessuna primitiva di braccia o mani.</p>
   </aside>
 </div>
 <script>
 const $ = (id) => document.getElementById(id);
-const post = (u, b) => fetch(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b || {}) }).catch(() => {});
-const held = new Set();
-let shift = false;
-$("cam").src = "stream.mjpg";
-const sp = $("sp"), tr = $("tr");
-for (const [i, o] of [[sp, "spo"], [tr, "tro"]]) { const f = () => { $(o).textContent = (+i.value).toFixed(2); localStorage.setItem("g1_" + i.id, i.value); }; try { i.value = localStorage.getItem("g1_" + i.id) || i.value; } catch {} i.oninput = f; f(); }
+const post = (u, b) => fetch(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b || {}) }).then(r => r.json()).then(d => { if (d && d.ok === false && d.error) note(d.error); return d; }).catch(() => ({}));
+const held = new Set(); let shift = false, sel = "both", mode = "sim", lastErr = 0, loOnly = true;
+function note(t) { const now = Date.now(); if (now - lastErr < 1500) return; lastErr = now; add("err", t); }
+for (const [i, o] of [["sp", "spo"], ["tr", "tro"], ["jr", "jro"]]) { const e = $(i); try { e.value = localStorage.getItem("g1_" + i) || e.value; } catch {} const f = () => { $(o).textContent = (+e.value).toFixed(2); try { localStorage.setItem("g1_" + i, e.value); } catch {} }; e.oninput = f; f(); }
 
-function command() {
-  const k = (c) => held.has(c) ? 1 : 0;
-  const boost = shift ? 1.5 : 1;
-  const lin = +sp.value * boost, rot = +tr.value * boost;
+// ---------- views
+$("cam").src = "stream.mjpg"; $("head").src = "api/head.mjpg";
+function remount() { const t = Date.now(); $("cam").src = "stream.mjpg?" + t; $("head").src = "api/head.mjpg?" + t; }
+$("head").onerror = () => setTimeout(() => $("head").src = "api/head.mjpg?" + Date.now(), 1500);
+
+// ---------- keyboard: walking, arms, gestures
+const ARMKEYS = { i: ["shoulder_pitch", -1], k: ["shoulder_pitch", 1], j: ["shoulder_roll", 1], l: ["shoulder_roll", -1], u: ["elbow", 1], o: ["elbow", -1], y: ["shoulder_yaw", 1], h: ["shoulder_yaw", -1] };
+const MIRROR = new Set(["shoulder_roll", "shoulder_yaw"]);
+function walkCmd() {
+  const k = (c) => held.has(c) ? 1 : 0, boost = shift ? 1.5 : 1, lin = +$("sp").value * boost, rot = +$("tr").value * boost;
   return { vx: (k("w") - k("s")) * lin, vy: (k("q") - k("e")) * Math.min(lin, 0.4), vyaw: (k("a") - k("d")) * rot };
 }
-let wasMoving = false;
+function armRates() {
+  if (loOnly) return {};  // locomotion-only (always on the real robot): no arm commands are ever sent
+  const r = {}, g = +$("jr").value * (shift ? 1.5 : 1);
+  for (const [key, [joint, dir]] of Object.entries(ARMKEYS)) if (held.has(key))
+    for (const side of ["left", "right"]) {
+      if (sel !== "both" && sel !== side) continue;
+      const v = dir * (side === "right" && MIRROR.has(joint) ? -1 : 1) * g;
+      r[side + "_" + joint] = (r[side + "_" + joint] || 0) + v;
+    }
+  return r;
+}
+let wasWalking = false, wasJog = false;
 setInterval(() => {
-  const c = command(), moving = c.vx || c.vy || c.vyaw;
-  if (moving) post("api/move", c);
-  else if (wasMoving) post("api/stop");
-  wasMoving = !!moving;
+  const c = walkCmd(), walking = !!(c.vx || c.vy || c.vyaw);
+  if (walking) post("api/move", c); else if (wasWalking) post("api/stop");
+  wasWalking = walking;
+  const r = armRates(), jog = Object.keys(r).length > 0;
+  if (jog) post("api/jog", { rates: r }); else if (wasJog) post("api/jog", { rates: {} });
+  wasJog = jog;
 }, 100);
+const KEYS = "wasdqeijkluoyh";
 function paint() { document.querySelectorAll(".key").forEach((e) => e.classList.toggle("on", held.has(e.dataset.k))); }
+function stopAll() { held.clear(); paint(); post("api/stop"); }
+function setSel(s) { sel = s; document.querySelectorAll("#armsel .btn").forEach((b) => b.className = "btn btn--sm " + (b.dataset.s === s ? "btn--violet" : "btn--ghost")); }
+document.querySelectorAll("#armsel .btn").forEach((b) => b.onclick = () => setSel(b.dataset.s));
 addEventListener("keydown", (e) => {
-  if (e.target.tagName === "INPUT" && e.target.type !== "range") return;
-  shift = e.shiftKey;
-  const k = e.key.toLowerCase();
-  if ("wasdqe".includes(k) && k.length === 1) { held.add(k); paint(); e.preventDefault(); }
-  else if (k === " " || k === "escape") { held.clear(); paint(); post("api/stop"); e.preventDefault(); }
-  else if (k === "r") post("api/reset");
+  if (e.target.tagName === "INPUT" && e.target.type !== "range" && e.target.type !== "checkbox") { if (e.key === "Escape") stopAll(); return; }
+  shift = e.shiftKey; const k = e.key.toLowerCase();
+  if (k.length === 1 && KEYS.includes(k)) { held.add(k); paint(); e.preventDefault(); }
+  else if (k === " " || k === "escape") { stopAll(); post("api/kill"); e.preventDefault(); }
+  else if (k === "r") startRobot();
+  else if (k === "1") setSel("left"); else if (k === "2") setSel("right"); else if (k === "3") setSel("both");
 });
 addEventListener("keyup", (e) => { shift = e.shiftKey; held.delete(e.key.toLowerCase()); paint(); });
-addEventListener("blur", () => { held.clear(); paint(); post("api/stop"); });
-document.querySelectorAll(".key").forEach((el) => {  // also usable with the mouse / touch
-  const k = el.dataset.k;
-  el.onpointerdown = () => { held.add(k); paint(); };
-  el.onpointerup = el.onpointerleave = el.onpointercancel = () => { held.delete(k); paint(); };
-});
-$("stop").onclick = () => { held.clear(); paint(); post("api/stop"); };
-$("reset").onclick = () => post("api/reset");
+addEventListener("blur", stopAll);
+document.querySelectorAll(".key").forEach((el) => { const k = el.dataset.k; el.onpointerdown = () => { held.add(k); paint(); }; el.onpointerup = el.onpointerleave = el.onpointercancel = () => { held.delete(k); paint(); }; });
+$("customstop").onclick = () => post("api/custom_stop");
+$("stop").onclick = stopAll; $("kill").onclick = () => { stopAll(); post("api/kill"); };
+async function setFsm(id, label) {
+  const names = { 1: "Damp (il robot cede)", 3: "Sit", 500: "Start", 501: "modalità camminata", 702: "Lie2StandUp", 706: "Squat/StandUp" };
+  if (mode === "real" && !confirm(`${names[id]} sul robot VERO (FSM ${id}). Il robot cambia modalità. Operatore col telecomando pronto, nessuno vicino. Continuare?`)) return;
+  stopAll();
+  const d = await post("api/fsm", { id });
+  if (d && d.ok) add("", `FSM ${id} richiesto → il robot risulta in FSM ${d.fsm ?? "?"} ${d.changed ? "(cambiato)" : "(NON cambiato)"}`);
+}
+function startRobot() {  // LocoClient.Start() (FSM 500): on the REAL robot it changes its mode, so never from a stray key
+  if (mode === "real" && !confirm("Start sul robot VERO: cambia la modalità del robot (FSM 500). Va fatto solo con il robot in piedi e in modalità normale. Continuare?")) return;
+  setFsm(500);
+}
+document.querySelectorAll(".fsm").forEach((b) => b.onclick = () => setFsm(+b.dataset.id));
+$("hi").onclick = () => { if (mode !== "real" || confirm("HighStand sul robot vero. Continuare?")) post("api/stand_height", { high: true }); };
+$("lowh").onclick = () => { if (mode !== "real" || confirm("LowStand sul robot vero. Continuare?")) post("api/stand_height", { high: false }); };
+document.querySelectorAll(".bal").forEach((b) => b.onclick = () => { if (mode !== "real" || confirm("SetBalanceMode sul robot vero. Continuare?")) post("api/balance_mode", { mode: +b.dataset.m }); });
+let presetsMode = null;
+async function loadPresets() {
+  presetsMode = mode;
+  const d = await (await fetch("api/presets")).json();
+  const mk = (label, title, faded, onclick, cls) => { const b = document.createElement("button"); b.className = "btn btn--sm " + (cls || "btn--ghost"); b.textContent = label; if (title) b.title = title; if (faded) b.style.opacity = 0.45; b.onclick = onclick; return b; };
+  $("presets").replaceChildren(...d.presets.map((p) => {
+    const label = (p.release ? "↺ " : p.caution ? "⚠ " : "") + p.name.replaceAll("_", " ") + (p.id != null ? " · " + p.id : "");
+    const faded = mode === "sim" && !p.simulated;
+    const title = faded ? "non simulato nel mock: esiste solo sul robot vero" : p.release ? "rilascia le braccia (id 99): alcune azioni restano tenute alla posa finale" :
+      p.caution ? "non è nell'app Unitree: per Unitree può far cadere il robot" : "";
+    return mk(label, title, faded, () => {
+      if (mode === "real" && p.caution && !confirm(`«${p.name}» non è tra le azioni dell'app Unitree: Unitree avverte che può far cadere il robot. Robot libero attorno, telecomando in mano. Continuare?`)) return;
+      post("api/preset", { name: p.name });
+    }, p.release ? "btn--violet" : "btn--ghost");
+  }));
+  $("custom").replaceChildren(...(d.custom || []).map((c) => mk(c.name.replace(/\n/g, " ") + (c.time ? " · " + c.time + " s" : ""),
+    mode === "real" ? "azione insegnata dall'app: si esegue per nome" : "esiste solo sul robot vero", mode !== "real", () => {
+      if (!confirm(`Azione insegnata «${c.name.replace(/\n/g, " ")}» sul robot VERO (${c.time || "?"} s). Può muovere anche la vita. Robot libero attorno, telecomando in mano. Continuare?`)) return;
+      post("api/custom", { name: c.name });
+    })));
+  $("customwrap").hidden = !(d.custom && d.custom.length);
+  $("presetsrc").textContent = "Elenco: " + d.source;
+}
+loadPresets();
 
-// orbit camera: drag = rotate, wheel = zoom
+// ---------- orbit camera (simulator)
 let az = 145, el = -15, dist = 3, drag = null, orbitT = 0;
 const sendOrbit = () => { const t = Date.now(); if (t - orbitT > 50) { orbitT = t; post("api/orbit", { azimuth: az, elevation: el, distance: dist }); } };
 $("cam").onpointerdown = (e) => { drag = [e.clientX, e.clientY]; $("cam").setPointerCapture(e.pointerId); };
-$("cam").onpointerup = () => { drag = null; post("api/orbit", { azimuth: az, elevation: el, distance: dist }); };
+$("cam").onpointerup = () => { drag = null; };
 $("cam").onpointermove = (e) => { if (!drag) return; az -= (e.clientX - drag[0]) * 0.4; el = Math.max(-85, Math.min(0, el - (e.clientY - drag[1]) * 0.3)); drag = [e.clientX, e.clientY]; sendOrbit(); };
 $("cam").onwheel = (e) => { e.preventDefault(); dist = Math.max(1, Math.min(10, dist * (e.deltaY > 0 ? 1.1 : 0.9))); sendOrbit(); };
 
+// ---------- sim / real switch
+function applyMode(s) {
+  if (!s.mode) return; mode = s.mode; document.body.dataset.mode = mode;
+  $("m-sim").className = "btn btn--sm " + (mode === "sim" ? "btn--violet" : "btn--ghost");
+  $("m-real").className = "btn btn--sm " + (mode === "real" ? "btn--violet" : "btn--ghost");
+  $("m-real").hidden = !s.real_enabled;
+  $("banner").hidden = mode !== "real";
+  loOnly = !!s.locomotion_only; document.body.dataset.lo = loOnly ? "1" : "0";
+  if (presetsMode !== null && presetsMode !== mode) loadPresets();
+  document.body.dataset.ctl = mode === "sim" ? (s.controller || "gym12") : "real";
+  const ctl = $("ctl"); ctl.hidden = mode !== "sim";
+  if (s.controllers && ctl.options.length === 0) { for (const [k, v] of Object.entries(s.controllers)) ctl.add(new Option(v, k)); ctl.onchange = async () => { stopAll(); const d = await post("api/controller", { name: ctl.value }); if (d && d.ok) add("", "controller: " + ctl.value); }; }
+  if (s.controller) ctl.value = s.controller;
+  $("lo").checked = loOnly; $("lo").disabled = mode === "real"; $("lo-label").style.opacity = mode === "real" ? 0.5 : 1;
+  $("bantext").textContent = s.real_state === "armed" ? "armato: camminata, modalità e gesti vanno al robot vero (niente developer mode, niente basso livello)" : s.real_state === "halted" ? "FERMATO dal kill switch: riarma da REAL" : "non armato";
+  $("maintag").textContent = mode === "real" ? "telecamera del robot vero" : "vista esterna (simulatore)";
+  $("cam").style.display = mode === "real" ? "none" : "block";
+}
+let curMode = "sim";
+$("lo").onchange = async () => { stopAll(); const d = await post("api/locomotion_only", { value: $("lo").checked }); applyMode(d); };
+$("m-sim").onclick = async () => { const d = await post("api/mode", { mode: "sim" }); applyMode(d); $("log").replaceChildren(); remount(); };
+$("m-real").onclick = () => { if (mode !== "real") $("armpanel").hidden = false; };
+document.querySelectorAll(".chk").forEach((c) => c.onchange = () => $("arm").disabled = ![...document.querySelectorAll(".chk")].every((x) => x.checked));
+$("armcancel").onclick = () => { $("armpanel").hidden = true; };
+$("arm").onclick = async () => { const d = await post("api/mode", { mode: "real", confirm: true }); $("armpanel").hidden = true; applyMode(d); $("log").replaceChildren(); remount(); if (d.warning) add("err", d.warning); };
+
+// ---------- state
 async function poll() {
   try {
-    const s = await (await fetch("api/state")).json();
-    $("status").textContent = `G1 U2 · simulatore MuJoCo · ${s.fallen ? "CADUTO" : "in piedi"}`;
+    const s = await (await fetch("api/state")).json(); applyMode(s);
+    $("status").textContent = `G1 U2 · ${s.mode === "real" ? "ROBOT VERO" : "simulatore MuJoCo"} · ${s.fallen ? "CADUTO" : s.damped ? "molle (damp)" : "ok"}`;
     $("fell").hidden = !s.fallen;
-    const rows = [["x", s.x + " m"], ["y", s.y + " m"], ["quota", s.z + " m"], ["yaw", s.yaw_deg + "°"],
-      ["cmd vx", s.vx + " m/s"], ["cmd vy", s.vy + " m/s"], ["cmd ω", s.vyaw + " rad/s"], ["cadute", s.falls], ["tempo sim", s.sim_time + " s"]];
-    $("st").replaceChildren(...rows.flatMap(([k, v]) => { const a = document.createElement("span"), b = document.createElement("span"); a.textContent = k; b.textContent = v; return [a, b]; }));
+    const sig = s.camera_error; $("nosig").hidden = !sig; $("nosig").textContent = sig || "";
+    const rows = [["x", s.x], ["y", s.y], ["yaw", s.yaw_deg], ["cmd vx", s.vx], ["cmd vy", s.vy], ["cmd ω", s.vyaw], ["azione", s.preset || "-"], ["cadute", s.falls], ["FSM", s.fsm ?? "-"]];
+    $("st").replaceChildren(...rows.flatMap(([k, v]) => { const a = document.createElement("span"), b = document.createElement("span"); a.textContent = k; b.textContent = v ?? "-"; return [a, b]; }));
   } catch { $("status").textContent = "nessuna connessione"; }
   setTimeout(poll, 500);
 }
 poll();
+
+// ---------- chat
+const log = $("log"); let lastEv = 0, curSession = null;
+function add(cls, text, extra) { const d = document.createElement("div"); d.className = cls; d.textContent = text; if (extra) d.append(extra); log.append(d); log.scrollTop = log.scrollHeight; return d; }
+function fmtArgs(tool, a) {  // never "[object Object]": a move is shown as its steps
+  if (tool === "move" && Array.isArray(a.steps))
+    return a.steps.map((s) => `${String(s.action).replaceAll("_", " ")} ${s.amount}${String(s.action).startsWith("turn") ? "°" : " m"}`).join(" → ");
+  return Object.entries(a).map(([k, v]) => k + "=" + (v !== null && typeof v === "object" ? JSON.stringify(v) : v)).join(", ");
+}
+function render(e) {
+  if (e.kind === "user") add("user", e.text);
+  else if (e.kind === "final") add("final", e.text);
+  else if (e.kind === "error") add("err", e.text);
+  else if (e.kind === "step") {
+    const d = document.createElement("div"); d.className = "step" + (e.ok ? "" : " bad");
+    const img = document.createElement("img"); img.src = `api/frame/${e.frame}.jpg`;
+    const t = document.createElement("div"); const b = document.createElement("b");
+    b.textContent = `${e.n}. ${e.tool}(${fmtArgs(e.tool, e.args)})${e.ok ? "" : " — RIFIUTATO: " + e.result}`;
+    t.append(b, document.createElement("br"), document.createTextNode(e.thought || "")); d.append(img, t); log.append(d); log.scrollTop = log.scrollHeight;
+  }
+}
+async function evpoll() {
+  try {
+    const d = await (await fetch("api/events?after=" + lastEv)).json();
+    if (curSession !== null && d.session !== curSession) { lastEv = 0; log.replaceChildren(); curSession = d.session; setTimeout(evpoll, 0); return; }  // webapp restarted
+    curSession = d.session;
+    for (const e of d.events) { render(e); lastEv = e.id; }
+  } catch {}
+  setTimeout(evpoll, 700);
+}
+evpoll();
+$("form").onsubmit = async (e) => {
+  e.preventDefault(); const text = $("msg").value.trim(); if (!text) return; $("msg").value = "";
+  const d = await fetch("api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) })
+    .then((r) => r.json()).catch(() => ({ ok: false, error: "nessuna risposta dal server" }));
+  if (!d.ok) { add("user", text); add("err", d.error || "messaggio non inviato"); $("msg").value = text; }  // a refused message is never lost
+};
+$("abort").onclick = () => { stopAll(); post("api/abort"); };
 </script>
 </body>
 </html>
