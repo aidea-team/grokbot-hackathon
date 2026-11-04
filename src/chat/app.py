@@ -24,10 +24,11 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-for sub in ("chat", "dog", "sim"):
+for sub in ("chat", "dog", "sim", "g1"):
     sys.path.insert(0, str(ROOT / "src" / sub))
 
 import cameras  # noqa: E402
+import g1_app  # noqa: E402
 import uvicorn  # noqa: E402
 from driver import Go1Driver, JsonlLog  # noqa: E402
 from dog_agent import AgentError, DogAgent  # noqa: E402
@@ -80,6 +81,7 @@ class TeleopIn(BaseModel):
 def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
     app = FastAPI(title="Chat col cane")
     app.mount("/ui", StaticFiles(directory=UI_STATIC), name="ui")  # design system aidea (src/ui/static)
+    app.mount("/g1", g1_app.create_app())  # Unitree G1 humanoid in MuJoCo, WASD (physics starts when /g1/ is opened)
 
     def _log_call(request: Request) -> None:  # who pressed Stop / Reset demo (browser vs. script)
         agent._log("api_call", path=request.url.path, client=request.client.host if request.client else None,
