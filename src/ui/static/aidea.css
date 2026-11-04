@@ -1,0 +1,158 @@
+/* aidea.css: design system del gestionale-frontend, versione senza build per le pagine statiche.
+   Fonte: gestionale-frontend/src/styles/{tokens,base,controls}.css e src/components/*.css.
+   Se il gestionale cambia i token, riallineare qui (stessi nomi di variabili, stessi valori).
+   Regole: font Artific (mai altri), canvas nero, spigoli vivi (radius 0), testi UI in minuscolo,
+   giallo = azione primaria, viola = stato attivo/focus, hairline al posto delle card. */
+
+@font-face { font-family: "Artific"; src: url("fonts/Artific-Light.woff2") format("woff2"); font-weight: 300; font-display: swap; }
+@font-face { font-family: "Artific"; src: url("fonts/Artific-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Artific"; src: url("fonts/Artific-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Artific"; src: url("fonts/Artific-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Artific"; src: url("fonts/Artific-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Artific"; src: url("fonts/Artific-Black.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Artific"; src: url("fonts/Artific-SuperBold.woff2") format("woff2"); font-weight: 900; font-display: swap; }
+
+:root {
+  --aidea-violet-700: #4300de;
+  --aidea-violet-600: #6922ef;
+  --aidea-violet-500: #8f3fff;
+  --aidea-violet-300: #c89aff;
+  --aidea-yellow-500: #fff94a;
+  --aidea-yellow-400: #fffb8e;
+  --aidea-amber-500: #ffc115;
+  --aidea-amber-400: #ffd44d;
+  --aidea-black: #0a0a12;
+  --aidea-slate-800: #2a2a3a;
+  --aidea-slate-700: #3c3c52;
+  --aidea-success: #00d68f;
+  --aidea-danger: #ff3860;
+
+  --bg: var(--aidea-black);
+  --bg-raised: #14141f;
+  --bg-sunken: #050509;
+  --fg-1: #ffffff;
+  --fg-2: #d6d6e5;
+  --fg-3: #8a8aa3;
+  --fg-4: #5a5a74;
+  --fg-on-accent: var(--aidea-black);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --accent: var(--aidea-yellow-500);
+
+  --font-sans: "Artific", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Artific", ui-monospace, "SFMono-Regular", monospace;
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-24: 1.5rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+}
+
+/* ---- base ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); overscroll-behavior-y: none; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-16);
+  line-height: 1.45;
+  color: var(--fg-1);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font-family: inherit; color: inherit; }
+button { cursor: pointer; }
+:where(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+::selection { background: var(--aidea-yellow-500); color: var(--aidea-black); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-sunken); }
+::-webkit-scrollbar-thumb { background: var(--aidea-slate-800); }
+::-webkit-scrollbar-thumb:hover { background: var(--aidea-slate-700); }
+.mono { font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
+.muted { color: var(--fg-4); font-style: italic; }
+.eyebrow { font-size: var(--fs-12); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
+
+/* ---- testata (TopNav) ---- */
+.topnav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--border); }
+.topnav__inner { height: 64px; padding: 0 var(--space-10); display: flex; align-items: center; gap: var(--space-4); }
+.topnav__brand { display: inline-flex; align-items: center; gap: 11px; flex: none; color: var(--fg-1); text-decoration: none; }
+.topnav__brand img { display: block; height: 32px; width: auto; }
+.topnav__brand-text { font-weight: 800; font-size: var(--fs-18); letter-spacing: -0.015em; text-transform: lowercase; }
+.topnav__status { flex: 1; min-width: 0; font-size: var(--fs-14); color: var(--fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topnav__status.is-live { color: var(--fg-1); }
+.topnav__actions { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+@media (max-width: 720px) {
+  .topnav__inner { padding: 0 var(--space-5); }
+  .topnav__brand-text { display: none; }
+}
+
+/* ---- bottoni ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  border: 0; font-weight: 600; letter-spacing: -0.005em; line-height: 1; text-transform: lowercase; white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--sm { font-size: var(--fs-14); height: 36px; padding: 0 14px; }
+.btn--md { font-size: 15px; height: 44px; padding: 0 20px; }
+.btn--lg { font-size: var(--fs-16); height: 52px; padding: 0 26px; }
+.btn--block { width: 100%; }
+.btn--primary { background: var(--accent); color: var(--fg-on-accent); font-weight: 700; }
+.btn--primary:hover:not(:disabled) { background: var(--aidea-amber-500); }
+.btn--violet { background: var(--aidea-violet-700); color: #fff; }
+.btn--violet:hover:not(:disabled) { background: var(--aidea-violet-600); }
+.btn--ghost { background: transparent; color: var(--fg-2); border: 1px solid var(--border-strong); font-weight: 500; }
+.btn--ghost:hover:not(:disabled) { color: var(--fg-1); border-color: rgba(255, 255, 255, 0.4); }
+/* azione di arresto: sempre visibile, mai gialla (il giallo è l'azione primaria) */
+.btn--danger { background: rgba(255, 56, 96, 0.1); color: var(--aidea-danger); border: 1px solid rgba(255, 56, 96, 0.4); font-weight: 700; }
+.btn--danger:hover:not(:disabled) { background: var(--aidea-danger); color: #fff; border-color: var(--aidea-danger); }
+
+/* ---- badge e notice ---- */
+.badge { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-12); font-weight: 600; letter-spacing: 0.02em; padding: 5px 11px; white-space: nowrap; }
+.badge::before { content: ""; width: 7px; height: 7px; flex-shrink: 0; background: currentColor; }
+.badge--neutral { border: 1px solid var(--border-strong); color: var(--fg-2); }
+.badge--neutral::before { background: var(--fg-3); }
+.badge--violet { background: rgba(143, 63, 255, 0.12); border: 1px solid rgba(143, 63, 255, 0.35); color: var(--aidea-violet-300); }
+.badge--violet::before { border-radius: 50%; background: var(--aidea-violet-500); }
+.badge--success { background: rgba(0, 214, 143, 0.1); border: 1px solid rgba(0, 214, 143, 0.35); color: var(--aidea-success); }
+.badge--success::before { border-radius: 50%; }
+.badge--danger { background: rgba(255, 56, 96, 0.1); border: 1px solid rgba(255, 56, 96, 0.4); color: var(--aidea-danger); }
+
+.notice { display: flex; align-items: center; gap: var(--space-3); margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid transparent; font-size: var(--fs-14); }
+.notice--neutral { color: var(--fg-2); border-color: var(--border-strong); }
+.notice--success { color: var(--aidea-success); background: rgba(0, 214, 143, 0.1); border-color: rgba(0, 214, 143, 0.35); }
+.notice--danger { color: var(--aidea-danger); background: rgba(255, 56, 96, 0.1); border-color: rgba(255, 56, 96, 0.4); }
+
+/* ---- campi ---- */
+.edit-input, .edit-select {
+  width: 100%; padding: 9px 12px; background: var(--bg-sunken); color: var(--fg-1);
+  border: 1px solid var(--border-strong); font-size: var(--fs-14);
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+.edit-input:focus, .edit-select:focus { outline: none; border-color: var(--aidea-violet-500); }
+.edit-input::placeholder { color: var(--fg-4); }
+.ui-select {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-color: transparent; background-repeat: no-repeat; background-position: right 12px center; background-size: 12px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8aa3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  border: 1px solid var(--border-strong); color: var(--fg-2); font-weight: 500; text-transform: lowercase;
+  font-size: var(--fs-14); height: 36px; padding: 0 34px 0 14px;
+  transition: border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.ui-select:hover, .ui-select:focus { border-color: rgba(255, 255, 255, 0.4); color: var(--fg-1); }
+.ui-select option { background: var(--bg-raised); text-transform: none; }

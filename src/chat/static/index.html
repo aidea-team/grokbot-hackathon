@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>go1 · aidea</title>
+<link rel="stylesheet" href="/ui/aidea.css">
+<style>
+  .app { height: calc(100% - 65px); display: flex; flex-direction: column; padding: 0 var(--space-10); }
+  .body { flex: 1; min-height: 0; display: flex; gap: var(--space-8); padding-top: var(--space-2); }
+  .chat { flex: 1; min-width: 320px; min-height: 0; display: flex; flex-direction: column; }
+  #log { flex: 1; overflow-y: auto; padding: var(--space-4) 0; display: flex; flex-direction: column; gap: 18px; }
+
+  .user { align-self: flex-end; max-width: 80%; background: rgba(143, 63, 255, 0.12); border: 1px solid rgba(143, 63, 255, 0.35); padding: 8px 14px; white-space: pre-wrap; }
+  .final { white-space: pre-wrap; max-width: 92%; border-left: 3px solid var(--accent); padding-left: var(--space-4); }
+  .note, .error { font-size: var(--fs-14); color: var(--fg-3); }
+  .error { color: var(--aidea-danger); }
+  .step { display: grid; grid-template-columns: 96px 1fr; gap: var(--space-3); align-items: start; padding-top: 18px; border-top: 1px solid var(--border); }
+  .step img { width: 96px; height: 72px; object-fit: cover; background: var(--bg-sunken); display: block; }
+  .step .txt { font-size: var(--fs-14); color: var(--fg-2); min-width: 0; }
+  .step .meta { display: flex; gap: var(--space-2); align-items: baseline; margin-bottom: 2px; }
+  .step .n { color: var(--fg-3); font-variant-numeric: tabular-nums; }
+  .step .act { font-size: var(--fs-12); font-weight: 600; color: var(--fg-1); word-break: break-all; }
+  .step .act.bad { color: var(--aidea-danger); }
+
+  form { display: flex; gap: var(--space-2); padding: var(--space-3) 0 var(--space-6); }
+  form .edit-input { flex: 1; width: auto; font-size: var(--fs-16); padding: 11px 14px; }
+
+  /* mock / real switch */
+  .modeswitch { display: inline-flex; gap: 0; }
+  .modeswitch .btn { border-radius: 0; }
+  .modeswitch .btn + .btn { margin-left: -1px; }
+  [data-mode="real"] #m-real { box-shadow: 0 0 0 1px var(--aidea-danger); }
+
+  /* banners (real mode, arming, halted) */
+  .banner { margin: var(--space-3) 0 0; display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  .banner[hidden], #armpanel[hidden] { display: none; }
+  .banner .grow { flex: 1; min-width: 200px; }
+  #armpanel { margin: var(--space-3) 0 0; }
+  #armpanel label { display: flex; gap: var(--space-2); align-items: flex-start; margin: 6px 0; cursor: pointer; }
+  #armpanel .row { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+
+  /* cameras: big */
+  .eyes { width: clamp(440px, 50vw, 860px); flex: none; align-self: flex-start; padding-top: var(--space-4); }
+  .tile { position: relative; background: #000; border: 1px solid var(--border); overflow: hidden; }
+  .tile img { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .tile.main { aspect-ratio: 4 / 3; }
+  .tile.small { aspect-ratio: 4 / 3; cursor: pointer; }
+  .tile.small:hover { border-color: var(--border-strong); }
+  .tile .tag { position: absolute; left: 8px; top: 8px; padding: 2px 8px; font-size: var(--fs-12); background: rgba(10, 10, 18, 0.75); color: var(--fg-2); }
+  .tile .nosig { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: var(--space-4); color: var(--fg-3); font-size: var(--fs-14); }
+  .tile.off .nosig { display: flex; }
+  .smalls { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
+  .eyes .cap { margin-top: 6px; }
+
+  @media (max-width: 960px) {
+    .app { padding: 0 var(--space-4); }
+    .body { flex-direction: column-reverse; gap: 0; }
+    .eyes { width: 100%; padding-top: var(--space-3); }
+    .tile.main { aspect-ratio: 16 / 9; }
+  }
+</style>
+</head>
+<body data-mode="sim">
+<header class="topnav">
+  <div class="topnav__inner">
+    <span class="topnav__brand"><img src="/ui/aidea-mark.svg" alt="aidea"><span class="topnav__brand-text">go1</span></span>
+    <div id="status" class="topnav__status">connessione…</div>
+    <div class="topnav__actions">
+      <div class="modeswitch" role="group" aria-label="modalità">
+        <button id="m-sim" class="btn btn--sm btn--violet" title="Simulatore MuJoCo (fisica vera, nessun rischio)">mock · MuJoCo</button>
+        <button id="m-real" class="btn btn--sm btn--ghost" title="Cane Unitree Go1 vero (serve --real all'avvio e una conferma)">real · cane</button>
+      </div>
+      <select id="speed" class="ui-select" title="Velocità del simulatore">
+        <option value="1">1×</option>
+        <option value="0.5">0,5×</option>
+        <option value="2">2×</option>
+      </select>
+      <button id="stop" class="btn btn--sm btn--danger" title="Kill switch: interrompe la missione e ferma il cane (anche Esc)">stop</button>
+      <button id="reset" class="btn btn--sm btn--ghost" title="Simulatore: riporta cane e oggetti all'inizio. Cane vero: azzera solo l'odometria stimata. In entrambi i casi azzera la conversazione">reset demo</button>
+    </div>
+  </div>
+</header>
+<div class="app">
+  <div id="realbar" class="notice notice--danger banner" hidden>
+    <span class="badge badge--danger" id="realbadge">REAL</span>
+    <span class="grow" id="realtext"></span>
+    <button id="rearm" class="btn btn--md btn--ghost" hidden>riarma…</button>
+    <button id="stop-big" class="btn btn--lg btn--danger">STOP</button>
+  </div>
+  <div id="armpanel" class="notice notice--danger" hidden>
+    <strong>Passare al cane vero?</strong> Si collega al Go1 e il modello potrà muoverlo con passi corti (max 0,5 m / 45°),
+    solo walk, turn e stand, dentro un geofence. Spunta tutto per armare.
+    <label><input type="checkbox" class="chk"> Il cane è acceso, in piedi, con almeno 1,5 m liberi intorno.</label>
+    <label><input type="checkbox" class="chk"> Nessuna persona (soprattutto bambini) vicino al cane.</label>
+    <label><input type="checkbox" class="chk"> Ho il telecomando fisico in mano e posso premere Stop (anche Esc o INVIO nel terminale).</label>
+    <div class="row">
+      <button id="arm-go" class="btn btn--md btn--danger" disabled>arma e collega</button>
+      <button id="arm-cancel" class="btn btn--md btn--ghost">annulla</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <section class="chat">
+      <div id="log"></div>
+      <form id="form" autocomplete="off">
+        <input type="text" id="input" class="edit-input" placeholder="Scrivi un comando…" autofocus>
+        <button type="submit" class="btn btn--md btn--primary">invia</button>
+      </form>
+    </section>
+    <aside class="eyes">
+      <div id="maintile" class="tile main"><img id="mainimg" alt=""><span class="tag" id="maintag"></span><div class="nosig">nessun segnale</div></div>
+      <div id="smalls" class="smalls"></div>
+      <div class="eyebrow cap" id="camcap">telecamera frontale</div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const log = $("log"), input = $("input"), bar = $("status");
+let lastId = 0, st = { mode: "sim" };
+
+const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+                                          body: body === undefined ? undefined : JSON.stringify(body) });
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
+
+/* ---------------------------------------------------------------- chat log */
+function render(ev) {
+  let node;
+  if (ev.type === "user") node = el("div", "user", ev.text);
+  else if (ev.type === "final") node = el("div", "final", ev.text);
+  else if (ev.type === "note") node = el("div", "note", ev.text);
+  else if (ev.type === "error") node = el("div", "error", ev.text);
+  else if (ev.type === "step") {
+    node = el("div", "step");
+    const img = el("img"); img.src = `/api/frame/${ev.frame}.jpg`; img.alt = "";
+    const txt = el("div", "txt"), meta = el("div", "meta");
+    meta.append(el("span", "n", String(ev.n).padStart(2, "0")));
+    if (ev.action !== "finish") meta.append(el("span", "act" + (ev.error ? " bad" : ""), ev.error ? `${ev.action} — ${ev.error}` : ev.action));
+    txt.append(meta);
+    if (ev.thought) txt.append(el("div", "", ev.thought));
+    node.append(img, txt);
+  } else return;
+  const stick = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+  log.append(node);
+  if (stick) log.scrollTop = log.scrollHeight;
+  if (node.querySelector("img")) node.querySelector("img").onload = () => { if (stick) log.scrollTop = log.scrollHeight; };
+}
+
+/* ---------------------------------------------------------------- mode switch / real banner */
+function applyMode(s) {
+  const prev = st.mode; st = { ...st, ...s };
+  document.body.dataset.mode = s.mode;
+  const real = s.mode === "real";
+  $("m-sim").className = "btn btn--sm " + (real ? "btn--ghost" : "btn--violet");
+  $("m-real").className = "btn btn--sm " + (real ? (s.real_state === "HALTED" ? "btn--ghost" : "btn--danger") : "btn--ghost");
+  $("speed").style.display = real ? "none" : "";
+  $("realbar").hidden = !real;
+  if (real) {
+    const halted = s.real_state === "HALTED";
+    $("realbadge").textContent = halted ? "FERMATO" : "REAL";
+    $("realtext").textContent = halted
+      ? "Il kill switch ha fermato il cane: non riceve più comandi finché un umano non lo riarma."
+      : `Il cane si muove davvero${s.battery != null ? " (batteria " + s.battery + "%)" : ""}. Telecomando in mano. ` +
+        `Stato: ${s.real_state === "MOVING" ? "in movimento" : "pronto"} · geofence ${s.geofence_m} m. Esc = stop.`;
+    $("rearm").hidden = !halted;
+  }
+  if (prev !== s.mode || !camsMounted) mountCams(s.mode);
+}
+
+async function setMode(mode, confirm) {
+  const d = await (await post("/api/mode", { mode, confirm: !!confirm })).json();
+  if (!d.ok) render({ type: "error", text: d.error });
+  else log.replaceChildren();  // new body, new conversation
+  applyMode(d);
+  return d;
+}
+
+$("m-sim").onclick = () => { if (st.mode !== "sim") setMode("sim"); $("armpanel").hidden = true; };
+$("m-real").onclick = () => {
+  if (st.mode === "real" && st.real_state !== "HALTED") return;
+  if (!st.real_enabled) { setMode("real"); return; }  // the server explains why it is not available
+  $("armpanel").hidden = false;
+};
+$("rearm").onclick = () => { $("armpanel").hidden = false; };
+$("arm-cancel").onclick = () => { $("armpanel").hidden = true; document.querySelectorAll(".chk").forEach(c => c.checked = false); $("arm-go").disabled = true; };
+document.querySelectorAll(".chk").forEach(c => c.onchange = () => {
+  $("arm-go").disabled = ![...document.querySelectorAll(".chk")].every(x => x.checked);
+});
+$("arm-go").onclick = async () => {
+  $("arm-go").disabled = true;
+  const d = await setMode("real", true);
+  $("armpanel").hidden = true;
+  document.querySelectorAll(".chk").forEach(c => c.checked = false);
+  if (!d.ok) $("arm-go").disabled = true;
+};
+
+/* ---------------------------------------------------------------- kill switch */
+const doStop = async () => { const d = await (await post("/api/stop")).json(); applyMode(d); };
+$("stop").onclick = doStop; $("stop-big").onclick = doStop;
+addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); doStop(); } });
+
+/* ---------------------------------------------------------------- polling */
+async function pollEvents() {
+  try {
+    const d = await (await fetch(`/api/events?after=${lastId}`)).json();
+    for (const ev of d.events) { render(ev); lastId = Math.max(lastId, ev.id); }
+    applyMode(d);
+    bar.className = "topnav__status" + (d.running ? " is-live" : "");
+    bar.dataset.base = d.running ? `passo ${d.step} · ${d.phase}` : "fermo";
+  } catch { bar.dataset.base = "server non raggiungibile"; bar.className = "topnav__status"; }
+}
+
+async function pollState() {
+  try {
+    const s = await (await fetch("/api/state")).json();
+    const pose = `x ${s.x} · y ${s.y} · ${s.yaw_deg}°` + (s.estimated ? " (stima)" : "");
+    const win = s.mode === "sim" && s.viewer === false ? " · finestra 3D chiusa, la riapro" : "";
+    bar.textContent = `${bar.dataset.base || "…"}  —  ${pose}${win}`;
+  } catch { bar.textContent = "server non raggiungibile"; }
+}
+
+$("form").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = input.value.trim(); if (!text) return;
+  input.value = "";
+  const d = await (await post("/api/chat", { message: text })).json();
+  if (d.error) render({ type: "error", text: d.error });
+  input.focus();
+};
+$("reset").onclick = async () => { await post("/api/reset-demo"); log.replaceChildren(); input.focus(); };
+$("speed").onchange = (e) => post("/api/speed", { time_scale: parseFloat(e.target.value) });
+
+setInterval(pollEvents, 500); setInterval(pollState, 500); pollEvents(); pollState();
+
+/* ---------------------------------------------------------------- cameras (big) */
+// Same interface in mock and real: the same 3 cameras (list from /api/cameras), one big + two small, click a
+// small one to bring it to the big one. Only the pixel source changes: sim = polled JPEG from MuJoCo,
+// real = the dog's own MJPEG streams.
+let TILES = [{ n: 1, name: "front", label: "davanti" }, { n: 2, name: "down", label: "basso" }, { n: 4, name: "side", label: "lato" }];
+fetch("/api/cameras").then(r => r.json()).then(d => { TILES = d.cameras; mountCams(camMode || "sim"); }).catch(() => {});
+let camsMounted = false, camTimers = [], mainIdx = 0, camMode = null;
+
+function tileEl(t, big) {
+  const d = el("div", "tile " + (big ? "main" : "small")); d.dataset.n = t.n;
+  const img = el("img"); img.alt = t.label;
+  d.append(img, el("span", "tag", `cam${t.n} · ${t.label}`), el("div", "nosig", camMode === "real" ? "nessun segnale: sei sul Wi-Fi del cane? ffmpeg installato?" : "nessun segnale"));
+  img.onerror = () => d.classList.add("off"); img.onload = () => d.classList.remove("off");
+  return d;
+}
+
+// sim: request the next frame only after the previous one loaded (one loop per visible tile)
+function pollTile(tile, t) {
+  const img = tile.querySelector("img");
+  const next = (ok) => camTimers.push(setTimeout(refresh, ok ? 700 : 2000));
+  const refresh = () => { if (document.hidden) { camTimers.push(setTimeout(refresh, 1000)); return; }
+                          img.src = `/api/camera.jpg?cam=${t.name}&t=${Date.now()}`; };
+  img.onload = () => { tile.classList.remove("off"); next(true); };
+  img.onerror = () => { tile.classList.add("off"); next(false); };
+  refresh();
+}
+
+function mountCams(mode) {
+  camsMounted = true; camMode = mode; camTimers.forEach(clearTimeout); camTimers = [];
+  document.querySelectorAll(".eyes .tile img").forEach(i => { i.onload = i.onerror = null; i.removeAttribute("src"); });  // close old MJPEG streams
+  const main = $("maintile"), smalls = $("smalls");
+  smalls.replaceChildren();
+  $("camcap").textContent = (mode === "real" ? "telecamere del cane (reali)" : "telecamere del cane simulato (MuJoCo)") + " · clic su una piccola per ingrandirla";
+  const order = [mainIdx, ...TILES.map((_, i) => i).filter(i => i !== mainIdx)];
+  const [first, ...rest] = order.map(i => TILES[i]);
+  const attach = (tile, t) => { if (mode === "real") tile.querySelector("img").src = `/cam/${t.n}.mjpg`; else pollTile(tile, t); };
+  const big = tileEl(first, true);
+  main.replaceWith(big); big.id = "maintile";
+  attach(big, first);
+  for (const t of rest) {
+    const sm = tileEl(t, false);
+    attach(sm, t);
+    sm.onclick = () => { mainIdx = TILES.findIndex(x => x.n === t.n); mountCams(camMode); };
+    smalls.append(sm);
+  }
+}
+
+// stream errors reported by the server relays (real mode only)
+setInterval(async () => {
+  if (camMode !== "real") return;
+  try {
+    const d = await (await fetch("/api/cams")).json();
+    for (const c of d.cams) document.querySelectorAll(`.tile[data-n="${c.n}"]`).forEach(t => t.classList.toggle("off", !!c.error));
+  } catch {}
+}, 3000);
+
+mountCams("sim");
+</script>
+</body>
+</html>

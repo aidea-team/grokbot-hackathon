@@ -98,6 +98,19 @@ class _BaseDriver:
         return WalkResult(not interrupted, "halted" if interrupted else "ok",
                           round(elapsed, 3), interrupted)
 
+    def drive(self, vx: float, vyaw: float) -> bool:
+        """One teleop tick: validated velocity (or idle when both are 0). Caller loops and owns the
+        watchdog. Returns False if refused (invalid or halted); then idle is sent."""
+        ok, _ = validate_walk(vx, vyaw, 1.0)
+        if not ok or self.halt_event.is_set():
+            self._send_idle()
+            return False
+        if vx == 0.0 and vyaw == 0.0:
+            self._send_idle()
+        else:
+            self._send_velocity(vx, vyaw)
+        return True
+
     def stop(self) -> None:
         t0 = time.monotonic()
         while time.monotonic() - t0 < STOP_S:
