@@ -286,7 +286,8 @@ class DogAgent:
 
         model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
         env_effort = os.environ.get("OPENAI_REASONING_EFFORT") or None  # reasoning models only
-        mode = self.hub.mode  # fixed for the whole mission: switching mode aborts it
+        actual_mode = self.hub.mode  # fixed for the whole mission: switching mode aborts it
+        mode = "real" if actual_mode in ("real", "both") else "sim"  # "both" is the real dog (+ a simulator mirror)
         brain = self.brain  # same: fixed for the mission
         if mode == "real":
             max_steps = int(os.environ.get("DOG_MAX_STEPS_REAL") or 20)  # step limit: the real dog gets fewer
@@ -303,7 +304,7 @@ class DogAgent:
         steps: list[str] = []
         final: str | None = None
         totals = {"wait": 0.0, "cap": 0.0, "api": 0.0, "exec": 0.0}
-        self._log("mission_start", goal=goal, mode=mode, model=model, effort=cfg.llm_effort or env_effort,
+        self._log("mission_start", goal=goal, mode=mode, body=actual_mode, model=model, effort=cfg.llm_effort or env_effort,
                   brain=brain, settings=asdict(cfg))
 
         for n in range(1, max_steps + 1):

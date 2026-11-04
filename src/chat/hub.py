@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import threading
 
+from both_body import BothBody
 from real_body import DISARMED, RealBody, RealError
 
 
@@ -19,7 +20,8 @@ class HubError(Exception):
 class RobotHub:
     def __init__(self, sim, real: RealBody | None = None, log=None):
         self.sim, self.real, self.log = sim, real, log
-        self.mode = "sim"
+        self._both = BothBody(sim, real) if real is not None else None
+        self.mode = "sim"  # "sim" | "real" | "both" (the same commands to the real dog and to the simulator)
         self._lock = threading.Lock()
 
     @property
@@ -28,7 +30,14 @@ class RobotHub:
 
     @property
     def body(self):
+        if self.mode == "both" and self._both is not None:
+            return self._both
         return self.real if (self.mode == "real" and self.real is not None) else self.sim
+
+    @property
+    def real_like(self) -> bool:
+        """True when the real dog is being driven (alone or together with the simulator)."""
+        return self.mode in ("real", "both")
 
     def set_mode(self, mode: str, confirm: bool = False) -> dict:
         with self._lock:
@@ -36,7 +45,7 @@ class RobotHub:
                 if self.real is not None:
                     self.real.disarm()
                 self.mode = "sim"
-            elif mode == "real":
+            elif mode in ("real", "both"):
                 if self.real is None:
                     raise HubError("Il cane vero non è abilitato. Una persona deve avviare l'app dal terminale con "
                                    "`--real` (e scrivere «go» per armare). Resto sul simulatore.")
@@ -47,7 +56,10 @@ class RobotHub:
                 except RealError as e:
                     self.mode = "sim"
                     raise HubError(str(e)) from e
-                self.mode = "real"
+                if mode == "both":  # the mirror starts where the real dog starts (origin) and runs at real time
+                    self.sim.set_time_scale(1.0)
+                    self.sim.reset_pose()
+                self.mode = mode
             else:
                 raise HubError(f"modalità sconosciuta: {mode!r}")
         self._event("mode_switch", mode=self.mode)
@@ -55,8 +67,10 @@ class RobotHub:
 
     def kill(self, source: str) -> None:
         """Stop whatever is being driven. On the real dog it latches HALTED until a human re-arms."""
-        if self.mode == "real" and self.real is not None:
+        if self.real_like and self.real is not None:
             self.real.kill(source)
+            if self.mode == "both":
+                self.sim.clear()
         else:
             self.sim.clear()
 
@@ -68,7 +82,7 @@ class RobotHub:
         real_state = self.real.state if self.real is not None else None
         return {
             "mode": self.mode, "real_enabled": self.real_enabled, "real_state": real_state,
-            "armed": real_state not in (None, DISARMED) and self.mode == "real",
+            "armed": real_state not in (None, DISARMED) and self.real_like,
             "battery": self.real.battery if self.real is not None else None,
         }
 

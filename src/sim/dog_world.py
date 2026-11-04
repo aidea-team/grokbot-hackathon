@@ -47,7 +47,23 @@ FR, FL, RR, RL = range(4)
 LINK = 0.213  # thigh and calf length (m)
 Z_FOOT = -0.265  # standing foot height below the thigh joint
 Z_START = 0.28
+# Jumps: the take-off is the LEGS' own push (deep crouch -> fast extension, limited by the Go1's motor torques).
+# Rotation (flip pitch, jump_yaw yaw) is a body torque applied only while the feet are still pushing on the floor,
+# capped at what the hind legs' push could create; after take-off nothing acts on the body.
+JUMP_CROUCH, JUMP_PUSH = FOLD, (0.0, 0.2, -0.6)
+JUMP_FLIGHT_T = 0.40  # s, flight time this push gives (measured); used to size the rotation rate
+ROT_TAU_MAX, ROT_TAU_Z_MAX, ROT_K = 60.0, 12.0, 10.0  # Nm about pitch / yaw (60 Nm = two hind legs at full motor torque, ~175 N each at 0.19 m), Nm per rad/s of rate error
+INVISIBLE_ASSIST = True  # the stabiliser: an external force/torque on the trunk (not physical); FMAX caps how much it can push
 SWING_LIFT, SWING_SHAPE = 0.09, 1.0  # foot clearance in the swing phase (m) and how early it rises (<1 = earlier)
+# Gait feedback (the dog's own state estimate -> foot trajectories; no force ever acts on the body from outside)
+KPV, KIV, GV_MAX = 0.5, 1.2, 1.2  # forward speed: P on the error, integral (m/s per m/s*s), integral clamp
+KPW, KIW, GW_MAX = 0.2, 2.0, 5.0  # yaw rate
+K_HEADING, HEADING_W_MAX = 1.5, 0.6  # heading hold when no turn is commanded: yaw-rate per rad of error (like the IMU in the firmware)
+KFFW = 1.5  # feed-forward: the feet drag on the floor, a turn needs ~1.5x the sweep the geometry says
+K_LEVEL, EXT_MAX = 0.35, 0.05  # leg-length levelling against pitch/roll (m per rad), clamp (m)
+STRIDE_MAX = 0.26  # m, longest foot sweep
+V_MAX, V_BACK, W_MAX = 2.5, 2.5, 3.0  # sanity bounds on the commanded speeds (m/s forward, backward; rad/s)
+DUTY, FREQ0, FREQ_K, FREQ_MAX = 0.6, 2.8, 2.0, 5.0  # trot: fraction of the cycle a foot is on the floor, cadence (Hz)
 GAIT_RATE = 12.0  # joint target slew (rad/s) while walking: pose changes leave it lower (3-6), which cripples the trot
 FRAME_DT = 1 / 60
 HOPS = {"jump", "backflip", "frontflip"}
@@ -70,9 +86,10 @@ MODES: dict[str, dict[str, float]] = {
     "getup": dict(v=1.0, yaw=1.0, pitch=0.0, roll=0.0, full=1.0),
     "limp": dict(v=0.0, yaw=0.0, pitch=0.0, roll=0.0, full=0.0),  # DAMPING: no help at all
 }
-KV, KI, FMAX = 60.0, 250.0, 30.0  # trunk speed tracking: N per (m/s), N per (m/s*s) integral (the firmware regulates speed itself), force cap
-KW, TZMAX = 6.0, 25.0  # yaw rate tracking (feet planted on the floor resist turning)
-KP, KD, TMAX = 100.0, 6.0, 40.0  # pitch/roll stabiliser: Nm/rad, Nm/(rad/s), torque cap
+# NOTE: the three constants below belong to the old invisible-force stabiliser (INVISIBLE_ASSIST), kept as a fallback
+KV, KI, FMAX = 60.0, 250.0, 4.0  # trunk speed tracking: N per (m/s), N per (m/s*s) integral, force cap (was 30 N: the legs now do the pushing)
+KW, TZMAX = 6.0, 6.0  # yaw rate tracking, torque cap (was 25 Nm)
+KP, KD, TMAX = 100.0, 6.0, 10.0  # pitch/roll stabiliser: Nm/rad, Nm/(rad/s), torque cap (was 40 Nm)
 KFULL = 60.0  # self-righting torque (get_up only)
 FADE_FROM, FADE_TO = 0.4, 0.8  # tilt (rad) range over which the stabiliser fades out: a fallen dog gets no help
 
@@ -163,38 +180,54 @@ def stand_up(d: "DogSim") -> Gen:
 
 # ---------------------------------------------------------------- actions
 
-def _hop(d: "DogSim", height: float, travel: float, flip: float, spin_deg: float) -> Gen:
-    """Crouch, push off (launch velocity), then free physics in flight, landing and, if needed, a fall."""
+def _hop(d: "DogSim", flip: float, spin_deg: float) -> Gen:
+    """Deep crouch, explosive push (the legs lift the body), free flight, landing and, if needed, a fall.
+
+    flip: -1 backflip, +1 frontflip, 0 none. spin_deg: yaw turn in the air. The rotation rates are the ones that
+    complete the move in JUMP_FLIGHT_T, but the torque that creates them is capped (ROT_TAU_*): if the push is not
+    enough the dog under-rotates and lands badly, for real."""
     yield from stand_up(d)
-    v0 = math.sqrt(2 * G * max(height, 0.05))
-    T = 2 * v0 / G  # flight time for a landing at take-off height
-    yaw0 = d.yaw
+    w_target = np.array([0.0, flip * 2 * math.pi / (JUMP_FLIGHT_T * 1.03), math.radians(spin_deg) / JUMP_FLIGHT_T])
     d.v_cmd = d.w_cmd = 0.0
     d.set_mode("pose")
-    d.goal_legs([CROUCH] * 4, rate=6.0)
-    yield from wait(d, 0.45)
-    d.goal_legs([PUSH] * 4, rate=60.0)
-    yield from wait(d, 0.09)
-    # take-off: launch velocity, then the body is on its own
-    vx, vy = travel / T * math.cos(yaw0), travel / T * math.sin(yaw0)
-    d.set_mode("air")
-    d.launch((vx, vy, v0), (0.0, flip * 2 * math.pi / (T * 1.03), math.radians(spin_deg) / T))
-    d.goal_legs([TUCK] * 4, rate=30.0)
-    t, landed = 0.0, False
-    while t < T * 1.8 + 0.6:
+    d.goal_legs([JUMP_CROUCH] * 4, rate=4.0)
+    yield from wait(d, 0.6)
+    d.set_mode("air")  # no stabiliser: from here on only the legs and the floor act on the body
+    d.goal_legs([JUMP_PUSH] * 4, rate=80.0)
+    t, t_air, left = 0.0, 0.0, False
+    while t < 0.5:  # push phase: the rotation torque acts only while the feet touch the floor
         t += d.dt
-        if t > 0.62 * T:
+        on_floor = d.support() > 0
+        if on_floor and t < 0.3:
+            wb = d.data.qvel[3:6]
+            d.push_torque((0.0, max(-ROT_TAU_MAX, min(ROT_TAU_MAX, ROT_K * (w_target[1] - wb[1]))) if flip else 0.0,
+                           max(-ROT_TAU_Z_MAX, min(ROT_TAU_Z_MAX, ROT_K * (w_target[2] - wb[2]))) if spin_deg else 0.0))
+        else:
+            d.push_torque((0.0, 0.0, 0.0))
+            if not on_floor:
+                t_air += d.dt
+                left = True
+        if left and t_air > 0.02:
+            break
+        yield
+    d.push_torque((0.0, 0.0, 0.0))
+    d.goal_legs([TUCK] * 4 if flip else [STAND] * 4, rate=30.0)
+    t, landed = 0.0, False
+    while t < JUMP_FLIGHT_T * 2.5 + 0.6:
+        t += d.dt
+        if t > 0.6 * JUMP_FLIGHT_T:
             d.goal_legs([STAND] * 4, rate=25.0)
-        if t > 0.2 and d.support() > 0:
+        if t > 0.1 and d.support() > 0:
             landed = True
             break
         yield
     d.set_mode("land")
     d.goal_legs([STAND] * 4, rate=10.0)
-    yield from wait(d, 0.7)
+    yield from wait(d, 0.8)
     if d.tilt() < 0.7:
         d.set_mode("stand")
         d.posture = "stand"
+    d._leg_rates[:] = GAIT_RATE
     if landed and d.touched_action:
         d.crashed = True
 
@@ -202,13 +235,13 @@ def _hop(d: "DogSim", height: float, travel: float, flip: float, spin_deg: float
 @behavior("JUMPYAW")
 def jump_yaw(d) -> Gen:
     """JUMPYAW: a jump on the spot with a 90 degree yaw turn in the air (parameters are our guess of the firmware's)."""
-    yield from _hop(d, 0.6, 0.0, 0.0, 90.0)
+    yield from _hop(d, 0.0, 90.0)
 
 
 @behavior("BACKFLIP")
 def backflip(d) -> Gen:
     """BACKFLIP: one full backward somersault. A bad landing makes the dog fall for real."""
-    yield from _hop(d, 0.9, -0.3, -1.0, 0.0)
+    yield from _hop(d, -1.0, 0.0)
 
 
 @behavior("STAND_UP")
@@ -336,7 +369,10 @@ class DogSim:
         self._last_mode = "IDLE"  # mode seen in the previous frame: behaviours start on the rising edge
         self._ignored_vel_logged = False
         self._limp = False
-        self._vint = np.zeros(2)  # integral of the trunk velocity error
+        self._vint = np.zeros(2)  # integral of the trunk velocity error (old stabiliser)
+        self._gv = self._gw = 0.0  # gait integrators: speed / yaw-rate correction
+        self._push_tau = np.zeros(3)
+        self._yaw_hold: float | None = None  # heading to keep while walking straight
         self._gen: Gen | None = None
         self._beh: str | None = None
         self._reset_req = False
@@ -396,10 +432,9 @@ class DogSim:
         self.q_goal[3 * i: 3 * i + 3] = leg
         self._leg_rates[3 * i: 3 * i + 3] = rate
 
-    def launch(self, v_world: tuple[float, float, float], omega_body: tuple[float, float, float]) -> None:
-        """Take-off: give the trunk its launch velocity (world linear, body angular)."""
-        self.data.qvel[0:3] = v_world
-        self.data.qvel[3:6] = omega_body
+    def push_torque(self, tau_body: tuple[float, float, float]) -> None:
+        """Body torque (body frame, Nm) applied by the legs' push, only meant to be set while the feet are on the floor."""
+        self._push_tau = np.array(tau_body, dtype=float)
 
     # -------- thread-safe API
     def set_command(self, vx: float | None = None, vyaw: float | None = None, mode: str | None = None) -> None:
@@ -578,10 +613,12 @@ class DogSim:
             self._ignored_vel_logged = False
         if moving:
             self.set_mode("stand")
-            self.v_cmd, self.w_cmd = vx, vyaw
+            self.v_cmd, self.w_cmd = max(-V_BACK, min(V_MAX, vx)), max(-W_MAX, min(W_MAX, vyaw))
             self._leg_rates[:] = GAIT_RATE
         else:
             self.v_cmd = self.w_cmd = 0.0
+            self._gv = self._gw = 0.0
+            self._yaw_hold = None
 
     def _set_limp(self, on: bool) -> None:
         """DAMPING: zero the position actuators' stiffness (kp) so the legs go slack; restore it when leaving."""
@@ -614,6 +651,7 @@ class DogSim:
         self.v_cmd = self.w_cmd = self.lift = self.phase = 0.0
         self.posture = "stand"
         self._vint = np.zeros(2)
+        self._gv = self._gw = 0.0
         self._cmd.update(vx=0.0, vyaw=0.0, mode="IDLE")
         self._last_mode = "IDLE"
         if self._limp:
@@ -635,7 +673,10 @@ class DogSim:
             lock.__enter__()
         try:
             for _ in range(n):
-                d.xfrc_applied[self.trunk] = self._trunk_wrench()
+                wrench = self._trunk_wrench() if INVISIBLE_ASSIST else np.zeros(6)
+                if self._push_tau.any():
+                    wrench[3:] += self._rot() @ self._push_tau
+                d.xfrc_applied[self.trunk] = wrench
                 mujoco.mj_step(m, d)
             if not np.isfinite(d.qpos).all():  # numerical blow-up: never leave the sim in NaN land
                 self._log("sim_unstable")
@@ -649,22 +690,45 @@ class DogSim:
         return abs(self.v_cmd) > 0.02 or abs(self.w_cmd) > 0.05
 
     def _gait_targets(self, dt: float) -> np.ndarray:
-        """Trot: diagonal leg pairs alternate; stance feet sweep backwards, swing feet lift and go forward."""
-        speed = max(abs(self.v_cmd), abs(self.w_cmd) * 0.13)
-        freq = min(5.0, 2.8 + 2.0 * speed)
+        """Trot: diagonal leg pairs alternate; stance feet sweep backwards, swing feet lift and go forward.
+
+        The only way the body moves is that the stance feet push on the floor. Speed and yaw rate are regulated by
+        the SWEEP of the feet (the dog's state estimator -> gait), and pitch/roll by the length of the legs."""
+        d = self.data
+        R = self._rot()
+        vx_meas = float((R.T @ d.qvel[0:3])[0])  # forward speed in the body frame
+        wz_meas = float(d.qvel[5])  # yaw rate (body frame)
+        w_cmd = self.w_cmd
+        if abs(w_cmd) < 1e-6:  # straight: hold the heading the dog had when it started
+            if self._yaw_hold is None:
+                self._yaw_hold = self.yaw
+            w_cmd = max(-HEADING_W_MAX, min(HEADING_W_MAX, K_HEADING * wrap(self._yaw_hold - self.yaw)))
+        else:
+            self._yaw_hold = None
+        ev, ew = self.v_cmd - vx_meas, w_cmd - wz_meas
+        self._gv = max(-GV_MAX, min(GV_MAX, self._gv + KIV * ev * dt))
+        self._gw = max(-GW_MAX, min(GW_MAX, self._gw + KIW * ew * dt))
+        v_eff = self.v_cmd + KPV * ev + self._gv
+        w_eff = KFFW * w_cmd + KPW * ew + self._gw
+        speed = max(abs(v_eff), abs(w_eff) * 0.13)
+        freq = min(FREQ_MAX, FREQ0 + FREQ_K * min(speed, 1.0))
         self.phase = (self.phase + freq * dt) % 1.0
-        duty = 0.6
+        duty = DUTY
         out = np.zeros(12)
         for i in range(4):
             side = 0.13 if i in (FL, RL) else -0.13  # left legs are on +y
-            v_i = self.v_cmd - self.w_cmd * side
-            stride = max(-0.22, min(0.22, v_i * duty / freq))
+            sx = 1.0 if i in (FR, FL) else -1.0
+            sy = 1.0 if i in (FL, RL) else -1.0
+            v_i = v_eff - w_eff * side
+            stride = max(-STRIDE_MAX, min(STRIDE_MAX, v_i * duty / freq))
             p = (self.phase + (0.0 if i in (FR, RL) else 0.5)) % 1.0
+            ext = max(-EXT_MAX, min(EXT_MAX, K_LEVEL * (-R[2, 0] * sx - R[2, 1] * sy)))  # longer leg on the low side
+            z0 = Z_FOOT - ext
             if p < duty:  # stance
-                x, z = stride / 2 - stride * (p / duty), Z_FOOT
+                x, z = stride / 2 - stride * (p / duty), z0
             else:  # swing
                 u = (p - duty) / (1 - duty)
-                x, z = -stride / 2 + stride * u, Z_FOOT + SWING_LIFT * math.sin(math.pi * u) ** SWING_SHAPE
+                x, z = -stride / 2 + stride * u, z0 + SWING_LIFT * math.sin(math.pi * u) ** SWING_SHAPE
             th1, th2 = leg_ik(x, z)
             out[3 * i: 3 * i + 3] = (0.0, th1, th2)
         return out

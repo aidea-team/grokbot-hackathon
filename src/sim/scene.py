@@ -26,6 +26,8 @@ BOX, SPHERE, CYL, ELLIPSOID, CAPSULE = (
     mujoco.mjtGeom.mjGEOM_ELLIPSOID, mujoco.mjtGeom.mjGEOM_CAPSULE,
 )
 
+STAIR_N, STAIR_RISE = 8, 0.05  # steps and rise of each (m): the scaffold deck is at N*RISE
+SERVO_KD = 0.0  # Nm*s/rad, damping of the leg servos
 FAST_RENDER = True  # False brings back shadows, floor reflection and antialiasing (nicer, ~4x slower per frame)
 
 ORANGE = (0.95, 0.45, 0.10, 1.0)
@@ -182,8 +184,8 @@ def build_model() -> mujoco.MjModel:
         spec.delete(key)
     _add_cameras(spec)
     # ahead: 2 m empty, then the stairs and the scaffold
-    _stairs(spec, 2.0, 3.6, 0.0)
-    _scaffold(spec, 3.6, 5.6, -0.9, 0.9)
+    _stairs(spec, 2.0, 3.6, 0.0, n=STAIR_N, rise=STAIR_RISE)
+    _scaffold(spec, 3.6, 5.6, -0.9, 0.9, h=STAIR_N * STAIR_RISE)
     # sides: coloured low platforms, only left and right of the stairs / scaffold line
     for x, left, right in ((2.7, RED, YELLOW), (4.2, BLUE, ORANGE), (5.7, GREEN, PURPLE)):
         _platform(spec, x, 2.4, left)
@@ -196,6 +198,9 @@ def build_model() -> mujoco.MjModel:
           roll=0.003)
     spec.option.integrator = mujoco.mjtIntegrator.mjINT_IMPLICITFAST  # stabler with the PD leg actuators
     model = spec.compile()
+    # Joint damping in the position servos (force = kp*(target-q) - kd*qdot): Menagerie ships kd=0. With it the legs stop
+    # bouncing and the trot holds without any outside help. Torque limits (forcerange) stay the Go1's own.
+    model.actuator_biasprm[:, 2] = -SERVO_KD
     if FAST_RENDER:
         # Measured on the 3 dog cameras: shadows + floor reflection + MSAA = 39 ms/frame, without = 10 ms.
         model.light_castshadow[:] = 0  # no shadow maps (the biggest cost)

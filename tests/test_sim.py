@@ -126,14 +126,16 @@ def test_stop_aborts_the_running_command_and_the_next_one_still_works():
     sim = Running()
     try:
         sim.body.submit("walk", {"distance_m": 5.0, "speed_mps": 0.5})
-        time.sleep(1.5)
+        t_sim = sim.world.sim_time  # the helper thread runs faster than real time: count simulated seconds
+        while sim.world.sim_time - t_sim < 1.5:
+            time.sleep(0.01)
         t0 = time.monotonic()
         sim.body.clear()
         while not sim.body.is_idle() and time.monotonic() - t0 < 5:
             time.sleep(0.02)
         assert sim.body.is_idle() and time.monotonic() - t0 < 2.0
         s = sim.body.snapshot()
-        assert s["x"] < 4.5
+        assert s["x"] < 1.5, f"a stop after 1.5 s of walking must leave the dog near the start, got x={s['x']}"
         assert sim.run("stand")["z"] > 0.2, "a STOP must not leave a latched halt in the simulator"
         sim.body.clear()  # STOP while idle must not poison the next command either
         assert sim.run("stand")["z"] > 0.2
@@ -205,6 +207,8 @@ def test_the_dog_climbs_the_stairs_onto_the_scaffold_and_cannot_get_up_from_the_
             s = sim.run("walk", {"distance_m": 1.0, "speed_mps": 0.6})
             if s["z"] > 0.6:
                 break
+        assert s["z"] > 0.6, f"did not climb the stairs: {s}"
+        s = sim.run("walk", {"distance_m": 0.6, "speed_mps": 0.4})  # one more step: from the top step onto the deck
         assert s["z"] > 0.6 and s["x"] > 3.6, f"did not reach the scaffold: {s}"
     finally:
         sim.close()

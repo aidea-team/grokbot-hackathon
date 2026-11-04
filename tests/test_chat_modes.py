@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -86,6 +87,69 @@ def test_agent_tools_in_real_mode_are_all_the_go1_primitives_without_limits():
     for t in build_tools("real"):
         for prop in t["parameters"]["properties"].values():
             assert "minimum" not in prop and "maximum" not in prop, "numeric limits must not be in the schema"
+
+
+def _step_world(hub):
+    stop = threading.Event()
+
+    def loop():
+        while not stop.is_set():
+            hub.sim.world.step(1 / 60)
+            time.sleep(0.0005)
+    threading.Thread(target=loop, daemon=True).start()
+    return stop
+
+
+def _spy(body, seen):
+    orig = body.submit
+
+    def submit(name, args=None):
+        r = orig(name, args)
+        seen.append((name, dict(args or {}), r["ok"]))
+        return r
+    body.submit = submit
+
+
+def test_both_mode_sends_the_same_command_to_the_real_dog_and_the_simulator():
+    client, hub, _ = build(real_enabled=True)
+    stop = _step_world(hub)
+    try:
+        r = client.post("/api/mode", json={"mode": "both"}).json()  # needs the explicit confirm like real
+        assert not r["ok"] and hub.mode == "sim"
+        r = client.post("/api/mode", json={"mode": "both", "confirm": True}).json()
+        assert r["ok"] and r["mode"] == "both" and r["armed"] and r["real_state"] == "IDLE"
+        real_seen, sim_seen = [], []
+        _spy(hub.real, real_seen)
+        _spy(hub.sim, sim_seen)
+        assert hub.body.submit("walk", {"distance_m": 0.1, "speed_mps": 0.2})["ok"]
+        t0 = time.monotonic()
+        while not hub.body.is_idle() and time.monotonic() - t0 < 30:
+            time.sleep(0.02)
+        assert hub.body.is_idle()
+        assert real_seen == sim_seen == [("walk", {"distance_m": 0.1, "speed_mps": 0.2}, True)]
+        s = client.get("/api/state").json()
+        assert s["mode"] == "both" and s["estimated"] is True and "sim" in s
+        assert abs(s["x"] - 0.1) < 0.03, "the real (mock) dog moved"
+        assert s["sim"]["x"] > 0.03, "the simulator moved too"
+        # a command the real dog refuses must not reach the simulator
+        assert not hub.body.submit("walk", {"distance_m": float("nan")})["ok"]
+        assert not hub.body.submit("frontflip", {})["ok"]
+        assert len(sim_seen) == 1 or all(not ok for *_, ok in sim_seen[1:]), "a refused command reached the simulator"
+        # STOP acts on both and latches the real dog
+        r = client.post("/api/stop").json()
+        assert r["real_state"] == "HALTED"
+        n = len(sim_seen)
+        assert not hub.body.submit("walk", {"distance_m": 0.1})["ok"] and len(sim_seen) == n
+        r = client.post("/api/mode", json={"mode": "sim"}).json()
+        assert r["ok"] and r["mode"] == "sim" and not r["armed"] and r["real_state"] == "DISARMED"
+    finally:
+        stop.set()
+
+
+def test_both_mode_is_refused_without_the_real_switch():
+    client, hub, _ = build(real_enabled=False)
+    r = client.post("/api/mode", json={"mode": "both", "confirm": True}).json()
+    assert not r["ok"] and "--real" in r["error"] and r["mode"] == "sim"
 
 
 def test_commands_route_lists_the_go1_command_set():

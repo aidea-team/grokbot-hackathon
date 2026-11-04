@@ -45,7 +45,7 @@
   .modeswitch { display: inline-flex; gap: 0; }
   .modeswitch .btn { border-radius: 0; }
   .modeswitch .btn + .btn { margin-left: -1px; }
-  [data-mode="real"] #m-real { box-shadow: 0 0 0 1px var(--aidea-danger); }
+  [data-mode="real"] #m-real, [data-mode="both"] #m-both { box-shadow: 0 0 0 1px var(--aidea-danger); }
 
   /* banners (real mode, arming, halted) */
   .banner { margin: var(--space-3) 0 0; display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
@@ -86,6 +86,7 @@
       <div class="modeswitch" role="group" aria-label="modalità">
         <button id="m-sim" class="btn btn--sm btn--violet" title="Simulatore MuJoCo (fisica vera, nessun rischio)">mock · MuJoCo</button>
         <button id="m-real" class="btn btn--sm btn--ghost" title="Cane Unitree Go1 vero (serve --real all'avvio e una conferma)">real · cane</button>
+        <button id="m-both" class="btn btn--sm btn--ghost" title="Gli stessi comandi al cane vero E al simulatore (serve --real all'avvio e una conferma)">both · cane + mock</button>
       </div>
       <div class="modeswitch" role="group" aria-label="cervello">
         <button id="b-llm" class="btn btn--sm btn--violet" title="Agente OpenAI con ragionamento (Responses API): lento, scrive il thought">LLM</button>
@@ -110,7 +111,7 @@
     <button id="stop-big" class="btn btn--lg btn--danger">STOP</button>
   </div>
   <div id="armpanel" class="notice notice--danger" hidden>
-    <strong>Passare al cane vero?</strong> Si collega al Go1 e il modello potrà muoverlo **senza limiti software**
+    <strong>Passare al cane vero?</strong> (in modalità both lo stesso comando va anche al simulatore) Si collega al Go1 e il modello potrà muoverlo <strong>senza limiti software</strong>
     (walk, turn, salti, flip, balli, damping…). Spunta tutto per armare.
     <label><input type="checkbox" class="chk"> Il cane è acceso, in piedi, con almeno 1,5 m liberi intorno.</label>
     <label><input type="checkbox" class="chk"> Nessuna persona (soprattutto bambini) vicino al cane.</label>
@@ -215,21 +216,23 @@ function render(ev) {
 function applyMode(s) {
   const prev = st.mode; st = { ...st, ...s };
   document.body.dataset.mode = s.mode;
-  const real = s.mode === "real";
+  const real = s.mode === "real" || s.mode === "both";  // both = the real dog (+ the simulator as a mirror)
+  const halted0 = s.real_state === "HALTED";
   $("m-sim").className = "btn btn--sm " + (real ? "btn--ghost" : "btn--violet");
-  $("m-real").className = "btn btn--sm " + (real ? (s.real_state === "HALTED" ? "btn--ghost" : "btn--danger") : "btn--ghost");
+  $("m-real").className = "btn btn--sm " + (s.mode === "real" ? (halted0 ? "btn--ghost" : "btn--danger") : "btn--ghost");
+  $("m-both").className = "btn btn--sm " + (s.mode === "both" ? (halted0 ? "btn--ghost" : "btn--danger") : "btn--ghost");
   $("speed").style.display = real ? "none" : "";
   $("realbar").hidden = !real;
   if (real) {
     const halted = s.real_state === "HALTED";
-    $("realbadge").textContent = halted ? "FERMATO" : "REAL";
+    $("realbadge").textContent = halted ? "FERMATO" : (s.mode === "both" ? "REAL + MOCK" : "REAL");
     $("realtext").textContent = halted
       ? "Il kill switch ha fermato il cane: non riceve più comandi finché un umano non lo riarma."
-      : `Il cane si muove davvero${s.battery != null ? " (batteria " + s.battery + "%)" : ""}. Telecomando in mano. ` +
+      : `Il cane si muove davvero${s.mode === "both" ? ", e lo stesso comando va anche al simulatore" : ""}${s.battery != null ? " (batteria " + s.battery + "%)" : ""}. Telecomando in mano. ` +
         `Stato: ${s.real_state === "MOVING" ? "in movimento" : "pronto"} · Esc = stop.`;
     $("rearm").hidden = !halted;
   }
-  if (prev !== s.mode || !camsMounted) mountCams(s.mode);
+  if (prev !== s.mode || !camsMounted) mountCams(real ? "real" : "sim");  // both: the agent looks through the real cameras
 }
 
 async function setMode(mode, confirm) {
@@ -284,19 +287,23 @@ $("s-close").onclick = () => $("settings").close();
 $("s-reset").onclick = async () => { const d = await (await post("/api/settings/reset")).json(); fillSettings({ settings: d.settings }); };
 
 $("m-sim").onclick = () => { if (st.mode !== "sim") setMode("sim"); $("armpanel").hidden = true; };
-$("m-real").onclick = () => {
-  if (st.mode === "real" && st.real_state !== "HALTED") return;
-  if (!st.real_enabled) { setMode("real"); return; }  // the server explains why it is not available
+let pendingMode = "real";  // which real-like mode the arm panel is about to enter
+const askArm = (mode) => {
+  if (st.mode === mode && st.real_state !== "HALTED") return;
+  if (!st.real_enabled) { setMode(mode); return; }  // the server explains why it is not available
+  pendingMode = mode;
   $("armpanel").hidden = false;
 };
-$("rearm").onclick = () => { $("armpanel").hidden = false; };
+$("m-real").onclick = () => askArm("real");
+$("m-both").onclick = () => askArm("both");
+$("rearm").onclick = () => { pendingMode = st.mode === "both" ? "both" : "real"; $("armpanel").hidden = false; };
 $("arm-cancel").onclick = () => { $("armpanel").hidden = true; document.querySelectorAll(".chk").forEach(c => c.checked = false); $("arm-go").disabled = true; };
 document.querySelectorAll(".chk").forEach(c => c.onchange = () => {
   $("arm-go").disabled = ![...document.querySelectorAll(".chk")].every(x => x.checked);
 });
 $("arm-go").onclick = async () => {
   $("arm-go").disabled = true;
-  const d = await setMode("real", true);
+  const d = await setMode(pendingMode, true);
   $("armpanel").hidden = true;
   document.querySelectorAll(".chk").forEach(c => c.checked = false);
   if (!d.ok) $("arm-go").disabled = true;
@@ -321,7 +328,8 @@ async function pollEvents() {
 async function pollState() {
   try {
     const s = await (await fetch("/api/state")).json();
-    const pose = `x ${s.x} · y ${s.y} · ${s.yaw_deg}°` + (s.estimated ? " (stima)" : "");
+    const pose = `x ${s.x} · y ${s.y} · ${s.yaw_deg}°` + (s.estimated ? " (stima)" : "")
+      + (s.sim ? ` · sim: x ${s.sim.x} · y ${s.sim.y} · ${s.sim.yaw_deg}°` : "");
     const win = s.mode === "sim" && s.viewer === false ? " · finestra 3D chiusa, la riapro" : "";
     bar.textContent = `${bar.dataset.base || "…"}  —  ${pose}${win}`;
   } catch { bar.textContent = "server non raggiungibile"; }
