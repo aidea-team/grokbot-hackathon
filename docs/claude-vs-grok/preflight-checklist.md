@@ -6,7 +6,7 @@
 ## 1. Repo e Claude Code
 - [ ] `git clone git@github.com:aidea-team/grokbot-hackathon.git && cd grokbot-hackathon && git pull`
 - [ ] `claude --version` (≥ 2.1.317 qui ✅) e `claude` nella repo: **approvare il server `xai-docs`** da `.mcp.json`, poi `/mcp` deve mostrarlo connesso. Da shell: `claude mcp get xai-docs` → niente più `Pending approval`.
-- [ ] In una sessione: `/skills` (o chiedere "quali skill hai?") → devono comparire `grok-api` e `robot-safety` ✅ (verificato con `claude -p`).
+- [ ] In una sessione: `/skills` (o chiedere "quali skill hai?") → deve comparire `grok-api` ✅ (verificato con `claude -p`).
 - [ ] Prova del docs MCP: *"usa xai-docs search_docs per 'function calling'"* → risultati reali.
 - [ ] Ognuno accede a GitHub dal proprio account con permesso di push. ⚠️ Se useremo `claude --cloud`, collegare la repo a claude.ai/code stasera.
 

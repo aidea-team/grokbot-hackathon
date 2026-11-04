@@ -9,7 +9,7 @@
 
 1. **Separazione netta:** Claude Code scrive il codice; il codice che gira in demo chiama **solo** Grok (API, Voice, Imagine, Bot). Niente `anthropic` in `src/`: lo controlla un test.
 2. **Docs MCP di xAI: funziona senza chiavi** (Streamable HTTP, stateless, 4 tool). È già in [`.mcp.json`](../../.mcp.json): al primo `claude` nella repo va approvato.
-3. **Due project skill pronte:** [`grok-api`](../../.claude/skills/grok-api/SKILL.md) (model id, endpoint, formati tool) e [`robot-safety`](../../.claude/skills/robot-safety/SKILL.md) (validatore, kill switch, mock-first). Grok Build legge le stesse skill e lo stesso `CLAUDE.md`, senza configurazione aggiuntiva.
+3. **Una project skill pronta:** [`grok-api`](../../.claude/skills/grok-api/SKILL.md) (model id, endpoint, formati tool). Grok Build legge la stessa skill e lo stesso `CLAUDE.md`, senza configurazione aggiuntiva.
 4. **Plugin `grok-build-plugin-cc`:** esiste, è ufficiale (Apache-2.0, v0.2.1) e il manifest supera la validazione. Ma è solo un ponte verso la CLI `grok`: senza `grok` installato e loggato non fa niente. Review e critique girano in sandbox read-only, mentre `delegate` scrive **senza sandbox e con auto-approve**: non va mai usato sul portatile collegato all'hardware.
 5. **Delegare a Grok Build** ha senso per una second opinion prima del code freeze e per **un componente intero, isolato in un worktree**, che diventa la prova concreta per la giuria. Non ha senso per driver, validatore e codice sul percorso critico.
 6. **Struttura mock-first** con contratti fissati nella prima ora (interfaccia `Driver`, tool JSON, schema degli eventi JSONL). Ogni run produce un JSONL, e da lì escono metriche, replay e demo di backup.
@@ -64,7 +64,6 @@ def test_no_anthropic_in_runtime():
 | Skill | Quando si attiva | Cosa impone |
 |---|---|---|
 | [`.claude/skills/grok-api/SKILL.md`](../../.claude/skills/grok-api/SKILL.md) | Codice che chiama Grok API, Voice, Imagine o la CLI `grok` | Model id, endpoint, formato dei tool (Responses piatto vs Chat annidato vs Voice), log JSONL, divieto di usare l'SDK `anthropic` a runtime, tabella dei file `docs/` da leggere |
-| [`.claude/skills/robot-safety/SKILL.md`](../../.claude/skills/robot-safety/SKILL.md) | Driver, executor, tool di movimento, script di demo | Whitelist, limiti doppi, validatore, kill switch locale, watchdog, mock-first con `--real` e conferma, test avversari |
 
 - Frontmatter secondo la [doc delle skill di Claude Code](https://code.claude.com/docs/en/skills.md): `name`, `description` (con il caso d'uso all'inizio) e `when_to_use`. Insieme, `description` e `when_to_use` restano sotto il limite di 1.536 caratteri. Verificato con `claude -p` che entrambe compaiono tra le skill disponibili. ✅
 - **Grok Build legge `.claude/skills/`, `CLAUDE.md`, `.mcp.json` e gli hook di Claude Code** "with zero configuration" ([build/features/skills-plugins-marketplaces](https://docs.x.ai/build/features/skills-plugins-marketplaces.md)). Se un pezzo lo scrive Grok, valgono quindi le stesse regole. Si verifica con `grok inspect`. ⚠️ Non provato.
@@ -127,7 +126,7 @@ Stato preso dalla GitHub API il 2026-11-03. Nessuno è stato installato né prov
 | X | X MCP ufficiale via `@xdevplatform/xurl` (1.4k★, MIT) | config in [docs/bots-imagine/grok-build.md](../bots-imagine/grok-build.md) | Se pubblichiamo su X; servono le chiavi dell'app X |
 | Ultimate 64 | `martijn-devrev/ultimate64mcp` | il repo risulta **spostato** (301) | Cercare il nuovo URL solo se usiamo l'Ultimate 64 |
 
-**Regola:** un MCP di terze parti verso l'hardware salta il nostro validatore. In sviluppo va bene, con l'hardware fermo o in simulatore e dopo averne letto il codice. Nel percorso Grok → hardware passa solo il nostro executor (skill `robot-safety`).
+**Regola:** un MCP di terze parti verso l'hardware salta il nostro validatore. In sviluppo va bene, con l'hardware fermo o in simulatore e dopo averne letto il codice. Nel percorso Grok → hardware passa solo il nostro executor.
 
 ---
 

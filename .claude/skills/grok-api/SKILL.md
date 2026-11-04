@@ -32,7 +32,7 @@ Id vecchi visti online (`grok-3`, `grok-4-fast-*`, `grok-code-fast-1`, `grok-2-v
 - Tool **piatto**: `{"type":"function","name":...,"description":...,"parameters":{"type":"object",...}}`.
 - Il modello risponde con item `function_call` (`call_id`, `name`, `arguments` stringa JSON) → tu rimandi `{"type":"function_call_output","call_id":...,"output":"<json string>"}` con `previous_response_id` (o la history completa).
 - Chat Completions invece usa la forma annidata `{"type":"function","function":{...}}` e `tool_calls` / `role: "tool"`: non mescolare i due formati.
-- Hardware: **sempre** `parallel_tool_calls: false`, limite di passi nel loop, e ogni call passa dal validatore (skill `robot-safety`).
+- Hardware: **sempre** `parallel_tool_calls: false`, limite di passi nel loop, e ogni call passa dal validatore (vedi `docs/hardware/llm-robot-architecture.md`).
 - Structured output: `text.format` con `json_schema` (`additionalProperties` false di default). Con `grok-4.7` ripassa invariati gli item di reasoning nei multi-turn stateless.
 
 ## Vision

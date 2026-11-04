@@ -71,7 +71,7 @@ Legenda: **=** equivalente diretto · **≈** stessa funzione con differenze · 
 
 | Cosa devo fare | Usa | Perché / come |
 |---|---|---|
-| Scrivere tutto il codice | **Claude Code** + docs MCP `xai-docs` + skill `grok-api` e `robot-safety` | È lo strumento che conosci. L'MCP evita di scrivere a memoria su docs che cambiano ogni giorno |
+| Scrivere tutto il codice | **Claude Code** + docs MCP `xai-docs` + skill `grok-api` | È lo strumento che conosci. L'MCP evita di scrivere a memoria su docs che cambiano ogni giorno |
 | Cervello del robot (pianificazione, scelta dei tool) | `grok-4.7` su Responses, `parallel_tool_calls=False` | Il modello migliore. Il reasoning non si spegne, quindi lo usiamo dove 1–3 s sono accettabili |
 | Loop veloce (comandi brevi, classificazione, giudice) | `grok-4.3` con `reasoning.effort:"none"` | Latenza minima |
 | Interfaccia vocale con tool sull'hardware | **Grok Voice Agent** (`grok-voice-latest`) | Fa voce e tool calling in un'unica sessione. Partire da [../voice/examples/voice_agent_local.py](../voice/examples/voice_agent_local.py) |

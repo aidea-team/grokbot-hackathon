@@ -15,3 +15,14 @@ mujoco>=3.2
 
 # Immagini della telecamera del cane (JPEG)
 pillow
+
+# Go2 vero via WebRTC (opzionale, pesante: aiortc & co). Senza, il Go2 funziona solo in mock.
+#   .venv/bin/pip install unitree_webrtc_connect
+
+# G1 (src/g1): policy di locomozione di unitree_rl_lab (onnx), eseguita con onnxruntime.
+onnxruntime
+
+# G1 vero (opzionale; il simulatore non li richiede). Serve CycloneDDS 0.10.x, la STESSA serie del robot: con la 11.x (default di pip) la
+# scoperta DDS non vede nessun servizio e ogni richiesta va in timeout. Vedi src/g1/README.md ("Robot vero: setup del Mac").
+#   CYCLONEDDS_HOME=<install di cyclonedds 0.10.x> .venv/bin/pip install "cyclonedds==0.10.2"
+#   .venv/bin/pip install --no-deps "git+https://github.com/unitreerobotics/unitree_sdk2_python.git"
