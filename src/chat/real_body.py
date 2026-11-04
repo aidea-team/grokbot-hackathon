@@ -45,14 +45,18 @@ def _secs(default: float) -> dict:
 
 class RealBody:
     name = "real"
-    TOOLS = commands.TOOLS
+    TOOLS = commands.TOOLS  # Go1 defaults; an instance built with another `cmds` (Go2) overrides them
     PRIMITIVE_TOOLS = commands.PRIMITIVE_TOOLS
 
     def __init__(self, driver_factory: Callable, log, camera=None, watchdog_s: float = WATCHDOG_S,
-                 extra_cameras: dict | None = None):
+                 extra_cameras: dict | None = None, cmds=commands, robot: str = "go1"):
         """driver_factory(log) -> a driver with connect/walk/stop/halt/close (Go1Driver; MockDriver in tests).
         camera: an object with acquire()/release() and a .frame (latest JPEG bytes), e.g. cams.relay(1) (front).
-        extra_cameras: {"down": relay(2), "side": relay(4)}: same names as src/sim/cameras.py."""
+        extra_cameras: {"down": relay(2), "side": relay(4)}: same names as src/sim/cameras.py.
+        cmds: the command module of the robot (src/dog/commands.py = Go1, src/dog/go2_commands.py = Go2): tool list,
+        validation and execution. robot: "go1" | "go2" (only a label for the snapshot; the commands do the work)."""
+        self.cmds, self.robot = cmds, robot
+        self.TOOLS, self.PRIMITIVE_TOOLS = cmds.TOOLS, cmds.PRIMITIVE_TOOLS
         self._factory, self.log, self.camera = driver_factory, log, camera
         self.cameras = {"front": camera, **(extra_cameras or {})}
         self.watchdog_s = watchdog_s
@@ -75,7 +79,8 @@ class RealBody:
     # ------------------------------------------------------------------ what the model is allowed to see
     @classmethod
     def tool_specs(cls) -> dict[str, dict]:
-        """Tools the model sees: the same definition as the simulator (src/dog/commands.py). No min/max."""
+        """Go1 tools the model sees: the same definition as the simulator (src/dog/commands.py). No min/max.
+        (The Go2 definition is src/dog/go2_commands.py; the agent picks it by robot in dog_agent.build_tools.)"""
         return commands.tool_specs()
 
     # ------------------------------------------------------------------ arming / disarming (human-triggered)
@@ -141,7 +146,7 @@ class RealBody:
         """Deterministic verdict: (ok, reason, clean_args). Independent of the model and of the schema."""
         if name not in self.TOOLS:
             return False, f"tool {name!r} non consentito sul cane vero (ammessi: {', '.join(self.TOOLS)})", {}
-        ok, reason, clean = commands.validate_args(name, args)
+        ok, reason, clean = self.cmds.validate_args(name, args)
         if not ok:
             return False, reason, {}
         if self.state == DISARMED:
@@ -186,7 +191,7 @@ class RealBody:
         self._event("real_verdict", tool=name, ok=ok, reason=reason)
         if not ok:
             return {"ok": False, "error": reason}
-        label = commands.label(name, clean)
+        label = self.cmds.label(name, clean)
         with self._lock:
             if self.state != IDLE:  # re-check under the lock: a kill may have just happened
                 return {"ok": False, "error": "cane non pronto (fermato o già in movimento)"}
@@ -249,7 +254,7 @@ class RealBody:
             "yaw_deg": round(math.degrees(math.atan2(math.sin(self.yaw), math.cos(self.yaw)))),
             "z": None, "posture": "in piedi", "current": self._current, "queue": [], "done": self._done,
             "time_scale": None, "viewer": None, "estimated": True, "battery": self.battery,
-            "real_state": self.state,
+            "real_state": self.state, "robot": self.robot,
         }
 
     # ------------------------------------------------------------------ threads
@@ -265,12 +270,17 @@ class RealBody:
             self._event("real_exec_start", command=label)
             t0 = time.monotonic()
             try:
-                res = commands.execute(driver, name, args)  # same code path as the simulator
+                res = self.cmds.execute(driver, name, args)  # same code path as the simulator
                 if name == "walk":
                     moved = math.copysign(args["speed_mps"], args["distance_m"]) * (
                         res.elapsed_s if res.interrupted else abs(args["distance_m"]) / args["speed_mps"])
                     self.x += moved * math.cos(self.yaw)
                     self.y += moved * math.sin(self.yaw)
+                elif name == "strafe":  # Go2 only: sideways, +distance = left
+                    moved = math.copysign(args["speed_mps"], args["distance_m"]) * (
+                        res.elapsed_s if res.interrupted else abs(args["distance_m"]) / args["speed_mps"])
+                    self.x -= moved * math.sin(self.yaw)
+                    self.y += moved * math.cos(self.yaw)
                 elif name == "turn":
                     vyaw = math.copysign(math.radians(args["rate_dps"]), args["degrees"])
                     self.yaw += vyaw * (res.elapsed_s if res.interrupted else abs(args["degrees"]) / args["rate_dps"])

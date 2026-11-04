@@ -5,6 +5,9 @@
     python src/chat/app.py --headless   # no 3D window (tests)
     mjpython src/chat/app.py --real     # a HUMAN launches this, on the dog's Wi-Fi: enables the REAL switch
 
+A switch in the top bar selects the robot: Go1 (MuJoCo / real) or Go2 (mock / real over WebRTC, needs
+`unitree_webrtc_connect` and, on firmware >= 1.1.15, GO2_AES_KEY in .env).
+
 Opens the chat on http://127.0.0.1:8765 and the simulator window together. Closing the window
 reopens it (the simulator is meant to stay on); Ctrl+C in the terminal stops everything.
 
@@ -24,15 +27,17 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-for sub in ("chat", "dog", "sim", "g1"):
+for sub in ("chat", "dog", "sim"):
     sys.path.insert(0, str(ROOT / "src" / sub))
 
 import cameras  # noqa: E402
-import g1_app  # noqa: E402
 import uvicorn  # noqa: E402
 from driver import Go1Driver, JsonlLog  # noqa: E402
 from dog_agent import AgentError, DogAgent  # noqa: E402
 import commands as go1_commands  # noqa: E402  (a route below is also called `commands`)
+import go2_bodies  # noqa: E402
+import go2_commands  # noqa: E402
+import go2_driver  # noqa: E402
 from dog_world import DogSim  # noqa: E402
 from sim_body import SimBody  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
@@ -46,6 +51,7 @@ import settings as agent_settings  # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 UI_STATIC = Path(__file__).resolve().parents[1] / "ui" / "static"
+go2_commands_where = "sul muso, guarda dritto davanti a te (lungo +x, la direzione in cui cammini)"
 REAL_CAMS = tuple(c.n for c in cameras.CAMERAS)  # front, down, side (cam3 is black, cam5 unavailable; 4/11)
 
 
@@ -66,6 +72,10 @@ class ModeIn(BaseModel):
     confirm: bool = False
 
 
+class RobotIn(BaseModel):
+    robot: str
+
+
 class ManualIn(BaseModel):
     command: str
     args: dict = {}
@@ -81,7 +91,6 @@ class TeleopIn(BaseModel):
 def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
     app = FastAPI(title="Chat col cane")
     app.mount("/ui", StaticFiles(directory=UI_STATIC), name="ui")  # design system aidea (src/ui/static)
-    app.mount("/g1", g1_app.create_app())  # Unitree G1 humanoid in MuJoCo, WASD (physics starts when /g1/ is opened)
 
     def _log_call(request: Request) -> None:  # who pressed Stop / Reset demo (browser vs. script)
         agent._log("api_call", path=request.url.path, client=request.client.host if request.client else None,
@@ -161,6 +170,20 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
         agent.reset()  # a new body means a new conversation (history from the other body would mislead the model)
         return {"ok": True, **status}
 
+    @app.post("/api/robot")
+    def set_robot(body: RobotIn, request: Request):
+        """Go1 <-> Go2. Always aborts the mission, lands on the safe mock/simulator of the new robot, new conversation."""
+        _log_call(request)
+        agent.abort()
+        try:
+            status = hub.set_robot(body.robot)
+        except HubError as e:
+            return {"ok": False, "error": str(e), **hub.status()}
+        if hub.robot == "go2" and agent.brain == "jev":
+            agent.set_brain("llm")  # JEV is tuned for the Go1
+        agent.reset()  # history from the other robot would mislead the model
+        return {"ok": True, **status, "brain": agent.brain}
+
     @app.post("/api/brain")
     def set_brain(body: BrainIn, request: Request):
         """LLM agent <-> JEV (Decisions API) switch. Ends the running mission; the conversation is kept."""
@@ -192,7 +215,13 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
 
     @app.get("/cam/{n}.mjpg")
     def real_cam(n: int):
-        """Live MJPEG of dog camera n (read-only relay in src/dog/cams.py). Only if launched with --real."""
+        """Live MJPEG of dog camera n (read-only relay in src/dog/cams.py). Only if launched with --real.
+        Go2: its single front camera (n=1), taken from the WebRTC link."""
+        if hub.robot == "go2":
+            if not hub.real_enabled or n != 1:
+                return JSONResponse({"error": "la telecamera del Go2 vero serve --real; n = 1"}, 404)
+            return StreamingResponse(go2_driver.mjpeg(hub.go2_real.camera),
+                                     media_type="multipart/x-mixed-replace; boundary=frame")
         if not hub.real_enabled or n not in REAL_CAMS:
             return JSONResponse({"error": f"real cameras need --real; n in {list(REAL_CAMS)}"}, 404)
         import cams
@@ -202,17 +231,26 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
     def cam_status():
         if not hub.real_enabled:
             return {"cams": []}
+        if hub.robot == "go2":
+            return {"cams": [{"n": 1, "error": hub.go2_real.camera.error}]}
         import cams
         return {"cams": [{"n": n, "error": cams.relay(n).error} for n in REAL_CAMS]}
 
     @app.get("/api/cameras")
     def camera_list():
-        """The same 3 cameras in mock and real mode: name, real Go1 number, label, placement told to the model."""
+        """The same cameras in mock and real mode: name, real camera number, label, placement told to the model."""
+        if hub.robot == "go2":
+            return {"cameras": [{"name": "front", "n": 1, "label": "davanti", "where": go2_commands_where}]}
         return {"cameras": [{"name": c.name, "n": c.n, "label": c.label, "where": c.where} for c in cameras.CAMERAS]}
 
     @app.get("/api/camera.jpg")
     def camera(cam: str = "front"):
         """Simulator frame of camera `cam` (front/down/side). In real mode the browser uses /cam/<n>.mjpg."""
+        if hub.robot == "go2":  # mock Go2: the synthetic top-down view (the real Go2 uses /cam/1.mjpg)
+            jpeg = hub.go2_sim.capture(camera="front") if cam == "front" else None
+            if jpeg is None:
+                return Response(status_code=404 if cam != "front" else 503)
+            return Response(jpeg, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
         if cam not in cameras.BY_NAME:
             return JSONResponse({"error": f"cam in {list(cameras.BY_NAME)}"}, 404)
         jpeg = sim.capture(480, 360, camera=cam)
@@ -241,7 +279,8 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
 
     @app.get("/api/commands")
     def commands():
-        return {name: spec["description"] for name, spec in go1_commands.tool_specs().items()}
+        module = go2_commands if hub.robot == "go2" else go1_commands
+        return {name: spec["description"] for name, spec in module.tool_specs().items()}
 
     return app
 
@@ -259,6 +298,8 @@ def main() -> int:
     world = DogSim(headless=args.headless, log=log)  # the MuJoCo physics, viewer and cameras
     sim = SimBody(world, log)  # the simulated dog as a body: same commands as the real one
 
+    go2_sim = go2_bodies.make_go2_mock(log)  # the Go2 mock exists always (no hardware); the real Go2 only with --real
+    go2_real = None
     real = None
     if args.real:
         print("REAL DOG ENABLED. Checklist: dog standing, >= 1.5 m clear around it, nobody close, remote in hand.")
@@ -268,7 +309,8 @@ def main() -> int:
         import cams  # read-only camera relay (needs ffmpeg), started only while someone looks
         real = RealBody(lambda lg: Go1Driver(lg), log, camera=cams.relay(1),
                         extra_cameras={c.name: cams.relay(c.n) for c in cameras.CAMERAS if c.name != "front"})
-    hub = RobotHub(sim, real, log)
+        go2_real, _ = go2_bodies.make_go2_real(log)  # connects over WebRTC only after the arm click (Go2 selected)
+    hub = RobotHub(sim, real, log, go2_sim=go2_sim, go2_real=go2_real)
     agent = DogAgent(hub, log)
 
     if real is not None and sys.stdin.isatty():
@@ -291,8 +333,9 @@ def main() -> int:
     except KeyboardInterrupt:
         pass
     finally:
-        if real is not None:
-            real.shutdown()  # halts and disarms
+        for body in (real, go2_real, go2_sim):
+            if body is not None:
+                body.shutdown()  # halts and disarms
         sim.shutdown()
         world.shutdown()
         server.should_exit = True

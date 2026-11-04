@@ -72,6 +72,8 @@ class WalkResult:
 
 class _BaseDriver:
     name = "base"
+    LOOP_DT = LOOP_DT  # seconds between two commands on the wire (a subclass may slow this down: Go2 uses WebRTC)
+    STOP_S = STOP_S
 
     def __init__(self, log: JsonlLog):
         self.log = log
@@ -102,7 +104,7 @@ class _BaseDriver:
                 if self.halt_event.is_set():
                     break
                 self._send_velocity(vx, vyaw)
-                self.sleep(LOOP_DT)
+                self.sleep(self.LOOP_DT)
         finally:
             self.stop()
         elapsed = self.now() - t0
@@ -130,7 +132,7 @@ class _BaseDriver:
                 if self.halt_event.is_set():
                     break
                 self._send_mode(mode)
-                self.sleep(LOOP_DT)
+                self.sleep(self.LOOP_DT)
         finally:
             self.stop()
         elapsed = self.now() - t0
@@ -154,9 +156,9 @@ class _BaseDriver:
 
     def stop(self) -> None:
         t0 = self.now()
-        while self.now() - t0 < STOP_S:
+        while self.now() - t0 < self.STOP_S:
             self._send_idle()
-            self.sleep(LOOP_DT)
+            self.sleep(self.LOOP_DT)
         self.log.event("stop", driver=self.name)
 
     # implemented by subclasses

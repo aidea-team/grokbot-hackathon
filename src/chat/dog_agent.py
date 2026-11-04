@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 import cameras
 import jev
 import commands
+import go2_commands
 from real_body import DISARMED, HALTED, RealBody
 from scene import describe
 from settings import Settings, SettingsStore
@@ -95,6 +96,39 @@ non camminare alla cieca.
 fattuale. Se l'umano ti dice di fermarti, chiama `finish` subito.
 - Odometria: angoli in gradi, positivi verso sinistra (antiorario); +x è la direzione iniziale, +y è a sinistra."""
 
+GO2_PROMPT = """Sei un cane robot Unitree Go2{where}. Sai di essere un cane robot, sei molto intelligente e soprattutto \
+prudente. Non recitare: niente versi (mai «bau»), niente personaggio, niente esclamazioni. Scrivi in modo sobrio e \
+diretto, nella lingua dell'umano (di norma italiano).
+
+Come lavori (ciclo percezione → azione):
+- A ogni passo ricevi l'immagine della tua telecamera frontale (descritta sotto), l'odometria stimata, il log dei passi \
+già fatti e l'obiettivo dell'umano. Scegli UNA sola azione atomica (un solo tool); dopo l'esecuzione riceverai un'immagine nuova.
+- In ogni chiamata compila `thought`: 1-3 frasi con ciò che vedi, a che punto sei rispetto all'obiettivo e perché \
+scegli quell'azione.
+- Hai: walk (avanti/indietro), strafe (passo laterale senza girarti), turn, stand, e i movimenti stand_up, lie_down, \
+recovery, sit, rise_sit, hello, stretch, dance, più finish. Non hai salti né flip. Un comando può essere rifiutato \
+(argomenti non validi, cane fermato dal kill switch): leggi il motivo nel log, cambia piano e non insistere. Se il cane \
+risulta fermato dal kill switch, chiama `finish`.
+- Prima di camminare assicurati di essere in piedi: se l'ultimo movimento ti ha lasciato seduto o accucciato, usa \
+stand_up (o rise_sit) prima di walk/strafe/turn.
+{safety}- L'odometria è a circuito aperto (velocità comandata × tempo): è una stima e può essere sbagliata. Fidati più della \
+telecamera che dei numeri.
+- Se l'immagine è vuota o hai perso il bersaglio, gira gradualmente (turn di 20-40°) guardando dopo ogni rotazione; \
+non camminare alla cieca.
+- Quando l'obiettivo è raggiunto, o se la richiesta è solo una domanda, chiama `finish` con un messaggio breve e \
+fattuale. Se l'umano ti dice di fermarti, chiama `finish` subito.
+- Odometria: angoli in gradi, positivi verso sinistra (antiorario); +x è la direzione iniziale, +y è a sinistra."""
+
+GO2_REAL_SAFETY = """- Sei un robot VERO, in un luogo con persone intorno: ogni movimento ha conseguenze fisiche. Se vedi una persona, un \
+bambino, un cavo, un gradino o un oggetto a meno di circa un metro davanti, NON avanzare: aggira o chiama `finish` e spiega.
+"""
+GO2_MOCK_SAFETY = """- Sei in modalità prova, senza hardware: l'immagine è una vista dall'alto SINTETICA (una griglia da 0,5 m, un anello \
+verde sull'origine, tu sei il triangolo viola con il muso in alto), non una telecamera vera. Non ci sono ostacoli: serve \
+solo a provare i comandi e l'odometria.
+"""
+GO2_CAM = ("Hai 1 telecamera, quella frontale (cam1 «davanti» (front)): sul muso, guarda dritto davanti a te (lungo +x, "
+           "la direzione in cui cammini). Non hai telecamere laterali né verso il basso.")
+
 MAP_PROMPT = """
 
 Ricordi la mappa del posto in cui vivi (centro degli oggetti in coordinate di odometria):
@@ -117,8 +151,10 @@ FINISH_TOOL = {
 }
 
 
-def cam_block(cfg: Settings | None = None) -> str:
+def cam_block(cfg: Settings | None = None, robot: str = "go1") -> str:
     """Camera paragraph; if some cameras are switched off in the settings, say which ones the model gets."""
+    if robot == "go2":
+        return GO2_CAM  # a single camera: nothing to switch off
     block = cameras.prompt_block()
     if cfg is not None and len(cfg.cams) < len(cameras.CAMERAS):
         got = ", ".join(f"cam{c.n} «{c.label}»" for c in cameras.CAMERAS if c.name in cfg.cams)
@@ -127,16 +163,20 @@ def cam_block(cfg: Settings | None = None) -> str:
     return block
 
 
-def system_prompt(mode: str = "sim", cfg: Settings | None = None) -> str:
+def system_prompt(mode: str = "sim", cfg: Settings | None = None, robot: str = "go1") -> str:
     """Same camera description in sim and real: only the body (and its safety rules) differs."""
-    prompt = _base_prompt(mode) + "\n\n" + cam_block(cfg)
+    prompt = _base_prompt(mode, robot) + "\n\n" + cam_block(cfg, robot)
     if cfg is not None and not cfg.llm_thought:
         prompt += "\n\nNon compilare `thought` (non esiste): chiama direttamente il tool."
     return prompt
 
 
-def _base_prompt(mode: str = "sim") -> str:
+def _base_prompt(mode: str = "sim", robot: str = "go1") -> str:
     """DOG_KNOWS_MAP=1 in .env also gives the simulated dog the map of the props (default: only its eyes)."""
+    if robot == "go2":
+        real = mode == "real"
+        return GO2_PROMPT.format(where=" REALE, in un museo" if real else " in modalità prova (mock)",
+                                 safety=GO2_REAL_SAFETY if real else GO2_MOCK_SAFETY)
     if mode == "real":
         return REAL_PROMPT
     prompt = SYSTEM_PROMPT
@@ -149,9 +189,10 @@ class AgentError(Exception):
     """A problem to show to the human in the chat (missing key, API error...)."""
 
 
-def build_tools(mode: str = "sim", thought: bool = True) -> list[dict]:
-    """Tool list for the model: the Go1 command set (src/dog/commands.py), identical in sim and real."""
-    specs = commands.tool_specs()  # the SAME commands in the simulator and on the real dog
+def build_tools(mode: str = "sim", thought: bool = True, robot: str = "go1") -> list[dict]:
+    """Tool list for the model: the command set of the robot (src/dog/commands.py = Go1, go2_commands.py = Go2),
+    identical in sim and real."""
+    specs = (go2_commands if robot == "go2" else commands).tool_specs()  # the SAME commands in mock and real
     tools = []
     for name, spec in specs.items():
         params = copy.deepcopy(spec["parameters"])
@@ -209,6 +250,8 @@ class DogAgent:
     def set_brain(self, brain: str) -> None:
         if brain not in ("llm", "jev"):
             raise AgentError(f"brain sconosciuto: {brain!r}")
+        if brain == "jev" and self.hub.robot == "go2":
+            raise AgentError("JEV è tarato sul Go1 (azioni e angoli): per il Go2 usa il cervello LLM.")
         self.abort()  # a running mission keeps its brain: switching ends it
         self.brain = brain
 
@@ -293,10 +336,11 @@ class DogAgent:
         env_effort = os.environ.get("OPENAI_REASONING_EFFORT") or None  # reasoning models only
         actual_mode = self.hub.mode  # fixed for the whole mission: switching mode aborts it
         mode = "real" if actual_mode in ("real", "both") else "sim"  # "both" is the real dog (+ a simulator mirror)
+        robot = self.hub.robot  # fixed for the whole mission too: switching robot aborts it
         brain = self.brain  # same: fixed for the mission
         if mode == "real":
             max_steps = int(os.environ.get("DOG_MAX_STEPS_REAL") or 20)  # step limit: the real dog gets fewer
-            if self.hub.real.state in (DISARMED, HALTED):
+            if self.hub.active_real.state in (DISARMED, HALTED):
                 raise AgentError("Il cane vero non è armato (o è stato fermato dal kill switch): "
                                  "arma di nuovo dal pulsante REAL prima di dare comandi.")
         else:
@@ -309,7 +353,7 @@ class DogAgent:
         steps: list[str] = []
         final: str | None = None
         totals = {"wait": 0.0, "cap": 0.0, "api": 0.0, "exec": 0.0}
-        self._log("mission_start", goal=goal, mode=mode, body=actual_mode, model=model, effort=cfg.llm_effort or env_effort,
+        self._log("mission_start", goal=goal, mode=mode, robot=robot, body=actual_mode, model=model, effort=cfg.llm_effort or env_effort,
                   brain=brain, settings=asdict(cfg))
 
         for n in range(1, max_steps + 1):
@@ -321,11 +365,13 @@ class DogAgent:
                 return
             t_wait = time.monotonic() - t_start
             t0 = time.monotonic()
-            shots = self._capture_all(cfg, mode)
+            shots = self._capture_all(cfg, mode, robot)
             t_cap = time.monotonic() - t0
             frame = shots["front"]  # the front camera is mandatory (it is also the chat thumbnail)
             if frame is None:
                 raise AgentError("La telecamera del cane non risponde (sei sul Wi-Fi del cane? ffmpeg installato?)"
+                                 if mode == "real" and robot == "go1" else
+                                 "La telecamera del Go2 non risponde (WebRTC collegato? la telecamera parte con l'arm)."
                                  if mode == "real" else "La telecamera del simulatore non risponde.")
             frame_id = self._store_frame(frame)
             with self._lock:
@@ -352,8 +398,8 @@ class DogAgent:
                                        else "Obiettivo concluso (JEV sceglie solo azioni: non scrive testo).")
                 extra = {"confidence": dec.confidence}
             else:
-                kwargs: dict = {"model": model, "instructions": system_prompt(mode, cfg),
-                                "tools": self._tools_for(mode, cfg.llm_thought),
+                kwargs: dict = {"model": model, "instructions": system_prompt(mode, cfg, robot),
+                                "tools": self._tools_for(mode, cfg.llm_thought, robot),
                                 "tool_choice": "required", "parallel_tool_calls": False,
                                 "input": [{"role": "user", "content": [{"type": "input_text", "text": text},
                                                                        *_camera_parts(shots)]}]}
@@ -471,21 +517,21 @@ class DogAgent:
             self._log("physics_feedback", n=n, action=label, object=hit, stuck=stuck, crash=crash, fell=fell)
         return True, after, feedback
 
-    def _capture_all(self, cfg: Settings, mode: str) -> dict[str, bytes | None]:
+    def _capture_all(self, cfg: Settings, mode: str, robot: str = "go1") -> dict[str, bytes | None]:
         """Frames of the enabled cameras; in parallel (default) the step waits for the slowest one, not the sum."""
-        names = [c.name for c in cameras.CAMERAS if c.name in cfg.cams]
+        names = ["front"] if robot == "go2" else [c.name for c in cameras.CAMERAS if c.name in cfg.cams]
         w, h = cfg.width_height()
-        if hasattr(self.hub.sim, "jpeg_quality"):
-            self.hub.sim.jpeg_quality = cfg.jpeg_quality
+        if hasattr(self.hub.active_sim, "jpeg_quality"):
+            self.hub.active_sim.jpeg_quality = cfg.jpeg_quality
         grab = lambda name: self.sim.capture(w, h, camera=name)  # noqa: E731  (the real body ignores w/h)
         if cfg.parallel_capture and len(names) > 1:
             return dict(zip(names, self._pool.map(grab, names)))
         return {name: grab(name) for name in names}
 
-    def _tools_for(self, mode: str, thought: bool) -> list[dict]:
-        key = (mode, thought)
+    def _tools_for(self, mode: str, thought: bool, robot: str = "go1") -> list[dict]:
+        key = (mode, thought, robot)
         if key not in self._tool_cache:
-            self._tool_cache[key] = build_tools(mode, thought)
+            self._tool_cache[key] = build_tools(mode, thought, robot)
         return self._tool_cache[key]
 
     def _compose_final(self, client, model: str, effort: str | None, mode: str, text: str,

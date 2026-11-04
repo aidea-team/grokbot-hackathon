@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>go1 · aidea</title>
+<title>go · aidea</title>
 <link rel="stylesheet" href="/ui/aidea.css">
 <style>
   .app { height: calc(100% - 65px); display: flex; flex-direction: column; padding: 0 var(--space-10); }
@@ -45,6 +45,7 @@
   .modeswitch { display: inline-flex; gap: 0; }
   .modeswitch .btn { border-radius: 0; }
   .modeswitch .btn + .btn { margin-left: -1px; }
+  .modeswitch .btn[hidden] { display: none; }
   [data-mode="real"] #m-real, [data-mode="both"] #m-both { box-shadow: 0 0 0 1px var(--aidea-danger); }
 
   /* banners (real mode, arming, halted) */
@@ -99,12 +100,16 @@
 <body data-mode="sim">
 <header class="topnav">
   <div class="topnav__inner">
-    <span class="topnav__brand"><img src="/ui/aidea-mark.svg" alt="aidea"><span class="topnav__brand-text">go1</span></span>
+    <span class="topnav__brand"><img src="/ui/aidea-mark.svg" alt="aidea"><span class="topnav__brand-text" id="brand">go1</span></span>
     <div id="status" class="topnav__status">connessione…</div>
     <div class="topnav__actions">
+      <div class="modeswitch" role="group" aria-label="robot">
+        <button id="r-go1" class="btn btn--sm btn--violet" title="Unitree Go1 (il cane del museo): simulatore MuJoCo o cane vero">Go1</button>
+        <button id="r-go2" class="btn btn--sm btn--ghost" title="Unitree Go2: mock cinematico o cane vero via WebRTC (non ancora provato su un Go2 vero)">Go2</button>
+      </div>
       <div class="modeswitch" role="group" aria-label="modalità">
         <button id="m-sim" class="btn btn--sm btn--violet" title="Simulatore MuJoCo (fisica vera, nessun rischio)">mock · MuJoCo</button>
-        <button id="m-real" class="btn btn--sm btn--ghost" title="Cane Unitree Go1 vero (serve --real all'avvio e una conferma)">real · cane</button>
+        <button id="m-real" class="btn btn--sm btn--ghost" title="Cane vero (serve --real all'avvio e una conferma)">real · cane</button>
         <button id="m-both" class="btn btn--sm btn--ghost" title="Gli stessi comandi al cane vero E al simulatore (serve --real all'avvio e una conferma)">both · cane + mock</button>
       </div>
       <div class="modeswitch" role="group" aria-label="interfaccia">
@@ -134,8 +139,8 @@
     <button id="stop-big" class="btn btn--lg btn--danger">STOP</button>
   </div>
   <div id="armpanel" class="notice notice--danger" hidden>
-    <strong>Passare al cane vero?</strong> (in modalità both lo stesso comando va anche al simulatore) Si collega al Go1 e il modello potrà muoverlo <strong>senza limiti software</strong>
-    (walk, turn, salti, flip, balli, damping…). Spunta tutto per armare.
+    <strong>Passare al cane vero?</strong> <span id="armtext">(in modalità both lo stesso comando va anche al simulatore) Si collega al Go1 e il modello potrà muoverlo <strong>senza limiti software</strong>
+    (walk, turn, salti, flip, balli, damping…).</span> Spunta tutto per armare.
     <label><input type="checkbox" class="chk"> Il cane è acceso, in piedi, con almeno 1,5 m liberi intorno.</label>
     <label><input type="checkbox" class="chk"> Nessuna persona (soprattutto bambini) vicino al cane.</label>
     <label><input type="checkbox" class="chk"> Ho il telecomando fisico in mano e posso premere Stop (anche Esc o INVIO nel terminale).</label>
@@ -155,7 +160,7 @@
     </section>
     <section class="manual" id="manual" hidden>
       <h2>Controllo manuale</h2>
-      <p class="note">Tieni premuto <b>W A S D</b> (o le frecce): W/S avanti/indietro, A/D gira a sinistra/destra. Al rilascio il cane si ferma. <b>Esc</b> = STOP.</p>
+      <p class="note">Tieni premuto <b>W A S D</b> (o le frecce): W/S avanti/indietro, A/D gira a sinistra/destra (sul Go2 anche passo laterale con i pulsanti sotto). Al rilascio il cane si ferma. <b>Esc</b> = STOP.</p>
       <div class="keys" id="keys">
         <button class="btn btn--lg btn--ghost k-w" data-k="w">W<small>avanti</small></button>
         <button class="btn btn--lg btn--ghost k-a" data-k="a">A<small>sinistra</small></button>
@@ -166,7 +171,7 @@
         <label>velocità m/s <input id="m-speed" type="number" step="0.05" min="0.05" value="0.2" class="edit-input"></label>
         <label>rotazione °/s <input id="m-rate" type="number" step="5" min="5" value="25" class="edit-input"></label>
       </div>
-      <h2>Primitive del Go1 (valori di default)</h2>
+      <h2 id="primtitle">Primitive del Go1 (valori di default)</h2>
       <div class="prims" id="prims"></div>
       <div id="manual-msg" class="note"></div>
     </section>
@@ -254,26 +259,61 @@ function render(ev) {
 
 /* ---------------------------------------------------------------- mode switch / real banner */
 function applyMode(s) {
-  const prev = st.mode; st = { ...st, ...s };
+  const prev = st.mode, prevRobot = st.robot; st = { ...st, ...s };
+  const robot = s.robot || st.robot || "go1", go2 = robot === "go2";
+  if (robot !== prevRobot) applyRobot(robot, s.robots);
   document.body.dataset.mode = s.mode;
   const real = s.mode === "real" || s.mode === "both";  // both = the real dog (+ the simulator as a mirror)
   const halted0 = s.real_state === "HALTED";
   $("m-sim").className = "btn btn--sm " + (real ? "btn--ghost" : "btn--violet");
   $("m-real").className = "btn btn--sm " + (s.mode === "real" ? (halted0 ? "btn--ghost" : "btn--danger") : "btn--ghost");
   $("m-both").className = "btn btn--sm " + (s.mode === "both" ? (halted0 ? "btn--ghost" : "btn--danger") : "btn--ghost");
-  $("speed").style.display = real ? "none" : "";
+  $("speed").style.display = (real || go2) ? "none" : "";
   $("realbar").hidden = !real;
   if (real) {
     const halted = s.real_state === "HALTED";
     $("realbadge").textContent = halted ? "FERMATO" : (s.mode === "both" ? "REAL + MOCK" : "REAL");
     $("realtext").textContent = halted
       ? "Il kill switch ha fermato il cane: non riceve più comandi finché un umano non lo riarma."
-      : `Il cane si muove davvero${s.mode === "both" ? ", e lo stesso comando va anche al simulatore" : ""}${s.battery != null ? " (batteria " + s.battery + "%)" : ""}. Telecomando in mano. ` +
+      : `Il ${go2 ? "Go2" : "cane"} si muove davvero${s.mode === "both" ? ", e lo stesso comando va anche al simulatore" : ""}${s.battery != null ? " (batteria " + s.battery + "%)" : ""}. Telecomando in mano. ` +
         `Stato: ${s.real_state === "MOVING" ? "in movimento" : "pronto"} · Esc = stop.`;
     $("rearm").hidden = !halted;
   }
-  if (prev !== s.mode || !camsMounted) mountCams(real ? "real" : "sim");  // both: the agent looks through the real cameras
+  if (prev !== s.mode || robot !== prevRobot || !camsMounted) mountCams(real ? "real" : "sim");  // both: the agent looks through the real cameras
 }
+
+// Go1 <-> Go2: the label of every control follows the robot (the server lands on the robot's mock/simulator)
+function applyRobot(robot, robots) {
+  const go2 = robot === "go2";
+  document.body.dataset.robot = robot;
+  $("brand").textContent = robot; document.title = robot + " · aidea";
+  $("r-go1").className = "btn btn--sm " + (go2 ? "btn--ghost" : "btn--violet");
+  $("r-go2").className = "btn btn--sm " + (go2 ? "btn--violet" : "btn--ghost");
+  if (robots) $("r-go2").hidden = !robots.includes("go2");
+  $("m-sim").textContent = go2 ? "mock · Go2" : "mock · MuJoCo";
+  $("m-sim").title = go2 ? "Mock cinematico del Go2: stessi comandi, nessuna fisica, vista dall'alto sintetica" : "Simulatore MuJoCo (fisica vera, nessun rischio)";
+  $("m-both").hidden = go2;
+  $("b-jev").disabled = go2;
+  $("u-manual").title = `Controllo manuale: WASD + un pulsante per ogni primitiva del ${go2 ? "Go2" : "Go1"}`;
+  $("primtitle").textContent = `Primitive del ${go2 ? "Go2" : "Go1"} (valori di default)`;
+  $("armtext").innerHTML = go2
+    ? "Si collega al Go2 via WebRTC (chiudi prima l'app Unitree Go: un solo client alla volta) e il modello potrà muoverlo <strong>senza limiti software</strong> (walk, strafe, turn, sit, hello, balli…). <strong>Mai testato su un Go2 vero.</strong>"
+    : "(in modalità both lo stesso comando va anche al simulatore) Si collega al Go1 e il modello potrà muoverlo <strong>senza limiti software</strong> (walk, turn, salti, flip, balli, damping…).";
+  $("m-speed").value = go2 ? 0.3 : 0.2; $("m-rate").value = go2 ? 30 : 25;
+  buildPrims(robot);
+  fetch("/api/cameras").then(r => r.json()).then(d => { TILES = d.cameras; mainIdx = 0; mountCams(camMode || "sim"); }).catch(() => {});
+}
+async function setRobot(robot) {
+  if (st.robot === robot) return;
+  releaseAll();
+  const d = await (await post("/api/robot", { robot })).json();
+  if (!d.ok) render({ type: "error", text: d.error });
+  else log.replaceChildren();  // new robot, new conversation
+  $("armpanel").hidden = true;
+  applyMode(d); applyBrain(d.brain);
+}
+$("r-go1").onclick = () => setRobot("go1");
+$("r-go2").onclick = () => setRobot("go2");
 
 async function setMode(mode, confirm) {
   const d = await (await post("/api/mode", { mode, confirm: !!confirm })).json();
@@ -352,7 +392,14 @@ $("arm-go").onclick = async () => {
 /* ---------------------------------------------------------------- manual mode (WASD + one button per Go1 primitive) */
 // Same commands the chat sends (src/dog/commands.py), with their default values. WASD = hold-to-move: the page repeats
 // the target every 150 ms and the server stops the dog if it hears nothing for 0.4 s.
-const PRIMS = [  // [tool, args, label, default, danger]
+const PRIMS_GO2 = [  // Go2 (src/dog/go2_commands.py): no jumps, flips or damping
+  ["stand", {}, "stand", "fermo 1 s"], ["stand_up", {}, "stand_up", "3 s"], ["lie_down", {}, "lie_down", "3 s"],
+  ["recovery", {}, "recovery", "rialzati · 4 s"], ["sit", {}, "sit", "seduto · 3 s"], ["rise_sit", {}, "rise_sit", "alzati dal seduto · 3 s"],
+  ["hello", {}, "hello", "saluta · 4 s"], ["stretch", {}, "stretch", "5 s"],
+  ["strafe", { distance_m: 0.3 }, "strafe ←", "30 cm a sinistra"], ["strafe", { distance_m: -0.3 }, "strafe →", "30 cm a destra"],
+  ["dance", { style: 1 }, "dance 1", "15 s"], ["dance", { style: 2 }, "dance 2", "15 s"],
+];
+const PRIMS_GO1 = [  // [tool, args, label, default, danger]
   ["stand", {}, "stand", "fermo 1 s"], ["stand_up", {}, "stand_up", "2 s"], ["lie_down", {}, "lie_down", "3 s"],
   ["recovery", {}, "recovery", "rialzati · 4 s"], ["straight_hand", {}, "straight_hand", "zampa tesa · 4 s"],
   ["jump_yaw", {}, "jump_yaw", "salto + 90° · 4 s", true], ["backflip", {}, "backflip", "salto mortale · 4 s", true],
@@ -394,7 +441,8 @@ document.querySelectorAll("#keys button").forEach(b => {
   b.addEventListener("pointerdown", (e) => { e.preventDefault(); setHeld(k, true); });
   ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => setHeld(k, false)));
 });
-$("prims").replaceChildren(...PRIMS.map(([tool, args, label, hint, danger]) => {
+function buildPrims(robot) {
+$("prims").replaceChildren(...(robot === "go2" ? PRIMS_GO2 : PRIMS_GO1).map(([tool, args, label, hint, danger]) => {
   const b = el("button", "btn btn--md " + (danger ? "btn--danger" : "btn--ghost"));
   b.append(el("span", "", label), el("small", "", hint));
   b.onclick = async () => {
@@ -406,6 +454,8 @@ $("prims").replaceChildren(...PRIMS.map(([tool, args, label, hint, danger]) => {
   };
   return b;
 }));
+}
+buildPrims("go1");
 function setUi(ui) {
   document.body.dataset.ui = ui;
   $("manual").hidden = ui !== "manual";
@@ -474,7 +524,7 @@ let camsMounted = false, camTimers = [], mainIdx = 0, camMode = null;
 function tileEl(t, big) {
   const d = el("div", "tile " + (big ? "main" : "small")); d.dataset.n = t.n;
   const img = el("img"); img.alt = t.label;
-  d.append(img, el("span", "tag", `cam${t.n} · ${t.label}`), el("div", "nosig", camMode === "real" ? "nessun segnale: sei sul Wi-Fi del cane? ffmpeg installato?" : "nessun segnale"));
+  d.append(img, el("span", "tag", `cam${t.n} · ${t.label}`), el("div", "nosig", camMode === "real" ? (st.robot === "go2" ? "nessun segnale: Go2 collegato? unitree_webrtc_connect installato?" : "nessun segnale: sei sul Wi-Fi del cane? ffmpeg installato?") : "nessun segnale"));
   img.onerror = () => d.classList.add("off"); img.onload = () => d.classList.remove("off");
   return d;
 }
@@ -495,7 +545,7 @@ function mountCams(mode) {
   document.querySelectorAll(".eyes .tile img").forEach(i => { i.onload = i.onerror = null; i.removeAttribute("src"); });  // close old MJPEG streams
   const main = $("maintile"), smalls = $("smalls");
   smalls.replaceChildren();
-  $("camcap").textContent = (mode === "real" ? "telecamere del cane (reali)" : "telecamere del cane simulato (MuJoCo)") + " · clic su una piccola per ingrandirla";
+  $("camcap").textContent = (mode === "real" ? "telecamere del cane (reali)" : st.robot === "go2" ? "vista dall'alto sintetica del Go2 (mock)" : "telecamere del cane simulato (MuJoCo)") + " · clic su una piccola per ingrandirla";
   const order = [mainIdx, ...TILES.map((_, i) => i).filter(i => i !== mainIdx)];
   const [first, ...rest] = order.map(i => TILES[i]);
   const attach = (tile, t) => { if (mode === "real") tile.querySelector("img").src = `/cam/${t.n}.mjpg`; else pollTile(tile, t); };
