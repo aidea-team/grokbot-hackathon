@@ -1,7 +1,21 @@
 # SDK quickstart (Python e TypeScript) e setup per Claude Code
 
 > **Verificato il:** 2026-11-03. Versioni controllate su PyPI, npm e GitHub lo stesso giorno.
-> ⚠️ Snippet tratti dai docs ufficiali e **non eseguiti** contro l'API (non avevo una key). Le firme di `xai-sdk 1.21.0` le ho ispezionate installando il pacchetto.
+> ⚠️ Snippet tratti dai docs ufficiali e **non eseguiti** contro l'API. Le firme di `xai-sdk 1.21.0` le ho ispezionate installando il pacchetto.
+> ✅ **Dal 2026-11-04 abbiamo una API key xAI** (`xai-...`, in `.env` come `XAI_API_KEY`). Verificato con una `curl` su `POST /v1/responses` con `grok-4.3` e `reasoning.effort: "none"`: HTTP 200 in ~1,1 s. Gli snippet qui sotto restano da provare uno per uno.
+
+## Stato attuale e SDK da usare (2026-11-04)
+
+- **Oggi** il prototipo gira con l'**SDK `openai`** su un modello OpenAI (`gpt6luna`). **Dopo** deve passare a un modello Grok.
+- **Usare l'SDK `openai` con `base_url="https://api.x.ai/v1"`**, non `xai-sdk`: la migrazione si riduce a cambiare tre valori (`api_key`, `base_url`, `model`), senza riscrivere il codice. `xai-sdk` serve solo se servono funzioni che l'SDK OpenAI non copre (collections, management, voice).
+- Tenere i tre valori in `.env`/config, mai nel codice:
+  ```python
+  client = OpenAI(api_key=os.environ["LLM_API_KEY"], base_url=os.environ["LLM_BASE_URL"])
+  # oggi:  LLM_BASE_URL=https://api.openai.com/v1   LLM_MODEL=gpt6luna
+  # poi:   LLM_BASE_URL=https://api.x.ai/v1         LLM_MODEL=grok-4.3   (o grok-4.7)
+  ```
+- Preferire la **Responses API** (`client.responses.create`): funziona uguale su OpenAI e su xAI. Per bassa latenza `grok-4.3` con `reasoning.effort: "none"`.
+- **Chiavi `grok_...` non servono per Grok.** Quelle create su grok.com/dashboard/api-keys con Type "Cursor" valgono solo per le API Cursor Cloud Agents (`api.cursor.com`), non per `api.x.ai`, dove rispondono `400 Incorrect API key`. La chiave giusta inizia con `xai-`.
 
 ## Quale SDK usare
 
