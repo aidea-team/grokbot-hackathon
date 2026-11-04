@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from dataclasses import asdict
 import sys
 import threading
 import time
@@ -38,6 +39,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response, StreamingRes
 from hub import HubError, RobotHub  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 from real_body import RealBody  # noqa: E402
+import settings as agent_settings  # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 UI_STATIC = Path(__file__).resolve().parents[1] / "ui" / "static"
@@ -50,6 +52,10 @@ class ChatIn(BaseModel):
 
 class SpeedIn(BaseModel):
     time_scale: float
+
+
+class BrainIn(BaseModel):
+    brain: str
 
 
 class ModeIn(BaseModel):
@@ -108,6 +114,35 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
             return {"ok": False, "error": str(e), **hub.status()}
         agent.reset()  # a new body means a new conversation (history from the other body would mislead the model)
         return {"ok": True, **status}
+
+    @app.post("/api/brain")
+    def set_brain(body: BrainIn, request: Request):
+        """LLM agent <-> JEV (Decisions API) switch. Ends the running mission; the conversation is kept."""
+        _log_call(request)
+        try:
+            agent.set_brain(body.brain)
+        except AgentError as e:
+            return {"ok": False, "error": str(e), "brain": agent.brain}
+        return {"ok": True, "brain": agent.brain}
+
+    @app.get("/api/settings")
+    def get_settings():
+        return {"settings": asdict(agent.settings.get()), "defaults": asdict(agent_settings.DEFAULTS),
+                "choices": {"resolutions": agent_settings.RESOLUTIONS, "efforts": agent_settings.EFFORTS,
+                            "cams": [{"name": c.name, "label": c.label} for c in cameras.CAMERAS]}}
+
+    @app.post("/api/settings")
+    def set_settings(body: dict, request: Request):
+        """Live settings of the agent loop (cameras, resolution, JEV options...). Applied at the next step."""
+        _log_call(request)
+        cfg = agent.settings.update(body)
+        agent._log("settings_changed", settings=asdict(cfg))
+        return {"ok": True, "settings": asdict(cfg)}
+
+    @app.post("/api/settings/reset")
+    def reset_settings(request: Request):
+        _log_call(request)
+        return {"ok": True, "settings": asdict(agent.settings.reset())}
 
     @app.get("/cam/{n}.mjpg")
     def real_cam(n: int):

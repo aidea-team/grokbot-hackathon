@@ -377,6 +377,7 @@ class DogSim:
         self.data = mujoco.MjData(self.model)
         self.viewer = None
         self.time_scale = 1.0
+        self.jpeg_quality = 80  # camera JPEG quality (the agent settings can change it)
         self.dt = 0.0
 
         m = self.model
@@ -602,7 +603,7 @@ class DogSim:
                 renderer = self._renderers[key]
                 renderer.update_scene(self.data, camera=req.camera)
                 buf = io.BytesIO()
-                Image.fromarray(renderer.render()).save(buf, format="JPEG", quality=80)
+                Image.fromarray(renderer.render()).save(buf, format="JPEG", quality=self.jpeg_quality)
                 req.jpeg = buf.getvalue()
             except Exception as e:  # never let a camera problem stop the simulator
                 req.error = repr(e)

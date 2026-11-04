@@ -19,18 +19,21 @@ import json
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 import cameras
+import jev
 from dog_world import ACTIONS
 from real_body import DISARMED, HALTED, RealBody
 from scene import describe
+from settings import Settings, SettingsStore
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL = "gpt-4o-mini"
-LOG_STEPS = 15  # most recent steps shown in full to the model
 HISTORY_MISSIONS = 8  # past missions (goal + final message) kept in the prompt
 HIDDEN_ACTIONS = {"go_to"}  # blind long moves: the dog must navigate by sight, one atomic step at a time
 MAX_EVENTS, MAX_FRAMES = 1000, 400
@@ -112,9 +115,22 @@ FINISH_TOOL = {
 }
 
 
-def system_prompt(mode: str = "sim") -> str:
+def cam_block(cfg: Settings | None = None) -> str:
+    """Camera paragraph; if some cameras are switched off in the settings, say which ones the model gets."""
+    block = cameras.prompt_block()
+    if cfg is not None and len(cfg.cams) < len(cameras.CAMERAS):
+        got = ", ".join(f"cam{c.n} «{c.label}»" for c in cameras.CAMERAS if c.name in cfg.cams)
+        block += (f"\nIN QUESTA SESSIONE (per velocità) ricevi SOLO: {got}. Le altre telecamere non ti vengono "
+                  "inviate: non dire che sono guaste, semplicemente non le hai.")
+    return block
+
+
+def system_prompt(mode: str = "sim", cfg: Settings | None = None) -> str:
     """Same camera description in sim and real: only the body (and its safety rules) differs."""
-    return _base_prompt(mode) + "\n\n" + cameras.prompt_block()
+    prompt = _base_prompt(mode) + "\n\n" + cam_block(cfg)
+    if cfg is not None and not cfg.llm_thought:
+        prompt += "\n\nNon compilare `thought` (non esiste): chiama direttamente il tool."
+    return prompt
 
 
 def _base_prompt(mode: str = "sim") -> str:
@@ -131,17 +147,22 @@ class AgentError(Exception):
     """A problem to show to the human in the chat (missing key, API error...)."""
 
 
-def build_tools(mode: str = "sim") -> list[dict]:
+def build_tools(mode: str = "sim", thought: bool = True) -> list[dict]:
     """Tool list for the model. Real mode: ONLY the whitelist of RealBody, with its limits in the schema."""
     specs = (RealBody.tool_specs() if mode == "real"
              else {n: s for n, s in ACTIONS.items() if n not in HIDDEN_ACTIONS})
     tools = []
     for name, spec in specs.items():
         params = copy.deepcopy(spec["parameters"])
-        params["properties"] = {"thought": THOUGHT, **params["properties"]}
-        params["required"] = ["thought", *params["required"]]
+        if thought:
+            params["properties"] = {"thought": THOUGHT, **params["properties"]}
+            params["required"] = ["thought", *params["required"]]
         tools.append({"type": "function", "name": name, "description": spec["description"], "parameters": params})
-    return tools + [FINISH_TOOL]
+    finish = FINISH_TOOL
+    if not thought:
+        finish = {**FINISH_TOOL, "parameters": {**FINISH_TOOL["parameters"], "required": ["message"],
+                                                 "properties": {"message": FINISH_TOOL["parameters"]["properties"]["message"]}}}
+    return tools + [finish]
 
 
 def _image_part(jpeg: bytes) -> dict:
@@ -152,6 +173,8 @@ def _camera_parts(shots: dict[str, bytes | None]) -> list[dict]:
     """One labelled image per camera, always in the same order; a missing camera is said explicitly."""
     parts: list[dict] = []
     for c in cameras.CAMERAS:
+        if c.name not in shots:  # switched off in the settings: not sent at all
+            continue
         jpeg = shots.get(c.name)
         if jpeg is None:
             parts.append({"type": "input_text", "text": f"[cam{c.n} «{c.label}»: NON DISPONIBILE in questo passo]"})
@@ -168,7 +191,9 @@ class DogAgent:
     def __init__(self, hub, log=None):
         self.hub = hub  # chat/hub.py RobotHub: decides whether the body is the simulator or the real dog
         self.log = log
-        self._tools = {"sim": build_tools("sim"), "real": build_tools("real")}
+        self.settings = SettingsStore(Path(log.path).parent / "settings.json" if log is not None else None)
+        self._tool_cache: dict = {}
+        self._pool = ThreadPoolExecutor(max_workers=len(cameras.CAMERAS), thread_name_prefix="cam")
         self._lock = threading.Lock()
         self._events: list[dict] = []
         self._next_id = 0
@@ -178,6 +203,19 @@ class DogAgent:
         self._running = False
         self._epoch = 0  # bumped by abort()/reset(): a stale mission thread exits silently
         self._phase, self._step = "idle", 0
+        self.brain = "llm"  # "llm" = OpenAI reasoning agent (Responses API); "jev" = Decisions API (src/chat/jev.py)
+
+    def set_brain(self, brain: str) -> None:
+        if brain not in ("llm", "jev"):
+            raise AgentError(f"brain sconosciuto: {brain!r}")
+        self.abort()  # a running mission keeps its brain: switching ends it
+        self.brain = brain
+
+    def _jev_tools(self, mode: str) -> dict[str, str]:
+        """tool name -> description, from the same specs the LLM brain sees (so the whitelist is the same)."""
+        specs = (RealBody.tool_specs() if mode == "real"
+                 else {n: s for n, s in ACTIONS.items() if n not in HIDDEN_ACTIONS})
+        return {**{n: s["description"] for n, s in specs.items()}, "finish": FINISH_TOOL["description"]}
 
     @property
     def sim(self):
@@ -226,7 +264,7 @@ class DogAgent:
             return self._frames.get(frame_id)
 
     def status(self) -> dict:
-        return {"running": self._running, "phase": self._phase, "step": self._step}
+        return {"running": self._running, "phase": self._phase, "step": self._step, "brain": self.brain}
 
     # ---------------------------------------------------------------- the loop (mission thread)
     def _run(self, goal: str, epoch: int) -> None:
@@ -252,8 +290,9 @@ class DogAgent:
         from openai import OpenAI, OpenAIError
 
         model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
-        effort = os.environ.get("OPENAI_REASONING_EFFORT") or None  # reasoning models only
+        env_effort = os.environ.get("OPENAI_REASONING_EFFORT") or None  # reasoning models only
         mode = self.hub.mode  # fixed for the whole mission: switching mode aborts it
+        brain = self.brain  # same: fixed for the mission
         if mode == "real":
             max_steps = int(os.environ.get("DOG_MAX_STEPS_REAL") or 20)  # step limit: the real dog gets fewer
             if self.hub.real.state in (DISARMED, HALTED):
@@ -262,16 +301,27 @@ class DogAgent:
         else:
             max_steps = int(os.environ.get("DOG_MAX_STEPS") or 40)
         client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ.get("OPENAI_BASE_URL") or None)
+        cfg = self.settings.get()
+        if brain == "jev" and cfg.jev_session:
+            jev.prewarm()  # open the TLS connection before the first decision
         goals = [goal]
         steps: list[str] = []
         final: str | None = None
-        self._log("mission_start", goal=goal, mode=mode, model=model, effort=effort)
+        totals = {"wait": 0.0, "cap": 0.0, "api": 0.0, "exec": 0.0}
+        self._log("mission_start", goal=goal, mode=mode, model=model, effort=cfg.llm_effort or env_effort,
+                  brain=brain, settings=asdict(cfg))
 
         for n in range(1, max_steps + 1):
+            cfg = self.settings.get()  # live: changes from the settings dialog apply at the next step
+            effort = cfg.llm_effort or env_effort
             self._set_phase(epoch, "osservo", n)
+            t_start = time.monotonic()
             if not self._wait_idle(epoch):
                 return
-            shots = {c.name: self.sim.capture(camera=c.name) for c in cameras.CAMERAS}
+            t_wait = time.monotonic() - t_start
+            t0 = time.monotonic()
+            shots = self._capture_all(cfg, mode)
+            t_cap = time.monotonic() - t0
             frame = shots["front"]  # the front camera is mandatory (it is also the chat thumbnail)
             if frame is None:
                 raise AgentError("La telecamera del cane non risponde (sei sul Wi-Fi del cane? ffmpeg installato?)"
@@ -280,73 +330,110 @@ class DogAgent:
             with self._lock:
                 notes, self._inbox = self._inbox, []
             goals += notes
-            text = self._prompt(goals, notes, steps)
+            text = self._prompt(goals, notes, steps, cfg)
 
             self._set_phase(epoch, "ragiono", n)
-            kwargs: dict = {"model": model, "instructions": system_prompt(mode), "tools": self._tools[mode],
-                            "tool_choice": "required", "parallel_tool_calls": False,
-                            "input": [{"role": "user", "content": [{"type": "input_text", "text": text},
-                                                                   *_camera_parts(shots)]}]}
-            if effort:
-                kwargs["reasoning"] = {"effort": effort}
             t0 = time.monotonic()
-            try:
-                resp = client.responses.create(**kwargs)
-            except OpenAIError as e:
-                self._log("llm_error", error=repr(e))
-                raise AgentError(f"Errore dall'API OpenAI: {e}") from e
-            latency = round(time.monotonic() - t0, 2)
+            dec = None
+            if brain == "jev":
+                multi = cfg.jev_multi and mode == "sim"  # a blind 2nd move is never allowed on the real dog
+                try:
+                    dec = jev.decide([{"type": "input_text", "text": text}, *_camera_parts(shots)],
+                                     self._jev_tools(mode), mode, reuse_session=cfg.jev_session,
+                                     reduced=cfg.jev_reduced_angles, multi=multi, cam_block=cam_block(cfg))
+                except jev.JevError as e:
+                    self._log("llm_error", error=repr(e), brain="jev")
+                    raise AgentError(f"Errore dalla Decisions API (JEV): {e}") from e
+                name, args, thought = dec.name, dict(dec.args), dec.thought
+                if name == "finish":
+                    args["message"] = (self._compose_final(client, model, effort, mode, text, shots, cfg)
+                                       if cfg.jev_finish_llm
+                                       else "Obiettivo concluso (JEV sceglie solo azioni: non scrive testo).")
+                extra = {"confidence": dec.confidence}
+            else:
+                kwargs: dict = {"model": model, "instructions": system_prompt(mode, cfg),
+                                "tools": self._tools_for(mode, cfg.llm_thought),
+                                "tool_choice": "required", "parallel_tool_calls": False,
+                                "input": [{"role": "user", "content": [{"type": "input_text", "text": text},
+                                                                       *_camera_parts(shots)]}]}
+                if effort:
+                    kwargs["reasoning"] = {"effort": effort}
+                try:
+                    resp = client.responses.create(**kwargs)
+                except OpenAIError as e:
+                    self._log("llm_error", error=repr(e))
+                    raise AgentError(f"Errore dall'API OpenAI: {e}") from e
+                calls = [o for o in resp.output if o.type == "function_call"]
+                if calls:
+                    try:
+                        args = json.loads(calls[0].arguments or "{}")
+                    except json.JSONDecodeError:
+                        args = {}
+                    name, thought, extra = calls[0].name, str(args.pop("thought", "")).strip(), {}
+                else:  # the model answered in plain text: treat it as the final message
+                    name, args, thought, extra = "finish", {"message": resp.output_text or "(nessuna risposta)"}, "", {}
+            t_api = time.monotonic() - t0
+            latency = round(t_api, 2)
             if self._epoch != epoch:
                 return
 
-            calls = [o for o in resp.output if o.type == "function_call"]
-            if not calls:  # the model answered in plain text: treat it as the final message
-                final = resp.output_text or "(nessuna risposta)"
-                self._emit("step", n=n, thought="", action="finish", frame=frame_id, epoch=epoch)
-                break
-            call = calls[0]
-            try:
-                args = json.loads(call.arguments or "{}")
-            except json.JSONDecodeError:
-                args = {}
-            thought = str(args.pop("thought", "")).strip()
+            timing = {"wait": t_wait, "cap": t_cap, "api": t_api, "exec": 0.0}
 
-            if call.name == "finish":
+            def close_step(label: str = "") -> None:
+                """Timing of this step: JSONL + a `timing` event the UI attaches to the step."""
+                timing["exec"] = timing["exec"] if label else 0.0
+                for k in totals:
+                    totals[k] += timing[k]
+                t = {k: round(v, 2) for k, v in timing.items()}
+                t["total"] = round(sum(timing.values()), 2)
+                self._emit("timing", n=n, brain=brain, epoch=epoch, **t)
+                self._log("step_timing", n=n, brain=brain, **t)
+
+            if name == "finish":
                 final = str(args.get("message") or thought or "Fatto.")
                 self._emit("step", n=n, thought=thought, action="finish", frame=frame_id, epoch=epoch)
-                self._log("step", n=n, action="finish", thought=thought, latency_s=latency)
+                self._log("step", n=n, action="finish", thought=thought, latency_s=latency, brain=brain, **extra)
+                close_step()
                 break
 
             before = self.sim.snapshot()
-            result = self.sim.submit(call.name, args)
-            label = result.get("queued") or call.name
+            result = self.sim.submit(name, args)
+            label = result.get("queued") or name
             self._emit("step", n=n, thought=thought, action=label, frame=frame_id,
                        **({} if result["ok"] else {"error": result["error"]}), epoch=epoch)
-            self._log("step", n=n, action=label, thought=thought, latency_s=latency, ok=result["ok"])
+            self._log("step", n=n, action=label, thought=thought, latency_s=latency, ok=result["ok"], brain=brain, **extra)
             if not result["ok"]:
                 steps.append(f"{n}. «{thought}» → azione rifiutata ({result['error']})")
+                close_step()
                 continue
-            self._set_phase(epoch, f"eseguo {label}", n)
-            if not self._wait_idle(epoch):
+            t0 = time.monotonic()
+            alive, after, feedback = self._observe(epoch, n, label)
+            if not alive:
                 return
-            after = self.sim.snapshot()
-            body = self.sim
-            hit, stuck, crash, fell = body.last_block, body.last_stuck, body.last_crash, body.last_fell
-            feedback = []  # physical feedback from the simulator (the real dog has none of these flags)
-            if crash:
-                feedback.append("URTO IN SALTO: hai colpito un oggetto solido durante il salto")
-            elif stuck:
-                feedback.append("BLOCCATO: un oggetto solido ti impedisce di avanzare")
-            elif hit:
-                feedback.append("hai toccato un oggetto solido")
-            if fell:
-                feedback.append("SEI CADUTO (il prossimo comando ti rialza)")
-            if feedback:
-                self._emit("note", text=" · ".join(feedback).capitalize() + ".", epoch=epoch)
-                self._log("physics_feedback", n=n, action=label, object=hit, stuck=stuck, crash=crash, fell=fell)
             steps.append(f"{n}. «{thought[:240]}» → {label} → odometria: x={after['x']} y={after['y']} "
                          f"yaw={after['yaw_deg']}° (prima: x={before['x']} y={before['y']} yaw={before['yaw_deg']}°)"
                          + "".join(f" → {f}" for f in feedback))
+
+            # JEV only: a 2nd action from the same call, when both are confident and the 1st went smoothly
+            sec = dec.second if dec is not None else None
+            if (sec is not None and not feedback and dec.confidence >= cfg.jev_multi_min_conf
+                    and sec.confidence >= cfg.jev_multi_min_conf and self._epoch == epoch):
+                before2 = after
+                r2 = self.sim.submit(sec.name, sec.args)
+                label2 = r2.get("queued") or sec.name
+                self._emit("step", n=n, thought=sec.thought, action=label2, frame=frame_id,
+                           **({} if r2["ok"] else {"error": r2["error"]}), epoch=epoch)
+                self._log("step", n=n, part=2, action=label2, thought=sec.thought, ok=r2["ok"], brain=brain,
+                          confidence=sec.confidence)
+                if r2["ok"]:
+                    alive, after2, fb2 = self._observe(epoch, n, label2)
+                    if not alive:
+                        return
+                    steps.append(f"{n}b. «{sec.thought}» → {label2} → odometria: x={after2['x']} y={after2['y']} "
+                                 f"yaw={after2['yaw_deg']}° (prima: x={before2['x']} y={before2['y']} "
+                                 f"yaw={before2['yaw_deg']}°)" + "".join(f" → {f}" for f in fb2))
+            timing["exec"] = time.monotonic() - t0
+            close_step(label)
         else:
             final = f"Mi fermo dopo {max_steps} passi senza aver concluso."
 
@@ -356,9 +443,68 @@ class DogAgent:
         with self._lock:
             self._history.append({"goal": " / ".join(goals), "final": final})
             del self._history[:-HISTORY_MISSIONS]
-        self._log("mission_end", goal=goal, final=final, steps=len(steps))
+        n_steps = max(1, len(steps))
+        self._log("mission_end", goal=goal, final=final, steps=len(steps), brain=brain,
+                  avg_s={k: round(v / n_steps, 2) for k, v in totals.items()},
+                  total_s={k: round(v, 2) for k, v in totals.items()})
 
-    def _prompt(self, goals: list[str], notes: list[str], steps: list[str]) -> str:
+    def _observe(self, epoch: int, n: int, label: str) -> tuple[bool, dict, list[str]]:
+        """Wait for the action to finish, then read the physical feedback (the real dog has none of these flags)."""
+        self._set_phase(epoch, f"eseguo {label}", n)
+        if not self._wait_idle(epoch):
+            return False, {}, []
+        after = self.sim.snapshot()
+        body = self.sim
+        hit, stuck, crash, fell = body.last_block, body.last_stuck, body.last_crash, body.last_fell
+        feedback = []
+        if crash:
+            feedback.append("URTO IN SALTO: hai colpito un oggetto solido durante il salto")
+        elif stuck:
+            feedback.append("BLOCCATO: un oggetto solido ti impedisce di avanzare")
+        elif hit:
+            feedback.append("hai toccato un oggetto solido")
+        if fell:
+            feedback.append("SEI CADUTO (il prossimo comando ti rialza)")
+        if feedback:
+            self._emit("note", text=" · ".join(feedback).capitalize() + ".", epoch=epoch)
+            self._log("physics_feedback", n=n, action=label, object=hit, stuck=stuck, crash=crash, fell=fell)
+        return True, after, feedback
+
+    def _capture_all(self, cfg: Settings, mode: str) -> dict[str, bytes | None]:
+        """Frames of the enabled cameras; in parallel (default) the step waits for the slowest one, not the sum."""
+        names = [c.name for c in cameras.CAMERAS if c.name in cfg.cams]
+        w, h = cfg.width_height()
+        if hasattr(self.hub.sim, "jpeg_quality"):
+            self.hub.sim.jpeg_quality = cfg.jpeg_quality
+        grab = lambda name: self.sim.capture(w, h, camera=name)  # noqa: E731  (the real body ignores w/h)
+        if cfg.parallel_capture and len(names) > 1:
+            return dict(zip(names, self._pool.map(grab, names)))
+        return {name: grab(name) for name in names}
+
+    def _tools_for(self, mode: str, thought: bool) -> list[dict]:
+        key = (mode, thought)
+        if key not in self._tool_cache:
+            self._tool_cache[key] = build_tools(mode, thought)
+        return self._tool_cache[key]
+
+    def _compose_final(self, client, model: str, effort: str | None, mode: str, text: str,
+                       shots: dict, cfg: Settings) -> str:
+        """JEV cannot write text: one LLM call (no tools) words the final answer for the human."""
+        fallback = "Obiettivo concluso (JEV sceglie solo azioni: non scrive testo)."
+        kwargs: dict = {"model": model, "instructions": system_prompt(mode, cfg),
+                        "input": [{"role": "user", "content": [
+                            {"type": "input_text", "text": text + "\n\nLa missione è conclusa (o la richiesta è solo "
+                             "una domanda): rispondi all'umano con un messaggio breve e fattuale. Non chiamare tool."},
+                            *_camera_parts(shots)]}]}
+        if effort:
+            kwargs["reasoning"] = {"effort": effort}
+        try:
+            return client.responses.create(**kwargs).output_text or fallback
+        except Exception as e:  # never lose the mission over the final message
+            self._log("llm_error", error=repr(e), where="compose_final")
+            return fallback
+
+    def _prompt(self, goals: list[str], notes: list[str], steps: list[str], cfg: Settings) -> str:
         s = self.sim.snapshot()
         lines = []
         with self._lock:
@@ -376,12 +522,12 @@ class DogAgent:
         lines.append(f"Odometria{' STIMATA a circuito aperto' if s.get('estimated') else ''}: x={s['x']} m, "
                      f"y={s['y']} m, orientamento {s['yaw_deg']}° (0° = verso +x), postura: {s['posture']}.")
         if steps:
-            omitted = max(0, len(steps) - LOG_STEPS)
+            omitted = max(0, len(steps) - cfg.llm_log_steps)
             lines.append(f"\nPassi già fatti ({omitted} più vecchi omessi):" if omitted else "\nPassi già fatti:")
-            lines += steps[-LOG_STEPS:]
+            lines += steps[-cfg.llm_log_steps:]
         else:
             lines.append("\nNessun passo ancora fatto.")
-        lines.append("\nLe immagini allegate sono le tue 3 telecamere adesso. Scegli il prossimo passo.")
+        lines.append("\nLe immagini allegate sono le tue telecamere adesso. Scegli il prossimo passo.")
         return "\n".join(lines)
 
     # ---------------------------------------------------------------- helpers
@@ -390,7 +536,7 @@ class DogAgent:
         while not self.sim.is_idle():
             if self._epoch != epoch or time.monotonic() > deadline:
                 return False
-            time.sleep(0.05)
+            time.sleep(0.01)
         return self._epoch == epoch
 
     def _set_phase(self, epoch: int, phase: str, step: int) -> None:

@@ -24,6 +24,18 @@
   .step .act { font-size: var(--fs-12); font-weight: 600; color: var(--fg-1); word-break: break-all; }
   .step .act.bad { color: var(--aidea-danger); }
 
+  .timing { font-size: var(--fs-12); color: var(--fg-3); font-variant-numeric: tabular-nums; margin-top: 2px; }
+  dialog#settings { background: var(--bg-raised); color: var(--fg-1); border: 1px solid var(--border-strong); padding: var(--space-6); width: min(560px, 94vw); max-height: 88vh; overflow-y: auto; }
+  dialog#settings::backdrop { background: rgba(0, 0, 0, 0.6); }
+  #settings h3 { margin: var(--space-5) 0 var(--space-2); font-size: var(--fs-14); color: var(--fg-3); text-transform: uppercase; letter-spacing: .06em; }
+  #settings h3:first-of-type { margin-top: 0; }
+  #settings .opt { display: flex; gap: var(--space-3); align-items: center; padding: 5px 0; font-size: var(--fs-14); }
+  #settings .opt > label { flex: 1; cursor: pointer; }
+  #settings .opt small { display: block; color: var(--fg-3); font-size: var(--fs-12); }
+  #settings .cams { display: flex; gap: var(--space-4); }
+  #settings .foot { display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-5); }
+  #settings input[type=number] { width: 72px; }
+
   form { display: flex; gap: var(--space-2); padding: var(--space-3) 0 var(--space-6); }
   form .edit-input { flex: 1; width: auto; font-size: var(--fs-16); padding: 11px 14px; }
 
@@ -72,11 +84,16 @@
         <button id="m-sim" class="btn btn--sm btn--violet" title="Simulatore MuJoCo (fisica vera, nessun rischio)">mock · MuJoCo</button>
         <button id="m-real" class="btn btn--sm btn--ghost" title="Cane Unitree Go1 vero (serve --real all'avvio e una conferma)">real · cane</button>
       </div>
+      <div class="modeswitch" role="group" aria-label="cervello">
+        <button id="b-llm" class="btn btn--sm btn--violet" title="Agente OpenAI con ragionamento (Responses API): lento, scrive il thought">LLM</button>
+        <button id="b-jev" class="btn btn--sm btn--ghost" title="JEV: OpenAI Decisions API, una sola chiamata veloce che sceglie l'azione (non scrive testo)">JEV</button>
+      </div>
       <select id="speed" class="ui-select" title="Velocità del simulatore">
         <option value="1">1×</option>
         <option value="0.5">0,5×</option>
         <option value="2">2×</option>
       </select>
+      <button id="open-settings" class="btn btn--sm btn--ghost" title="Impostazioni del loop: telecamere, risoluzione, opzioni JEV e LLM (per escludere una ottimizzazione se peggiora)">impostazioni</button>
       <button id="stop" class="btn btn--sm btn--danger" title="Kill switch: interrompe la missione e ferma il cane (anche Esc)">stop</button>
       <button id="reset" class="btn btn--sm btn--ghost" title="Simulatore: riporta cane e oggetti all'inizio. Cane vero: azzera solo l'odometria stimata. In entrambi i casi azzera la conversazione">reset demo</button>
     </div>
@@ -117,6 +134,42 @@
   </div>
 </div>
 
+<dialog id="settings">
+  <h3>Telecamere (tutti i cervelli)</h3>
+  <div class="opt"><div class="cams" id="s-cams"></div></div>
+  <div class="opt"><label for="s-resolution">Risoluzione dei frame<small>solo simulatore; il cane vero ha i suoi stream</small></label>
+    <select id="s-resolution" class="ui-select"></select></div>
+  <div class="opt"><label for="s-jpeg_quality">Qualità JPEG (30–95)<small>solo simulatore</small></label>
+    <input id="s-jpeg_quality" type="number" min="30" max="95" class="edit-input"></div>
+  <div class="opt"><label for="s-parallel_capture">Cattura le camere in parallelo<small>il passo aspetta la più lenta, non la somma</small></label>
+    <input id="s-parallel_capture" type="checkbox"></div>
+
+  <h3>JEV (Decisions API)</h3>
+  <div class="opt"><label for="s-jev_session">Riusa la connessione HTTP<small>niente handshake TLS a ogni chiamata</small></label>
+    <input id="s-jev_session" type="checkbox"></div>
+  <div class="opt"><label for="s-jev_multi">Seconda azione dalla stessa chiamata<small>turn/walk senza rivedere le immagini; solo simulatore, solo se entrambe sono sicure</small></label>
+    <input id="s-jev_multi" type="checkbox"></div>
+  <div class="opt"><label for="s-jev_multi_min_conf">Confidenza minima per la seconda azione (0,5–0,99)</label>
+    <input id="s-jev_multi_min_conf" type="number" min="0.5" max="0.99" step="0.01" class="edit-input"></div>
+  <div class="opt"><label for="s-jev_reduced_angles">Niente giri da ±90°<small>meno scelte, angoli più calmi</small></label>
+    <input id="s-jev_reduced_angles" type="checkbox"></div>
+  <div class="opt"><label for="s-jev_finish_llm">Risposta finale scritta dall'LLM<small>JEV non scrive testo: una chiamata in più, solo alla fine</small></label>
+    <input id="s-jev_finish_llm" type="checkbox"></div>
+
+  <h3>Agente LLM (Responses API)</h3>
+  <div class="opt"><label for="s-llm_effort">Reasoning effort<small>«da .env» usa OPENAI_REASONING_EFFORT; solo modelli con reasoning</small></label>
+    <select id="s-llm_effort" class="ui-select"></select></div>
+  <div class="opt"><label for="s-llm_thought">Campo «thought» nei tool<small>token di output in più a ogni passo</small></label>
+    <input id="s-llm_thought" type="checkbox"></div>
+  <div class="opt"><label for="s-llm_log_steps">Passi precedenti mostrati al modello (1–30)</label>
+    <input id="s-llm_log_steps" type="number" min="1" max="30" class="edit-input"></div>
+
+  <div class="foot">
+    <button id="s-reset" class="btn btn--md btn--ghost" title="Torna al comportamento originale">ripristina predefiniti</button>
+    <button id="s-close" class="btn btn--md btn--primary">chiudi</button>
+  </div>
+</dialog>
+
 <script>
 const $ = (id) => document.getElementById(id);
 const log = $("log"), input = $("input"), bar = $("status");
@@ -133,8 +186,14 @@ function render(ev) {
   else if (ev.type === "final") node = el("div", "final", ev.text);
   else if (ev.type === "note") node = el("div", "note", ev.text);
   else if (ev.type === "error") node = el("div", "error", ev.text);
-  else if (ev.type === "step") {
-    node = el("div", "step");
+  else if (ev.type === "timing") {
+    const steps = [...log.querySelectorAll(`.step[data-n="${ev.n}"]`)], last = steps[steps.length - 1];
+    if (last) last.querySelector(".txt").append(el("div", "timing",
+      `${ev.total} s · attesa ${ev.wait} · camere ${ev.cap} · ${ev.brain === "jev" ? "JEV" : "LLM"} ${ev.api}` +
+      (ev.exec ? ` · esecuzione ${ev.exec}` : "")));
+    return;
+  } else if (ev.type === "step") {
+    node = el("div", "step"); node.dataset.n = ev.n;
     const img = el("img"); img.src = `/api/frame/${ev.frame}.jpg`; img.alt = "";
     const txt = el("div", "txt"), meta = el("div", "meta");
     meta.append(el("span", "n", String(ev.n).padStart(2, "0")));
@@ -178,6 +237,49 @@ async function setMode(mode, confirm) {
   return d;
 }
 
+function applyBrain(b) {
+  if (!b) return;
+  $("b-llm").className = "btn btn--sm " + (b === "llm" ? "btn--violet" : "btn--ghost");
+  $("b-jev").className = "btn btn--sm " + (b === "jev" ? "btn--violet" : "btn--ghost");
+}
+async function setBrain(brain) {
+  const d = await (await post("/api/brain", { brain })).json();
+  if (!d.ok) render({ type: "error", text: d.error });
+  applyBrain(d.brain);
+}
+$("b-llm").onclick = () => setBrain("llm");
+$("b-jev").onclick = () => setBrain("jev");
+
+/* ---------------------------------------------------------------- settings dialog (applies live, next step) */
+const SETTING_IDS = ["resolution", "jpeg_quality", "parallel_capture", "jev_session", "jev_multi", "jev_multi_min_conf",
+                     "jev_reduced_angles", "jev_finish_llm", "llm_effort", "llm_thought", "llm_log_steps"];
+let settingsLoaded = false;
+function fillSettings(d) {
+  const s = d.settings;
+  if (!settingsLoaded) {
+    $("s-resolution").replaceChildren(...d.choices.resolutions.map(r => new Option(r, r)));
+    $("s-llm_effort").replaceChildren(...d.choices.efforts.map(e => new Option(e || "da .env", e)));
+    $("s-cams").replaceChildren(...d.choices.cams.map(c => {
+      const l = el("label"); const i = el("input"); i.type = "checkbox"; i.dataset.cam = c.name;
+      i.disabled = c.name === "front"; i.onchange = saveSettings;
+      l.append(i, " " + c.label); return l;
+    }));
+    SETTING_IDS.forEach(id => $("s-" + id).onchange = saveSettings);
+    settingsLoaded = true;
+  }
+  for (const id of SETTING_IDS) { const e = $("s-" + id); if (e.type === "checkbox") e.checked = !!s[id]; else e.value = s[id]; }
+  document.querySelectorAll("#s-cams input").forEach(i => i.checked = s.cams.includes(i.dataset.cam));
+}
+async function saveSettings() {
+  const body = { cams: [...document.querySelectorAll("#s-cams input")].filter(i => i.checked).map(i => i.dataset.cam) };
+  for (const id of SETTING_IDS) { const e = $("s-" + id); body[id] = e.type === "checkbox" ? e.checked : (e.type === "number" ? parseFloat(e.value) : e.value); }
+  const d = await (await post("/api/settings", body)).json();
+  if (d.ok) fillSettings({ settings: d.settings });
+}
+$("open-settings").onclick = async () => { fillSettings(await (await fetch("/api/settings")).json()); $("settings").showModal(); };
+$("s-close").onclick = () => $("settings").close();
+$("s-reset").onclick = async () => { const d = await (await post("/api/settings/reset")).json(); fillSettings({ settings: d.settings }); };
+
 $("m-sim").onclick = () => { if (st.mode !== "sim") setMode("sim"); $("armpanel").hidden = true; };
 $("m-real").onclick = () => {
   if (st.mode === "real" && st.real_state !== "HALTED") return;
@@ -207,7 +309,7 @@ async function pollEvents() {
   try {
     const d = await (await fetch(`/api/events?after=${lastId}`)).json();
     for (const ev of d.events) { render(ev); lastId = Math.max(lastId, ev.id); }
-    applyMode(d);
+    applyMode(d); applyBrain(d.brain);
     bar.className = "topnav__status" + (d.running ? " is-live" : "");
     bar.dataset.base = d.running ? `passo ${d.step} · ${d.phase}` : "fermo";
   } catch { bar.dataset.base = "server non raggiungibile"; bar.className = "topnav__status"; }
