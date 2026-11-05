@@ -41,6 +41,17 @@
 .ov.small .ov-t { font-size: 64px; }
 .ov.bottom { top: auto; bottom: 210px; }
 .ov.right { left: auto; right: 110px; }
+.ov.chip { left: auto; right: 175px; top: 8px; }
+.ov.chip .ov-in { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 14px; padding: 10px 18px 10px 16px;
+                   border-left-width: 6px; max-width: 760px; }
+.ov.chip .ov-k { font-size: 18px; padding: 3px 9px; }
+.ov.chip .ov-t { font-size: 40px; margin-top: 0; }
+.ov.chip .ov-s { font-size: 19px; margin-top: 4px; flex-basis: 100%; }
+.ov.mini { left: 70px; top: 60px; }
+.ov.mini .ov-in { padding: 12px 20px 14px 16px; border-left-width: 6px; }
+.ov.mini .ov-k { font-size: 18px; padding: 3px 9px; }
+.ov.mini .ov-t { font-size: 52px; margin-top: 8px; }
+.ov.mini .ov-s { font-size: 21px; margin-top: 6px; }
 .chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
 .chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
@@ -48,10 +59,9 @@
 
   </style>
   <div id="root" data-composition-id="s17-tasti" data-width="1920" data-height="1080">
-    <div class="wrap" id="s17-tasti-w0" style="z-index:1"><video id="s17-tasti-m0" class="clip full" data-start="0" data-duration="2.0" data-track-index="1" data-media-start="0.0" src="assets/clips/c-hacker.mp4" muted playsinline></video></div>
-    <div class="wrap" id="s17-tasti-w1" style="z-index:2"><video id="s17-tasti-m1" class="clip full" data-start="2.0" data-duration="1.8" data-track-index="2" data-media-start="0.0" src="assets/clips/c-closeup.mp4" muted playsinline></video></div>
-    <div class="wrap" id="s17-tasti-w2" style="z-index:3"><video id="s17-tasti-m2" class="clip full" data-start="3.8" data-duration="1.6" data-track-index="3" data-media-start="0.0" src="assets/clips/c-mano.mp4" muted playsinline></video></div>
-    <div class="wrap" id="s17-tasti-w3" style="z-index:4"><video id="s17-tasti-m3" class="clip full" data-start="5.4" data-duration="1.8" data-track-index="4" data-media-start="0.0" src="assets/clips/c-scrive.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s17-tasti-w0" style="z-index:1"><video id="s17-tasti-m0" class="clip full" data-start="0" data-duration="2.4" data-track-index="1" data-media-start="0.0" src="assets/clips/c-hacker.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s17-tasti-w1" style="z-index:2"><video id="s17-tasti-m1" class="clip full" data-start="2.4" data-duration="2.2" data-track-index="2" data-media-start="0.0" src="assets/clips/c-closeup.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s17-tasti-w2" style="z-index:3"><video id="s17-tasti-m2" class="clip full" data-start="4.6" data-duration="2.6" data-track-index="3" data-media-start="0.0" data-playback-rate="0.95" src="assets/clips/c-scrive.mp4" muted playsinline></video></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });

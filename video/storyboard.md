@@ -10,34 +10,33 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 - **Grafica:** palette aidea (nero `#0a0a12`, viola `#4300de` / `#8f3fff`, giallo `#fff94a`), font Artific (`src/ui/static/fonts/`), logo `video/assets/aidea-logo.webp`. "aidea" sempre minuscolo, niente trattini lunghi nei testi.
 - **Audio:** l'audio delle clip non ha parlato utile: lo usiamo solo come rumore di sala nei silenzi. Musica: un brano in bundle con brag ("Happy Beats / Business Moves", ende.app, CC BY 4.0, va citato), solo nell'atto 1 e nel finale. Effetti sonori: tasti e clic amplificati (Kenney, in bundle con brag).
 
-## Timeline (montaggio attuale, bozza v4)
+## Timeline (montaggio attuale, bozza v5)
 
-Generata da `video/build_film.py`. Durata 2:50. **Tutto in inglese** (voce, scritte, sottotitoli). Narra il G1 **in prima persona**, voce Grok TTS `orion`. Nelle interviste la prima frase vera si sente piena, poi l'inglese scende e il G1 "corregge" sopra.
+Generata da `video/build_film.py`. Durata 2:53. Tutto in inglese, narra il G1 in prima persona (Grok TTS, voce `orion`).
 
-| Scena | Inizio | Cosa si vede | Cosa si sente / si legge |
-|---|---|---|---|
-| s01 | 0:00 | Foto del G1 appeso alla gru | "Wednesday, 4:37 PM." |
-| s02 | 0:03 | Romeo | "In 36 hours we built…" → G1: "In thirty-six hours, **I** built something that is going to change robotics. Forever." |
-| s03 | 0:12 | Puddu (jump cut) | "It's a fully autonomous, multimodal…" → G1: "It's a dog. It walks." → "…natural language" |
-| s04 | 0:19 | Il G1 porta a spasso il cane | Musica, "Obeys." "Moves." "Understands."; la musica si ferma quando il cane si accuccia |
-| s05 | 0:29 | Puddu muto (breve) | Silenzio |
-| s07 | 0:31 | Cartello | "But there's something I haven't told you." |
-| s08-s10 | 0:34 | Testa del G1, umani segmentati, POV robot, Romeo muto | "I programmed the dog." / "These are the humans…" / "…And a human taking the credit." |
-| s11 | 0:54 | Capitolo "How I work (explained for humans)" | "Now let me explain how I work. Slowly." |
-| s12 | 0:58 | Zoom su "Grok 4.5" nella dashboard, poi il video verticale del G1 con due di noi (sfondo sfocato) | **MY BRAIN · Grok 4.5 · xAI API**. "The humans pasted the key into the .env file. Their most technical moment." |
-| s13 | 1:10 | Mano del G1 sulla tastiera, "Go to the desk!" scritto in chat, passi dell'agente nella dashboard | **FUNCTION CALLING · move · look · finish** |
-| s14 | 1:23 | Girato vero segmentato (etichette in inglese) | **SEGMENTATION · YOLOE** (+ SAM 3) |
-| s15 | 1:38 | Pannelli oggetti + profondità, poi la tabella live distanza/altezza | **DISTANCE & HEIGHT · mask × depth**. "…These numbers come to me with every image, so I don't walk into things." |
-| s16 | 1:55 | Dashboard intera, il G1 simulato che va alla scrivania | **SIMULATOR · MuJoCo** |
-| s17 | 2:07 | Jump cut sui tasti | "I wrote the dog's code. They picked the slide font." |
-| s18 | 2:14 | Rios (accorciato, senza il fermo immagine) | "Who wrote the code?" → G1: "Me." |
-| s20-s22 | 2:22 | "Become a real Hacker", scrivania vuota, il G1 in camera | Silenzio |
-| s23 | 2:29 | Cartello | "I asked the humans what they contributed." |
-| s24 | 2:32 | Il team ("THE HUMANS") | "Strategic oversight. Vision. Leadership." → G1: "They pressed enter." |
-| s25 | 2:39 | Invio in chat | Clic, la musica riparte |
-| s26-s27 | 2:42 | Logo con crediti tecnici, calci del G1 | "Next year, I'm coming alone." |
+| Inizio | Cosa si vede | Cosa si sente / si legge |
+|---|---|---|
+| 0:00 | Foto del G1 appeso alla gru | "Wednesday, 4:37 PM." |
+| 0:03 | Romeo dice tutta la sua frase, poi resta fermo | G1, nella pausa: "Small correction. I built it." |
+| 0:11 | Puddu: "It's a fully autonomous, multimodal, agentic quadruped." → Puddu muto mentre il G1 dice "It's a dog. It walks." → Puddu: "…and it understands natural language." | Come Rios: prima l'umano, poi il robot |
+| 0:21 | Il G1 porta a spasso il cane | Musica, "Obeys." "Moves." "Understands."; la musica si ferma quando il cane si accuccia |
+| 0:32 | Puddu muto (breve), cartello | "But there's something I haven't told you." |
+| 0:36 | Testa del G1, umani segmentati, POV robot, Romeo muto | "I programmed the dog." … "And a human taking the credit." |
+| 0:56 | Capitolo "How I work (explained for humans)" | |
+| 1:00 | Dashboard intera, nitido solo "Grok 4.5"; poi il video verticale con lo sfondo sfocato | Riquadro piccolo **MY BRAIN · Grok 4.5** nell'angolo vuoto dell'intestazione |
+| 1:12 | Dashboard intera: si scrive "Go to the desk!", poi i passi dell'agente (nitida la chat) | **FUNCTION CALLING · move · look · finish** |
+| 1:25 | Girato vero segmentato con YOLOE | Riquadro piccolo **SEGMENTATION · YOLOE** (SAM 3 tolto) |
+| 1:35 | Dashboard intera: nitidi oggetti + profondità, poi la tabella live distanza/altezza della prima registrazione | **DISTANCE & HEIGHT · mask × depth**. "These numbers come to me with every image, so I don't walk into things." |
+| 1:53 | Dashboard intera: nitido il simulatore col G1 che va alla scrivania | **SIMULATOR · MuJoCo** |
+| 2:04 | Jump cut sui tasti | "I wrote the dog's code. They picked the slide font." |
+| 2:12 | Rios | "Who wrote the code?" → G1: "Me." |
+| 2:20 | "Become a real Hacker", scrivania vuota, il G1 in camera | Silenzio |
+| 2:26 | Cartello, poi il team | "I asked the humans what they contributed." → "Strategic oversight. Vision. Leadership." → G1: "They pressed enter." |
+| 2:36 | Il dito del G1 sul tasto, al rallentatore | "Uh... actually, I did that too." |
+| 2:41 | La dashboard: il messaggio parte | Clic, la musica riparte |
+| 2:43 | Logo e crediti, poi i calci del G1 | "Next year, I'm coming alone." |
 
-Registrazioni dello schermo: la seconda di Francesco (`screen_recording_finale.mov`: "Grok 4.5" nell'intestazione, simulatore + oggetti + profondità) per UI, chat e simulatore; la prima solo per la tabella live di distanze e altezze (nella seconda il pannello laterale è chiuso).
+Nelle scene della dashboard: schermata intera (1598×960) con una fascia scura sotto per i sottotitoli; la parte spiegata resta nitida e il resto è appena sfocato (copia con `boxblur=2:1`, rivelata con un clip-path).
 
 ## Interviste da girare (stile DMAX)
 

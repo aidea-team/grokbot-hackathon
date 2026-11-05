@@ -10,8 +10,8 @@
   {
    "id": "d-01",
    "voice": "g1",
-   "text": "In thirty-six hours, I built something that is going to change robotics. [pause] Forever.",
-   "subtitle": "In thirty-six hours, I built something that is going to change robotics. Forever."
+   "text": "Small correction. [pause] I built it.",
+   "subtitle": "Small correction. I built it."
   },
   {
    "id": "d-02",
@@ -58,8 +58,8 @@
   {
    "id": "t-04",
    "voice": "g1",
-   "text": "To see, I use YOLO E. I type: chair, desk, laptop, person. And it paints everything, three times a second, offline. For the hard cases, SAM three, in the cloud.",
-   "subtitle": "To see, I use YOLOE. I type: chair, desk, laptop, person. And it paints everything, three times a second, offline. For the hard cases, SAM 3, in the cloud."
+   "text": "To see, I use YOLO E. I type: chair, desk, laptop, person. And it paints everything, three times a second, offline.",
+   "subtitle": "To see, I use YOLOE. I type: chair, desk, laptop, person. And it paints everything, three times a second, offline."
   },
   {
    "id": "t-05",
@@ -96,6 +96,12 @@
    "voice": "g1",
    "text": "[exhale] Next year, I'm coming alone.",
    "subtitle": "Next year, I'm coming alone."
+  },
+  {
+   "id": "g1-06",
+   "voice": "g1",
+   "text": "Uh... [pause] actually, I did that too.",
+   "subtitle": "Uh... actually, I did that too."
   }
  ]
 }

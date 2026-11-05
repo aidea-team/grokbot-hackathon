@@ -22,6 +22,7 @@ OUT = REPO / "video" / "film" / "assets"
 FORCE = "--force" in sys.argv
 
 FIT = "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080"
+DASH = "crop=2620:1574:116:258,scale=1598:960,pad=1920:1080:161:0:color=0x0a0a12"
 # Phone HDR (HLG) to SDR bt709, otherwise the renderer takes its slow HDR path and the colours come out flat.
 TONEMAP = ("zscale=tin=arib-std-b67:min=bt2020nc:pin=bt2020:rin=tv:t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
            "tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,")
@@ -71,6 +72,12 @@ CLIPS = {
     "r2-low":        (FOOT / "r2-dashboard-finale.mov", 9.0, 17.7, "crop=2580:1451:120:533," + FIT),
     "r2-chat":       (FOOT / "r2-dashboard-finale.mov", 0.8, 4.4, "crop=1600:900:170:1080," + FIT),
     "r2-percep":     (FOOT / "r2-dashboard-finale.mov", 8.0, 18.7, "crop=1450:816:1240:460," + FIT),
+    # The whole dashboard (header to input box), never cropped: 1598x960 at the top, a dark band below for the subtitles.
+    # *-b = the same, very slightly blurred: the scene keeps the part being explained sharp and the rest soft.
+    "d2":            (FOOT / "r2-dashboard-finale.mov", 0.0, 26.7, DASH),
+    "d2-b":          (FOOT / "r2-dashboard-finale.mov", 0.0, 26.7, DASH + ",boxblur=2:1"),
+    "d1":            (FOOT / "r1-dashboard-chat.mov", 0.0, 27.68, DASH),
+    "d1-b":          (FOOT / "r1-dashboard-chat.mov", 0.0, 27.68, DASH + ",boxblur=2:1"),
     "r-steps":       (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1760:990:170:900," + FIT),
     "r-objects":     (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1440:810:1250:400," + FIT),
     "r-mujoco":      (FOOT / "r1-dashboard-chat.mov", 8.0, 19.6, "crop=1060:596:180:570," + FIT),

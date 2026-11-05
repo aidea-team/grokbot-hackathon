@@ -41,6 +41,17 @@
 .ov.small .ov-t { font-size: 64px; }
 .ov.bottom { top: auto; bottom: 210px; }
 .ov.right { left: auto; right: 110px; }
+.ov.chip { left: auto; right: 175px; top: 8px; }
+.ov.chip .ov-in { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 14px; padding: 10px 18px 10px 16px;
+                   border-left-width: 6px; max-width: 760px; }
+.ov.chip .ov-k { font-size: 18px; padding: 3px 9px; }
+.ov.chip .ov-t { font-size: 40px; margin-top: 0; }
+.ov.chip .ov-s { font-size: 19px; margin-top: 4px; flex-basis: 100%; }
+.ov.mini { left: 70px; top: 60px; }
+.ov.mini .ov-in { padding: 12px 20px 14px 16px; border-left-width: 6px; }
+.ov.mini .ov-k { font-size: 18px; padding: 3px 9px; }
+.ov.mini .ov-t { font-size: 52px; margin-top: 8px; }
+.ov.mini .ov-s { font-size: 21px; margin-top: 6px; }
 .chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
 .chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
@@ -48,12 +59,15 @@
 
   </style>
   <div id="root" data-composition-id="s16-mujoco" data-width="1920" data-height="1080">
-    <div class="wrap" id="s16-mujoco-w0" style="z-index:1"><video id="s16-mujoco-m0" class="clip full" data-start="0" data-duration="11.77" data-track-index="1" data-media-start="8.0" data-playback-rate="1.58" src="assets/clips/r2-full.mp4" muted playsinline></video></div>
-    <div id="s16-mujoco-ov0" class="clip ov small right" data-start="0.6" data-duration="10.77" data-track-index="12" style="z-index:65"><div class="ov-in" id="s16-mujoco-ov0-in"><div class="ov-k">SIMULATOR</div><div class="ov-t">MuJoCo</div><div class="ov-s">real physics · Unitree locomotion policy · same commands as the real G1</div></div></div>
+    <div class="wrap" style="z-index:1"><video id="s16-mujoco-m0b" class="clip full" data-start="0" data-duration="11.77" data-track-index="1" data-media-start="8.0" data-playback-rate="1.58" src="assets/clips/d2-b.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s16-mujoco-w0" style="z-index:1"><video id="s16-mujoco-m0" class="clip full" data-start="0" data-duration="11.77" data-track-index="2" data-media-start="8.0" data-playback-rate="1.58" src="assets/clips/d2.mp4" muted playsinline></video></div>
+    <div id="s16-mujoco-ov0" class="clip ov chip" data-start="0.6" data-duration="10.77" data-track-index="12" style="z-index:65"><div class="ov-in" id="s16-mujoco-ov0-in"><div class="ov-k">SIMULATOR</div><div class="ov-t">MuJoCo</div><div class="ov-s">real physics · Unitree locomotion policy · same commands as the real G1</div></div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s16-mujoco-w0", {scale: 1.0, transformOrigin: "8% 40%"}, {scale: 1.3, duration: 11.77, ease: "none"}, 0);
+    tl.set("#s16-mujoco-w0", {clipPath: "inset(0px 0px 0px 0px round 0px)"}, 0);
+    tl.fromTo("#s16-mujoco-w0", {clipPath: "inset(0px 0px 0px 0px round 0px)"}, {clipPath: "inset(95px 1075px 435px 195px round 14px)", duration: 0.45, ease: "power2.inOut"}, 0.4);
+    tl.to("#s16-mujoco-w0", {clipPath: "inset(0px 0px 0px 0px round 0px)", duration: 0.35, ease: "power2.inOut"}, 11.42);
     tl.fromTo("#s16-mujoco-ov0-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out"}, 0.6);
     tl.to("#s16-mujoco-ov0-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 11.07);
     window.__timelines["s16-mujoco"] = tl;

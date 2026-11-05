@@ -41,6 +41,17 @@
 .ov.small .ov-t { font-size: 64px; }
 .ov.bottom { top: auto; bottom: 210px; }
 .ov.right { left: auto; right: 110px; }
+.ov.chip { left: auto; right: 175px; top: 8px; }
+.ov.chip .ov-in { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 14px; padding: 10px 18px 10px 16px;
+                   border-left-width: 6px; max-width: 760px; }
+.ov.chip .ov-k { font-size: 18px; padding: 3px 9px; }
+.ov.chip .ov-t { font-size: 40px; margin-top: 0; }
+.ov.chip .ov-s { font-size: 19px; margin-top: 4px; flex-basis: 100%; }
+.ov.mini { left: 70px; top: 60px; }
+.ov.mini .ov-in { padding: 12px 20px 14px 16px; border-left-width: 6px; }
+.ov.mini .ov-k { font-size: 18px; padding: 3px 9px; }
+.ov.mini .ov-t { font-size: 52px; margin-top: 8px; }
+.ov.mini .ov-s { font-size: 21px; margin-top: 6px; }
 .chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
 .chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
@@ -48,14 +59,17 @@
 
   </style>
   <div id="root" data-composition-id="s12-cervello" data-width="1920" data-height="1080">
-    <div class="wrap" id="s12-cervello-w0" style="z-index:1"><video id="s12-cervello-m0" class="clip full" data-start="0" data-duration="6.11" data-track-index="1" data-media-start="10.0" src="assets/clips/r2-full.mp4" muted playsinline></video></div>
+    <div class="wrap" style="z-index:1"><video id="s12-cervello-m0b" class="clip full" data-start="0" data-duration="6.11" data-track-index="1" data-media-start="10.0" src="assets/clips/d2-b.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s12-cervello-w0" style="z-index:1"><video id="s12-cervello-m0" class="clip full" data-start="0" data-duration="6.11" data-track-index="2" data-media-start="10.0" src="assets/clips/d2.mp4" muted playsinline></video></div>
     <div class="wrap" id="s12-cervello-w1" style="z-index:2"><video id="s12-cervello-m1" class="clip full" data-start="6.11" data-duration="5.34" data-track-index="2" data-media-start="0.0" data-playback-rate="0.899" src="assets/clips/c-vert.mp4" muted playsinline></video></div>
-    <div id="s12-cervello-ov0" class="clip ov bottom" data-start="1.0" data-duration="5.01" data-track-index="12" style="z-index:65"><div class="ov-in" id="s12-cervello-ov0-in"><div class="ov-k">MY BRAIN</div><div class="ov-t">Grok 4.5</div><div class="ov-s">xAI API · Responses API · function calling</div></div></div>
+    <div id="s12-cervello-ov0" class="clip ov chip" data-start="0.5" data-duration="5.51" data-track-index="12" style="z-index:65"><div class="ov-in" id="s12-cervello-ov0-in"><div class="ov-k">MY BRAIN</div><div class="ov-t">Grok 4.5</div><div class="ov-s">xAI API · Responses API · function calling</div></div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s12-cervello-w0", {scale: 1, transformOrigin: "-106px -124px"}, {scale: 2.6, duration: 0.22, ease: "power3.out"}, 0.5);
-    tl.fromTo("#s12-cervello-ov0-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out"}, 1.0);
+    tl.set("#s12-cervello-w0", {clipPath: "inset(0px 0px 0px 0px round 0px)"}, 0);
+    tl.fromTo("#s12-cervello-w0", {clipPath: "inset(0px 0px 0px 0px round 0px)"}, {clipPath: "inset(6px 1504px 1008px 196px round 14px)", duration: 0.45, ease: "power2.inOut"}, 0.4);
+    tl.to("#s12-cervello-w0", {clipPath: "inset(0px 0px 0px 0px round 0px)", duration: 0.35, ease: "power2.inOut"}, 5.76);
+    tl.fromTo("#s12-cervello-ov0-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out"}, 0.5);
     tl.to("#s12-cervello-ov0-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 5.71);
     window.__timelines["s12-cervello"] = tl;
   </script>
