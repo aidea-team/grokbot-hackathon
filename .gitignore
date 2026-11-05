@@ -46,3 +46,8 @@ video/film/.transcode-cache/
 
 # audio generato per la versione brainrot (rigenerabile con make_vo.py)
 video/brainrot/vo/
+video/brainrot/film/assets/
+video/brainrot/film/renders/
+video/brainrot/film/.hyperframes/
+video/brainrot/film/.transcode-cache/
+assets/memes/

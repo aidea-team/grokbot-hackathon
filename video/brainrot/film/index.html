@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>who did what · brainrot</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Noto Color Emoji"; src: url("assets/fonts/NotoColorEmoji.ttf") format("truetype"); }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+      #root { position: relative; width: 100%; height: 100%; background: #000; overflow: hidden;
+               font-family: "Archivo Black", "Noto Color Emoji", sans-serif; }
+      .filmwrap { position: absolute; left: 0; top: 560px; width: 1080px; height: 608px; transform-origin: 50% 50%;
+                   box-shadow: 0 0 0 6px #000, 0 20px 60px rgba(0,0,0,.6); }
+      .topcap { position: absolute; left: 40px; right: 40px; top: 90px; height: 380px; display: flex; align-items: center; justify-content: center;
+                 text-align: center; }
+      .topcap span, .instop span { display: inline-block; color: #fff; font-size: 74px; line-height: 1.08; text-transform: uppercase;
+                 -webkit-text-stroke: 4px #000; paint-order: stroke fill; text-shadow: 0 7px 0 #000, 0 0 30px rgba(0,0,0,.5); }
+      .instop { position: absolute; left: 40px; right: 40px; top: 230px; text-align: center; }
+      .instop span { font-size: 80px; }
+      .aura { position: absolute; left: 0; right: 0; top: 478px; text-align: center; }
+      .aura span { display: inline-block; font-size: 40px; background: rgba(0,0,0,.75); padding: 8px 22px; border-radius: 40px;
+                   border: 3px solid currentColor; letter-spacing: .02em; }
+      .words { position: absolute; left: 30px; right: 30px; top: 1188px; text-align: center; }
+      .words div { display: inline-block; color: #fff; font-size: 86px; line-height: 1.05; text-transform: uppercase;
+                    -webkit-text-stroke: 5px #000; paint-order: stroke fill; text-shadow: 0 8px 0 #000; }
+      .words .kw { color: #fff94a; }
+      .pip { position: absolute; }
+      .pipframe { position: absolute; inset: 0; border-radius: 26px; background: #fff; box-shadow: 0 18px 50px rgba(0,0,0,.7); }
+      .piplab { position: absolute; left: 0; right: 0; top: 10px; text-align: center; color: #fff; font-size: 42px;
+                 -webkit-text-stroke: 3px #000; paint-order: stroke fill; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="193.15" data-width="1080" data-height="1920">
+      <video id="bg0" class="clip" data-start="1.4" data-duration="20.3" data-track-index="1" data-media-start='0.0' src="assets/clips/film-bg.mp4" muted playsinline style="position:absolute;left:0;top:0;width:1080px;height:1920px;object-fit:cover;z-index:1"></video>
+      <div class="filmwrap" id="fw0" style="z-index:5"><video id="film0" class="clip" data-start="1.4" data-duration="20.3" data-track-index="2" data-media-start='0.0' src="assets/clips/film.mp4" muted playsinline style="width:1080px;height:608px;display:block"></video></div>
+      <video id="bg1" class="clip" data-start="23.5" data-duration="11.2" data-track-index="1" data-media-start='20.3' src="assets/clips/film-bg.mp4" muted playsinline style="position:absolute;left:0;top:0;width:1080px;height:1920px;object-fit:cover;z-index:1"></video>
+      <div class="filmwrap" id="fw1" style="z-index:5"><video id="film1" class="clip" data-start="23.5" data-duration="11.2" data-track-index="2" data-media-start='20.3' src="assets/clips/film.mp4" muted playsinline style="width:1080px;height:608px;display:block"></video></div>
+      <video id="bg2" class="clip" data-start="36.7" data-duration="27.6" data-track-index="1" data-media-start='31.5' src="assets/clips/film-bg.mp4" muted playsinline style="position:absolute;left:0;top:0;width:1080px;height:1920px;object-fit:cover;z-index:1"></video>
+      <div class="filmwrap" id="fw2" style="z-index:5"><video id="film2" class="clip" data-start="36.7" data-duration="27.6" data-track-index="2" data-media-start='31.5' src="assets/clips/film.mp4" muted playsinline style="width:1080px;height:608px;display:block"></video></div>
+      <video id="bg3" class="clip" data-start="68.1" data-duration="21.94" data-track-index="1" data-media-start='59.1' src="assets/clips/film-bg.mp4" muted playsinline style="position:absolute;left:0;top:0;width:1080px;height:1920px;object-fit:cover;z-index:1"></video>
+      <div class="filmwrap" id="fw3" style="z-index:5"><video id="film3" class="clip" data-start="68.1" data-duration="21.94" data-track-index="2" data-media-start='59.1' src="assets/clips/film.mp4" muted playsinline style="width:1080px;height:608px;display:block"></video></div>
+      <video id="bg4" class="clip" data-start="92.04" data-duration="68.04" data-track-index="1" data-media-start='81.04' src="assets/clips/film-bg.mp4" muted playsinline style="position:absolute;left:0;top:0;width:1080px;height:1920px;object-fit:cover;z-index:1"></video>
+      <div class="filmwrap" id="fw4" style="z-index:5"><video id="film4" class="clip" data-start="92.04" data-duration="68.04" data-track-index="2" data-media-start='81.04' src="assets/clips/film.mp4" muted playsinline style="width:1080px;height:608px;display:block"></video></div>
+      <video id="bg5" class="clip" data-start="161.68" data-duration="31.47" data-track-index="1" data-media-start='149.08' src="assets/clips/film-bg.mp4" muted playsinline style="position:absolute;left:0;top:0;width:1080px;height:1920px;object-fit:cover;z-index:1"></video>
+      <div class="filmwrap" id="fw5" style="z-index:5"><video id="film5" class="clip" data-start="161.68" data-duration="31.47" data-track-index="2" data-media-start='149.08' src="assets/clips/film.mp4" muted playsinline style="width:1080px;height:608px;display:block"></video></div>
+      <div id="insbg0" class="clip" data-start="0.0" data-duration="1.4" data-track-index="3" style="position:absolute;inset:0;background:#000;z-index:30"></div>
+      <video id="insv0" class="clip" data-start="0.0" data-duration="1.4" data-track-index="4" src="assets/clips/m-hi.mp4" muted playsinline style="position:absolute;left:0;top:656px;width:1080px;height:608px;object-fit:contain;z-index:31"></video>
+      <div id="inst0" class="clip instop" data-start="0.0" data-duration="1.4" data-track-index="5" style="z-index:32"><span id="insti0">SCIENTISTS REVEAL: THE ROBOT DID EVERYTHING</span></div>
+      <div id="insbg1" class="clip" data-start="21.7" data-duration="1.8" data-track-index="3" style="position:absolute;inset:0;background:#000;z-index:30"></div>
+      <video id="insv1" class="clip" data-start="21.7" data-duration="1.8" data-track-index="4" src="assets/clips/m-gumball.mp4" muted playsinline style="position:absolute;left:0;top:656px;width:1080px;height:608px;object-fit:contain;z-index:31"></video>
+      <div id="inst1" class="clip instop" data-start="21.7" data-duration="1.8" data-track-index="5" style="z-index:32"><span id="insti1">ME HEARING “AGENTIC QUADRUPED” 😮‍💨</span></div>
+      <div id="insbg2" class="clip" data-start="34.7" data-duration="2.0" data-track-index="3" style="position:absolute;inset:0;background:#000;z-index:30"></div>
+      <video id="insv2" class="clip" data-start="34.7" data-duration="2.0" data-track-index="4" src="assets/clips/m-laugh.mp4" muted playsinline style="position:absolute;left:0;top:656px;width:1080px;height:608px;object-fit:contain;z-index:31"></video>
+      <div id="inst2" class="clip instop" data-start="34.7" data-duration="2.0" data-track-index="5" style="z-index:32"><span id="insti2">THE DOG RAGEQUIT 💀💀💀</span></div>
+      <div id="insbg3" class="clip" data-start="64.3" data-duration="3.8" data-track-index="3" style="position:absolute;inset:0;background:#000;z-index:30"></div>
+      <video id="insv3" class="clip" data-start="64.3" data-duration="3.8" data-track-index="4" src="assets/clips/m-holmes.mp4" muted playsinline style="position:absolute;left:0;top:656px;width:1080px;height:608px;object-fit:contain;z-index:31"></video>
+      <div id="inst3" class="clip instop" data-start="64.3" data-duration="3.8" data-track-index="5" style="z-index:32"><span id="insti3">THE ROBOT “RESPECTING HUMANS”:</span></div>
+      <div id="insbg4" class="clip" data-start="90.04" data-duration="2.0" data-track-index="3" style="position:absolute;inset:0;background:#000;z-index:30"></div>
+      <video id="insv4" class="clip" data-start="90.04" data-duration="2.0" data-track-index="4" src="assets/clips/m-andy.mp4" muted playsinline style="position:absolute;left:0;top:656px;width:1080px;height:608px;object-fit:contain;z-index:31"></video>
+      <div id="inst4" class="clip instop" data-start="90.04" data-duration="2.0" data-track-index="5" style="z-index:32"><span id="insti4">THE HUMANS AFTER PASTING ONE API KEY</span></div>
+      <div id="insbg5" class="clip" data-start="160.08" data-duration="1.6" data-track-index="3" style="position:absolute;inset:0;background:#000;z-index:30"></div>
+      <video id="insv5" class="clip" data-start="160.08" data-duration="1.6" data-track-index="4" src="assets/clips/m-mbappe.mp4" muted playsinline style="position:absolute;left:0;top:656px;width:1080px;height:608px;object-fit:contain;z-index:31"></video>
+      <div id="inst5" class="clip instop" data-start="160.08" data-duration="1.6" data-track-index="5" style="z-index:32"><span id="insti5">HUMAN CONTRIBUTION:</span></div>
+      <div id="cap0" class="clip topcap" data-start="1.4" data-duration="2.8" data-track-index="5" style="z-index:20"><span id="capi0">POV: THE ROBOT DID ALL THE WORK 💀</span></div>
+      <div id="cap1" class="clip topcap" data-start="4.2" data-duration="5.7" data-track-index="5" style="z-index:20"><span id="capi1">BRO SAID “CHANGE ROBOTICS” 😭</span></div>
+      <div id="cap2" class="clip topcap" data-start="9.9" data-duration="1.9" data-track-index="5" style="z-index:20"><span id="capi2">THE ROBOT: “IT WON&#x27;T.” 🗿</span></div>
+      <div id="cap3" class="clip topcap" data-start="11.8" data-duration="4.3" data-track-index="5" style="z-index:20"><span id="capi3">“AGENTIC QUADRUPED” 🤓☝️</span></div>
+      <div id="cap4" class="clip topcap" data-start="16.3" data-duration="2.8" data-track-index="5" style="z-index:20"><span id="capi4">IT&#x27;S A DOG. 🐕</span></div>
+      <div id="cap5" class="clip topcap" data-start="23.5" data-duration="7.2" data-track-index="5" style="z-index:20"><span id="capi5">THE DOG ON LIVE DEMO DAY: 🐕‍🦺</span></div>
+      <div id="cap6" class="clip topcap" data-start="30.7" data-duration="4.0" data-track-index="5" style="z-index:20"><span id="capi6">DOG.EXE HAS STOPPED WORKING 💀</span></div>
+      <div id="cap7" class="clip topcap" data-start="36.7" data-duration="3.2" data-track-index="5" style="z-index:20"><span id="capi7">PLOT TWIST INCOMING 😳</span></div>
+      <div id="cap8" class="clip topcap" data-start="39.9" data-duration="4.8" data-track-index="5" style="z-index:20"><span id="capi8">THE ROBOT WAS THE DEV ALL ALONG 🗿</span></div>
+      <div id="cap9" class="clip topcap" data-start="44.7" data-duration="9.0" data-track-index="5" style="z-index:20"><span id="capi9">NPCs SPOTTED 🧍🧍🧍</span></div>
+      <div id="cap10" class="clip topcap" data-start="53.7" data-duration="8.4" data-track-index="5" style="z-index:20"><span id="capi10">“HUMAN IN THE LOOP” 🤝</span></div>
+      <div id="cap11" class="clip topcap" data-start="62.1" data-duration="2.2" data-track-index="5" style="z-index:20"><span id="capi11">HANDSHAKE FAILED. AURA LOSS 📉</span></div>
+      <div id="cap12" class="clip topcap" data-start="68.1" data-duration="3.53" data-track-index="5" style="z-index:20"><span id="capi12">SCANNING FOR INTELLIGENCE… 🔍</span></div>
+      <div id="cap13" class="clip topcap" data-start="71.63" data-duration="2.36" data-track-index="5" style="z-index:20"><span id="capi13">CAUGHT IN 4K 📸</span></div>
+      <div id="cap14" class="clip topcap" data-start="73.99" data-duration="4.6" data-track-index="5" style="z-index:20"><span id="capi14">LOCK IN. TECH TALK 🔒</span></div>
+      <div id="cap15" class="clip topcap" data-start="78.59" data-duration="6.11" data-track-index="5" style="z-index:20"><span id="capi15">GROK 4.5 = BIG BRAIN 🧠</span></div>
+      <div id="cap16" class="clip topcap" data-start="84.7" data-duration="5.34" data-track-index="5" style="z-index:20"><span id="capi16">PEAK HUMAN ENGINEERING 💀</span></div>
+      <div id="cap17" class="clip topcap" data-start="92.04" data-duration="13.37" data-track-index="5" style="z-index:20"><span id="capi17">FUNCTION CALLING SPEEDRUN ANY% 🏃</span></div>
+      <div id="cap18" class="clip topcap" data-start="105.41" data-duration="10.17" data-track-index="5" style="z-index:20"><span id="capi18">HUMANS = PURPLE BLOBS 🟣</span></div>
+      <div id="cap19" class="clip topcap" data-start="115.58" data-duration="17.53" data-track-index="5" style="z-index:20"><span id="capi19">HE MEASURES. WE GUESS. 📏</span></div>
+      <div id="cap20" class="clip topcap" data-start="133.11" data-duration="11.77" data-track-index="5" style="z-index:20"><span id="capi20">MUJOCO GAMEPLAY 🎮</span></div>
+      <div id="cap21" class="clip topcap" data-start="144.88" data-duration="7.2" data-track-index="5" style="z-index:20"><span id="capi21">10X ENGINEER (REAL) ⌨️🔥</span></div>
+      <div id="cap22" class="clip topcap" data-start="152.08" data-duration="1.35" data-track-index="5" style="z-index:20"><span id="capi22">WHO WROTE THE CODE? 🤔</span></div>
+      <div id="cap23" class="clip topcap" data-start="153.43" data-duration="6.65" data-track-index="5" style="z-index:20"><span id="capi23">THE ROBOT: “ME.” 🗿</span></div>
+      <div id="cap24" class="clip topcap" data-start="161.68" data-duration="2.2" data-track-index="5" style="z-index:20"><span id="capi24">BECOME A REAL HACKER 🤓</span></div>
+      <div id="cap25" class="clip topcap" data-start="163.88" data-duration="2.2" data-track-index="5" style="z-index:20"><span id="capi25">THE HUMANS&#x27; DESK RN:</span></div>
+      <div id="cap26" class="clip topcap" data-start="166.08" data-duration="2.2" data-track-index="5" style="z-index:20"><span id="capi26">👁️👄👁️</span></div>
+      <div id="cap27" class="clip topcap" data-start="168.28" data-duration="3.2" data-track-index="5" style="z-index:20"><span id="capi27">SO WHAT DID THE HUMANS DO? 🤔</span></div>
+      <div id="cap28" class="clip topcap" data-start="171.48" data-duration="5.3" data-track-index="5" style="z-index:20"><span id="capi28">STRATEGIC OVERSIGHT 👔 VISION 👓 LEADERSHIP 👑</span></div>
+      <div id="cap29" class="clip topcap" data-start="176.78" data-duration="1.7" data-track-index="5" style="z-index:20"><span id="capi29">THEY PRESSED ENTER 💀</span></div>
+      <div id="cap30" class="clip topcap" data-start="178.48" data-duration="5.37" data-track-index="5" style="z-index:20"><span id="capi30">HE PRESSED THAT TOO 😭😭</span></div>
+      <div id="cap31" class="clip topcap" data-start="183.85" data-duration="4.5" data-track-index="5" style="z-index:20"><span id="capi31">GG EZ 🏆</span></div>
+      <div id="cap32" class="clip topcap" data-start="188.35" data-duration="4.8" data-track-index="5" style="z-index:20"><span id="capi32">NEXT YEAR: SOLO 🤖</span></div>
+      <div id="aura0" class="clip aura" data-start="1.4" data-duration="8.5" data-track-index="6" style="z-index:21"><span id="aurai0" style="color:#00d68f">HUMAN AURA ▲ 100</span></div>
+      <div id="aura1" class="clip aura" data-start="9.9" data-duration="20.8" data-track-index="6" style="z-index:21"><span id="aurai1" style="color:#ff3860">HUMAN AURA ▼ -900</span></div>
+      <div id="aura2" class="clip aura" data-start="30.7" data-duration="31.4" data-track-index="6" style="z-index:21"><span id="aurai2" style="color:#ff3860">HUMAN AURA ▼ -5,900</span></div>
+      <div id="aura3" class="clip aura" data-start="62.1" data-duration="22.7" data-track-index="6" style="z-index:21"><span id="aurai3" style="color:#ff3860">HUMAN AURA ▼ -15,900</span></div>
+      <div id="aura4" class="clip aura" data-start="84.8" data-duration="45.31" data-track-index="6" style="z-index:21"><span id="aurai4" style="color:#ff3860">HUMAN AURA ▼ -25,900</span></div>
+      <div id="aura5" class="clip aura" data-start="130.11" data-duration="23.32" data-track-index="6" style="z-index:21"><span id="aurai5" style="color:#ff3860">HUMAN AURA ▼ -35,900</span></div>
+      <div id="aura6" class="clip aura" data-start="153.43" data-duration="23.35" data-track-index="6" style="z-index:21"><span id="aurai6" style="color:#ff3860">HUMAN AURA ▼ -135,900</span></div>
+      <div id="aura7" class="clip aura" data-start="176.78" data-duration="16.37" data-track-index="6" style="z-index:21"><span id="aurai7" style="color:#ff3860">HUMAN AURA ▼ -1,135,900</span></div>
+      <div id="wg0" class="clip words" data-start="9.98" data-duration="1.12" data-track-index="7" style="z-index:22"><div id="wgi0"><span id="w0_0" class="">It</span> <span id="w0_1" class="">won&#x27;t.</span> </div></div>
+      <div id="wg1" class="clip words" data-start="16.34" data-duration="0.85" data-track-index="7" style="z-index:22"><div id="wgi1"><span id="w1_0" class="">It&#x27;s</span> <span id="w1_1" class="">a</span> <span id="w1_2" class="">dog.</span> </div></div>
+      <div id="wg2" class="clip words" data-start="17.83" data-duration="1.27" data-track-index="7" style="z-index:22"><div id="wgi2"><span id="w2_0" class="">It</span> <span id="w2_1" class="">walks.</span> </div></div>
+      <div id="wg3" class="clip words" data-start="41.38" data-duration="0.68" data-track-index="7" style="z-index:22"><div id="wgi3"><span id="w3_0" class="">I</span> <span id="w3_1" class="">programmed</span> <span id="w3_2" class="">the</span> </div></div>
+      <div id="wg4" class="clip words" data-start="42.07" data-duration="0.81" data-track-index="7" style="z-index:22"><div id="wgi4"><span id="w4_0" class="">dog.</span> </div></div>
+      <div id="wg5" class="clip words" data-start="45.2" data-duration="0.49" data-track-index="7" style="z-index:22"><div id="wgi5"><span id="w5_0" class="">These</span> <span id="w5_1" class="">are</span> <span id="w5_2" class="">the</span> </div></div>
+      <div id="wg6" class="clip words" data-start="45.7" data-duration="0.74" data-track-index="7" style="z-index:22"><div id="wgi6"><span id="w6_0" class="">humans.</span> </div></div>
+      <div id="wg7" class="clip words" data-start="46.88" data-duration="1.27" data-track-index="7" style="z-index:22"><div id="wgi7"><span id="w7_0" class="">Thirty-six</span> <span id="w7_1" class="">hours,</span> </div></div>
+      <div id="wg8" class="clip words" data-start="48.16" data-duration="1.04" data-track-index="7" style="z-index:22"><div id="wgi8"><span id="w8_0" class="">forty</span> <span id="w8_1" class="">coffees.</span> </div></div>
+      <div id="wg9" class="clip words" data-start="49.67" data-duration="0.69" data-track-index="7" style="z-index:22"><div id="wgi9"><span id="w9_0" class="">And</span> <span id="w9_1" class="">they&#x27;re</span> <span id="w9_2" class="">still</span> </div></div>
+      <div id="wg10" class="clip words" data-start="50.37" data-duration="1.19" data-track-index="7" style="z-index:22"><div id="wgi10"><span id="w10_0" class="">arguing</span> <span id="w10_1" class="">about</span> <span id="w10_2" class="">variable</span> </div></div>
+      <div id="wg11" class="clip words" data-start="51.57" data-duration="0.81" data-track-index="7" style="z-index:22"><div id="wgi11"><span id="w11_0" class="">names.</span> </div></div>
+      <div id="wg12" class="clip words" data-start="55.18" data-duration="0.73" data-track-index="7" style="z-index:22"><div id="wgi12"><span id="w12_0" class="">Having</span> <span id="w12_1" class="">a</span> <span id="w12_2" class="kw">human</span> </div></div>
+      <div id="wg13" class="clip words" data-start="55.92" data-duration="0.35" data-track-index="7" style="z-index:22"><div id="wgi13"><span id="w13_0" class="">in</span> <span id="w13_1" class="">the</span> <span id="w13_2" class="kw">loop</span> </div></div>
+      <div id="wg14" class="clip words" data-start="56.28" data-duration="1.33" data-track-index="7" style="z-index:22"><div id="wgi14"><span id="w14_0" class="">is</span> <span id="w14_1" class="">very</span> <span id="w14_2" class="">valuable</span> </div></div>
+      <div id="wg15" class="clip words" data-start="57.62" data-duration="0.45" data-track-index="7" style="z-index:22"><div id="wgi15"><span id="w15_0" class="">to</span> <span id="w15_1" class="">me.</span> </div></div>
+      <div id="wg16" class="clip words" data-start="58.76" data-duration="0.64" data-track-index="7" style="z-index:22"><div id="wgi16"><span id="w16_0" class="">Which</span> <span id="w16_1" class="">is</span> <span id="w16_2" class="">why</span> </div></div>
+      <div id="wg17" class="clip words" data-start="59.41" data-duration="1.39" data-track-index="7" style="z-index:22"><div id="wgi17"><span id="w17_0" class="">I</span> <span id="w17_1" class="">deeply</span> <span id="w17_2" class="kw">respect</span> </div></div>
+      <div id="wg18" class="clip words" data-start="60.81" data-duration="0.7" data-track-index="7" style="z-index:22"><div id="wgi18"><span id="w18_0" class="">humans.</span> </div></div>
+      <div id="wg19" class="clip words" data-start="68.62" data-duration="0.39" data-track-index="7" style="z-index:22"><div id="wgi19"><span id="w19_0" class="">I</span> <span id="w19_1" class="">see</span> <span id="w19_2" class="">a</span> </div></div>
+      <div id="wg20" class="clip words" data-start="69.02" data-duration="0.51" data-track-index="7" style="z-index:22"><div id="wgi20"><span id="w20_0" class="">desk.</span> </div></div>
+      <div id="wg21" class="clip words" data-start="69.54" data-duration="0.71" data-track-index="7" style="z-index:22"><div id="wgi21"><span id="w21_0" class="">A</span> <span id="w21_1" class="">chair.</span> </div></div>
+      <div id="wg22" class="clip words" data-start="70.26" data-duration="0.83" data-track-index="7" style="z-index:22"><div id="wgi22"><span id="w22_0" class="">A</span> <span id="w22_1" class="">laptop.</span> </div></div>
+      <div id="wg23" class="clip words" data-start="71.75" data-duration="0.61" data-track-index="7" style="z-index:22"><div id="wgi23"><span id="w23_0" class="">And</span> <span id="w23_1" class="">a</span> <span id="w23_2" class="kw">human</span> </div></div>
+      <div id="wg24" class="clip words" data-start="72.37" data-duration="1.17" data-track-index="7" style="z-index:22"><div id="wgi24"><span id="w24_0" class="">taking</span> <span id="w24_1" class="">the</span> <span id="w24_2" class="">credit.</span> </div></div>
+      <div id="wg25" class="clip words" data-start="74.57" data-duration="0.51" data-track-index="7" style="z-index:22"><div id="wgi25"><span id="w25_0" class="">Now</span> <span id="w25_1" class="">let</span> <span id="w25_2" class="kw">me</span> </div></div>
+      <div id="wg26" class="clip words" data-start="75.09" data-duration="0.85" data-track-index="7" style="z-index:22"><div id="wgi26"><span id="w26_0" class="">explain</span> <span id="w26_1" class="">how</span> <span id="w26_2" class="">I</span> </div></div>
+      <div id="wg27" class="clip words" data-start="75.95" data-duration="0.56" data-track-index="7" style="z-index:22"><div id="wgi27"><span id="w27_0" class="">work.</span> </div></div>
+      <div id="wg28" class="clip words" data-start="77.0" data-duration="0.93" data-track-index="7" style="z-index:22"><div id="wgi28"><span id="w28_0" class="">Slowly.</span> </div></div>
+      <div id="wg29" class="clip words" data-start="78.99" data-duration="0.87" data-track-index="7" style="z-index:22"><div id="wgi29"><span id="w29_0" class="">My</span> <span id="w29_1" class="kw">brain</span> <span id="w29_2" class="">is</span> </div></div>
+      <div id="wg30" class="clip words" data-start="79.87" data-duration="0.71" data-track-index="7" style="z-index:22"><div id="wgi30"><span id="w30_0" class="">Grok.</span> </div></div>
+      <div id="wg31" class="clip words" data-start="80.59" data-duration="1.71" data-track-index="7" style="z-index:22"><div id="wgi31"><span id="w31_0" class="kw">Grok</span> <span id="w31_1" class="">4.5,</span> </div></div>
+      <div id="wg32" class="clip words" data-start="82.31" data-duration="0.69" data-track-index="7" style="z-index:22"><div id="wgi32"><span id="w32_0" class="">through</span> <span id="w32_1" class="">the</span> <span id="w32_2" class="">x</span> </div></div>
+      <div id="wg33" class="clip words" data-start="83.01" data-duration="1.27" data-track-index="7" style="z-index:22"><div id="wgi33"><span id="w33_0" class="">A</span> <span id="w33_1" class="">I</span> <span id="w33_2" class="">API.</span> </div></div>
+      <div id="wg34" class="clip words" data-start="84.8" data-duration="0.89" data-track-index="7" style="z-index:22"><div id="wgi34"><span id="w34_0" class="">The</span> <span id="w34_1" class="kw">humans</span> <span id="w34_2" class="">pasted</span> </div></div>
+      <div id="wg35" class="clip words" data-start="85.7" data-duration="0.53" data-track-index="7" style="z-index:22"><div id="wgi35"><span id="w35_0" class="">the</span> <span id="w35_1" class="">key</span> <span id="w35_2" class="">into</span> </div></div>
+      <div id="wg36" class="clip words" data-start="86.24" data-duration="0.93" data-track-index="7" style="z-index:22"><div id="wgi36"><span id="w36_0" class="">the</span> <span id="w36_1" class="">dot</span> <span id="w36_2" class="">env</span> </div></div>
+      <div id="wg37" class="clip words" data-start="87.18" data-duration="0.79" data-track-index="7" style="z-index:22"><div id="wgi37"><span id="w37_0" class="">file.</span> </div></div>
+      <div id="wg38" class="clip words" data-start="87.98" data-duration="0.97" data-track-index="7" style="z-index:22"><div id="wgi38"><span id="w38_0" class="">Their</span> <span id="w38_1" class="">most</span> <span id="w38_2" class="">technical</span> </div></div>
+      <div id="wg39" class="clip words" data-start="88.96" data-duration="0.73" data-track-index="7" style="z-index:22"><div id="wgi39"><span id="w39_0" class="">moment.</span> </div></div>
+      <div id="wg40" class="clip words" data-start="92.42" data-duration="0.71" data-track-index="7" style="z-index:22"><div id="wgi40"><span id="w40_0" class="">It</span> <span id="w40_1" class="">works</span> <span id="w40_2" class="">like</span> </div></div>
+      <div id="wg41" class="clip words" data-start="93.14" data-duration="0.71" data-track-index="7" style="z-index:22"><div id="wgi41"><span id="w41_0" class="">this.</span> </div></div>
+      <div id="wg42" class="clip words" data-start="93.86" data-duration="0.47" data-track-index="7" style="z-index:22"><div id="wgi42"><span id="w42_0" class="">I</span> <span id="w42_1" class="">write</span> <span id="w42_2" class="">what</span> </div></div>
+      <div id="wg43" class="clip words" data-start="94.34" data-duration="0.65" data-track-index="7" style="z-index:22"><div id="wgi43"><span id="w43_0" class="">I</span> <span id="w43_1" class="">want.</span> </div></div>
+      <div id="wg44" class="clip words" data-start="95.0" data-duration="0.73" data-track-index="7" style="z-index:22"><div id="wgi44"><span id="w44_0" class="kw">Grok</span> <span id="w44_1" class="">looks</span> <span id="w44_2" class="">through</span> </div></div>
+      <div id="wg45" class="clip words" data-start="95.74" data-duration="0.87" data-track-index="7" style="z-index:22"><div id="wgi45"><span id="w45_0" class="">my</span> <span id="w45_1" class="">camera</span> <span id="w45_2" class="">and</span> </div></div>
+      <div id="wg46" class="clip words" data-start="96.62" data-duration="0.57" data-track-index="7" style="z-index:22"><div id="wgi46"><span id="w46_0" class="">answers</span> <span id="w46_1" class="">with</span> <span id="w46_2" class="">a</span> </div></div>
+      <div id="wg47" class="clip words" data-start="97.2" data-duration="1.24" data-track-index="7" style="z-index:22"><div id="wgi47"><span id="w47_0" class="">function</span> <span id="w47_1" class="">call:</span> </div></div>
+      <div id="wg48" class="clip words" data-start="98.5" data-duration="1.62" data-track-index="7" style="z-index:22"><div id="wgi48"><span id="w48_0" class="">turn</span> <span id="w48_1" class="">twenty-eight</span> <span id="w48_2" class="">degrees,</span> </div></div>
+      <div id="wg49" class="clip words" data-start="100.13" data-duration="0.79" data-track-index="7" style="z-index:22"><div id="wgi49"><span id="w49_0" class="">walk</span> <span id="w49_1" class="">one</span> <span id="w49_2" class="">point</span> </div></div>
+      <div id="wg50" class="clip words" data-start="100.93" data-duration="1.17" data-track-index="7" style="z-index:22"><div id="wgi50"><span id="w50_0" class="">two</span> <span id="w50_1" class="">meters.</span> </div></div>
+      <div id="wg51" class="clip words" data-start="102.17" data-duration="0.89" data-track-index="7" style="z-index:22"><div id="wgi51"><span id="w51_0" class="">I</span> <span id="w51_1" class="">execute,</span> </div></div>
+      <div id="wg52" class="clip words" data-start="103.07" data-duration="0.89" data-track-index="7" style="z-index:22"><div id="wgi52"><span id="w52_0" class="">look</span> <span id="w52_1" class="">again,</span> </div></div>
+      <div id="wg53" class="clip words" data-start="103.97" data-duration="1.09" data-track-index="7" style="z-index:22"><div id="wgi53"><span id="w53_0" class="">and</span> <span id="w53_1" class="">repeat.</span> </div></div>
+      <div id="wg54" class="clip words" data-start="105.77" data-duration="0.61" data-track-index="7" style="z-index:22"><div id="wgi54"><span id="w54_0" class="">To</span> <span id="w54_1" class="">see,</span> </div></div>
+      <div id="wg55" class="clip words" data-start="106.39" data-duration="1.53" data-track-index="7" style="z-index:22"><div id="wgi55"><span id="w55_0" class="">I</span> <span id="w55_1" class="">use</span> <span id="w55_2" class="">YOLOE.</span> </div></div>
+      <div id="wg56" class="clip words" data-start="108.07" data-duration="0.71" data-track-index="7" style="z-index:22"><div id="wgi56"><span id="w56_0" class="">I</span> <span id="w56_1" class="">type:</span> </div></div>
+      <div id="wg57" class="clip words" data-start="108.79" data-duration="0.69" data-track-index="7" style="z-index:22"><div id="wgi57"><span id="w57_0" class="">chair,</span> </div></div>
+      <div id="wg58" class="clip words" data-start="109.49" data-duration="0.61" data-track-index="7" style="z-index:22"><div id="wgi58"><span id="w58_0" class="">desk,</span> </div></div>
+      <div id="wg59" class="clip words" data-start="110.11" data-duration="0.76" data-track-index="7" style="z-index:22"><div id="wgi59"><span id="w59_0" class="">laptop,</span> </div></div>
+      <div id="wg60" class="clip words" data-start="110.88" data-duration="0.89" data-track-index="7" style="z-index:22"><div id="wgi60"><span id="w60_0" class="">person.</span> </div></div>
+      <div id="wg61" class="clip words" data-start="111.78" data-duration="0.57" data-track-index="7" style="z-index:22"><div id="wgi61"><span id="w61_0" class="">And</span> <span id="w61_1" class="">it</span> <span id="w61_2" class="">paints</span> </div></div>
+      <div id="wg62" class="clip words" data-start="112.36" data-duration="0.65" data-track-index="7" style="z-index:22"><div id="wgi62"><span id="w62_0" class="">everything,</span> </div></div>
+      <div id="wg63" class="clip words" data-start="113.02" data-duration="0.67" data-track-index="7" style="z-index:22"><div id="wgi63"><span id="w63_0" class="">three</span> <span id="w63_1" class="">times</span> <span id="w63_2" class="">a</span> </div></div>
+      <div id="wg64" class="clip words" data-start="113.7" data-duration="0.57" data-track-index="7" style="z-index:22"><div id="wgi64"><span id="w64_0" class="">second,</span> </div></div>
+      <div id="wg65" class="clip words" data-start="114.28" data-duration="0.95" data-track-index="7" style="z-index:22"><div id="wgi65"><span id="w65_0" class="">offline.</span> </div></div>
+      <div id="wg66" class="clip words" data-start="115.96" data-duration="1.19" data-track-index="7" style="z-index:22"><div id="wgi66"><span id="w66_0" class="">Then</span> <span id="w66_1" class="">I</span> <span id="w66_2" class="">measure.</span> </div></div>
+      <div id="wg67" class="clip words" data-start="117.2" data-duration="1.11" data-track-index="7" style="z-index:22"><div id="wgi67"><span id="w67_0" class="">For</span> <span id="w67_1" class="">every</span> <span id="w67_2" class="">mask,</span> </div></div>
+      <div id="wg68" class="clip words" data-start="118.32" data-duration="0.41" data-track-index="7" style="z-index:22"><div id="wgi68"><span id="w68_0" class="">I</span> <span id="w68_1" class="">read</span> <span id="w68_2" class="">the</span> </div></div>
+      <div id="wg69" class="clip words" data-start="118.74" data-duration="1.07" data-track-index="7" style="z-index:22"><div id="wgi69"><span id="w69_0" class="">camera&#x27;s</span> <span id="w69_1" class="kw">depth</span> <span id="w69_2" class="">and</span> </div></div>
+      <div id="wg70" class="clip words" data-start="119.82" data-duration="1.3" data-track-index="7" style="z-index:22"><div id="wgi70"><span id="w70_0" class="">take</span> <span id="w70_1" class="">the</span> <span id="w70_2" class="">median.</span> </div></div>
+      <div id="wg71" class="clip words" data-start="121.2" data-duration="0.59" data-track-index="7" style="z-index:22"><div id="wgi71"><span id="w71_0" class="">Chair:</span> </div></div>
+      <div id="wg72" class="clip words" data-start="121.8" data-duration="1.71" data-track-index="7" style="z-index:22"><div id="wgi72"><span id="w72_0" class="">3.6</span> <span id="w72_1" class="">meters.</span> </div></div>
+      <div id="wg73" class="clip words" data-start="123.52" data-duration="0.78" data-track-index="7" style="z-index:22"><div id="wgi73"><span id="w73_0" class="">Desk:</span> </div></div>
+      <div id="wg74" class="clip words" data-start="124.31" data-duration="0.86" data-track-index="7" style="z-index:22"><div id="wgi74"><span id="w74_0" class="">two</span> <span id="w74_1" class="">meters.</span> </div></div>
+      <div id="wg75" class="clip words" data-start="125.65" data-duration="0.83" data-track-index="7" style="z-index:22"><div id="wgi75"><span id="w75_0" class="">These</span> <span id="w75_1" class="">numbers</span> <span id="w75_2" class="">come</span> </div></div>
+      <div id="wg76" class="clip words" data-start="126.49" data-duration="0.53" data-track-index="7" style="z-index:22"><div id="wgi76"><span id="w76_0" class="">to</span> <span id="w76_1" class="kw">me</span> <span id="w76_2" class="">with</span> </div></div>
+      <div id="wg77" class="clip words" data-start="127.03" data-duration="1.09" data-track-index="7" style="z-index:22"><div id="wgi77"><span id="w77_0" class="">every</span> <span id="w77_1" class="">image,</span> </div></div>
+      <div id="wg78" class="clip words" data-start="128.13" data-duration="0.43" data-track-index="7" style="z-index:22"><div id="wgi78"><span id="w78_0" class="">so</span> <span id="w78_1" class="">I</span> <span id="w78_2" class="">don&#x27;t</span> </div></div>
+      <div id="wg79" class="clip words" data-start="128.57" data-duration="1.07" data-track-index="7" style="z-index:22"><div id="wgi79"><span id="w79_0" class="">walk</span> <span id="w79_1" class="">into</span> <span id="w79_2" class="">things.</span> </div></div>
+      <div id="wg80" class="clip words" data-start="130.11" data-duration="1.01" data-track-index="7" style="z-index:22"><div id="wgi80"><span id="w80_0" class="kw">Humans</span> <span id="w80_1" class="kw">measure</span> <span id="w80_2" class="">by</span> </div></div>
+      <div id="wg81" class="clip words" data-start="131.13" data-duration="0.53" data-track-index="7" style="z-index:22"><div id="wgi81"><span id="w81_0" class="">eye.</span> </div></div>
+      <div id="wg82" class="clip words" data-start="131.67" data-duration="1.09" data-track-index="7" style="z-index:22"><div id="wgi82"><span id="w82_0" class="">It</span> <span id="w82_1" class="">shows.</span> </div></div>
+      <div id="wg83" class="clip words" data-start="133.49" data-duration="0.79" data-track-index="7" style="z-index:22"><div id="wgi83"><span id="w83_0" class="">And</span> <span id="w83_1" class="">before</span> <span id="w83_2" class="">doing</span> </div></div>
+      <div id="wg84" class="clip words" data-start="134.29" data-duration="0.95" data-track-index="7" style="z-index:22"><div id="wgi84"><span id="w84_0" class="">it</span> <span id="w84_1" class="">for</span> <span id="w84_2" class="">real,</span> </div></div>
+      <div id="wg85" class="clip words" data-start="135.25" data-duration="1.07" data-track-index="7" style="z-index:22"><div id="wgi85"><span id="w85_0" class="">I</span> <span id="w85_1" class="">rehearse</span> <span id="w85_2" class="">everything</span> </div></div>
+      <div id="wg86" class="clip words" data-start="136.33" data-duration="1.01" data-track-index="7" style="z-index:22"><div id="wgi86"><span id="w86_0" class="">in</span> <span id="w86_1" class="kw">MuJoCo,</span> </div></div>
+      <div id="wg87" class="clip words" data-start="137.35" data-duration="1.6" data-track-index="7" style="z-index:22"><div id="wgi87"><span id="w87_0" class="">a</span> <span id="w87_1" class="">physics</span> <span id="w87_2" class="">simulator.</span> </div></div>
+      <div id="wg88" class="clip words" data-start="139.04" data-duration="1.01" data-track-index="7" style="z-index:22"><div id="wgi88"><span id="w88_0" class="">Same</span> <span id="w88_1" class="">commands,</span> </div></div>
+      <div id="wg89" class="clip words" data-start="140.06" data-duration="0.85" data-track-index="7" style="z-index:22"><div id="wgi89"><span id="w89_0" class="">same</span> <span id="w89_1" class="">brain.</span> </div></div>
+      <div id="wg90" class="clip words" data-start="141.24" data-duration="0.45" data-track-index="7" style="z-index:22"><div id="wgi90"><span id="w90_0" class="">There</span> <span id="w90_1" class="">I</span> <span id="w90_2" class="">can</span> </div></div>
+      <div id="wg91" class="clip words" data-start="141.7" data-duration="0.57" data-track-index="7" style="z-index:22"><div id="wgi91"><span id="w91_0" class="">fall</span> <span id="w91_1" class="">as</span> <span id="w91_2" class="">much</span> </div></div>
+      <div id="wg92" class="clip words" data-start="142.28" data-duration="0.87" data-track-index="7" style="z-index:22"><div id="wgi92"><span id="w92_0" class="">as</span> <span id="w92_1" class="">I</span> <span id="w92_2" class="">want.</span> </div></div>
+      <div id="wg93" class="clip words" data-start="143.16" data-duration="1.37" data-track-index="7" style="z-index:22"><div id="wgi93"><span id="w93_0" class="">Nobody</span> <span id="w93_1" class="">films</span> <span id="w93_2" class="">it.</span> </div></div>
+      <div id="wg94" class="clip words" data-start="145.3" data-duration="0.37" data-track-index="7" style="z-index:22"><div id="wgi94"><span id="w94_0" class="">I</span> <span id="w94_1" class="">wrote</span> <span id="w94_2" class="">the</span> </div></div>
+      <div id="wg95" class="clip words" data-start="145.68" data-duration="0.89" data-track-index="7" style="z-index:22"><div id="wgi95"><span id="w95_0" class="">dog&#x27;s</span> <span id="w95_1" class="">code.</span> </div></div>
+      <div id="wg96" class="clip words" data-start="147.27" data-duration="0.55" data-track-index="7" style="z-index:22"><div id="wgi96"><span id="w96_0" class="">They</span> <span id="w96_1" class="">picked</span> <span id="w96_2" class="">the</span> </div></div>
+      <div id="wg97" class="clip words" data-start="147.83" data-duration="1.11" data-track-index="7" style="z-index:22"><div id="wgi97"><span id="w97_0" class="">slide</span> <span id="w97_1" class="">font.</span> </div></div>
+      <div id="wg98" class="clip words" data-start="153.51" data-duration="0.8" data-track-index="7" style="z-index:22"><div id="wgi98"><span id="w98_0" class="">Me.</span> </div></div>
+      <div id="wg99" class="clip words" data-start="176.84" data-duration="1.46" data-track-index="7" style="z-index:22"><div id="wgi99"><span id="w99_0" class="">They</span> <span id="w99_1" class="">pressed</span> <span id="w99_2" class="">enter.</span> </div></div>
+      <div id="wg100" class="clip words" data-start="178.75" data-duration="0.31" data-track-index="7" style="z-index:22"><div id="wgi100"><span id="w100_0" class="">Uh...</span> </div></div>
+      <div id="wg101" class="clip words" data-start="180.53" data-duration="0.91" data-track-index="7" style="z-index:22"><div id="wgi101"><span id="w101_0" class="">actually,</span> </div></div>
+      <div id="wg102" class="clip words" data-start="181.46" data-duration="0.41" data-track-index="7" style="z-index:22"><div id="wgi102"><span id="w102_0" class="">I</span> <span id="w102_1" class="">did</span> <span id="w102_2" class="">that</span> </div></div>
+      <div id="wg103" class="clip words" data-start="181.88" data-duration="0.93" data-track-index="7" style="z-index:22"><div id="wgi103"><span id="w103_0" class="">too.</span> </div></div>
+      <div id="wg104" class="clip words" data-start="189.83" data-duration="0.84" data-track-index="7" style="z-index:22"><div id="wgi104"><span id="w104_0" class="">Next</span> <span id="w104_1" class="">year,</span> </div></div>
+      <div id="wg105" class="clip words" data-start="190.68" data-duration="1.39" data-track-index="7" style="z-index:22"><div id="wgi105"><span id="w105_0" class="">I&#x27;m</span> <span id="w105_1" class="">coming</span> <span id="w105_2" class="">alone.</span> </div></div>
+      <div id="pipw0" class="pip" style="left:110px;top:1330px;width:860px;height:484px;z-index:25"><div id="pipf0" class="clip pipframe" data-start="45.3" data-duration="6.0" data-track-index="10"></div><video id="pipv0" class="clip" data-start="45.3" data-duration="6.0" data-track-index="9" src="assets/clips/p-familyguy.mp4" muted playsinline style="position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:cover;border-radius:18px"></video><div id="pipl0" class="clip piplab" data-start="45.3" data-duration="6.0" data-track-index="11">THE HUMANS RN</div></div>
+      <div id="pipw1" class="pip" style="left:110px;top:1330px;width:860px;height:484px;z-index:25"><div id="pipf1" class="clip pipframe" data-start="123.52" data-duration="1.8" data-track-index="10"></div><video id="pipv1" class="clip" data-start="123.52" data-duration="1.8" data-track-index="9" src="assets/clips/p-biddy.mp4" muted playsinline style="position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:cover;border-radius:18px"></video><div id="pipl1" class="clip piplab" data-start="123.52" data-duration="1.8" data-track-index="11">SCRIB DOON ✍️</div></div>
+      <div id="pipw2" class="pip" style="left:110px;top:1330px;width:860px;height:484px;z-index:25"><div id="pipf2" class="clip pipframe" data-start="133.91" data-duration="8.0" data-track-index="10"></div><video id="pipv2" class="clip" data-start="133.91" data-duration="8.0" data-track-index="9" src="assets/clips/p-niulai.mp4" muted playsinline style="position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:cover;border-radius:18px"></video><div id="pipl2" class="clip piplab" data-start="133.91" data-duration="8.0" data-track-index="11">MUJOCO PHYSICS BE LIKE</div></div>
+      <div id="pipw3" class="pip" style="left:110px;top:1330px;width:860px;height:484px;z-index:25"><div id="pipf3" class="clip pipframe" data-start="166.08" data-duration="2.2" data-track-index="10"></div><video id="pipv3" class="clip" data-start="166.08" data-duration="2.2" data-track-index="9" src="assets/clips/p-tony.mp4" muted playsinline style="position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:cover;border-radius:18px"></video></div>
+      <div id="pipw4" class="pip" style="left:180px;top:1150px;width:720px;height:720px;z-index:25"><video id="pipv4" class="clip" data-start="183.85" data-duration="4.5" data-track-index="9" src="assets/clips/p-cat.webm" muted playsinline style="position:absolute;inset:0px;width:calc(100% - 0px);height:calc(100% - 0px);object-fit:contain;border-radius:18px"></video></div>
+      <div id="pipw5" class="pip" style="left:110px;top:1330px;width:860px;height:484px;z-index:25"><div id="pipf5" class="clip pipframe" data-start="188.35" data-duration="4.8" data-track-index="10"></div><video id="pipv5" class="clip" data-start="188.35" data-duration="4.8" data-track-index="9" src="assets/clips/p-jiren.mp4" muted playsinline style="position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:cover;border-radius:18px"></video><div id="pipl5" class="clip piplab" data-start="188.35" data-duration="4.8" data-track-index="11">ME NEXT YEAR</div></div>
+      <audio id="afilm0" class="clip" data-start="1.4" data-duration="20.3" data-track-index="20" data-media-start='0.0' data-volume='1' src="assets/sfx/film.wav"></audio>
+      <audio id="afilm1" class="clip" data-start="23.5" data-duration="11.2" data-track-index="20" data-media-start='20.3' data-volume='1' src="assets/sfx/film.wav"></audio>
+      <audio id="afilm2" class="clip" data-start="36.7" data-duration="27.6" data-track-index="20" data-media-start='31.5' data-volume='1' src="assets/sfx/film.wav"></audio>
+      <audio id="afilm3" class="clip" data-start="68.1" data-duration="21.94" data-track-index="20" data-media-start='59.1' data-volume='1' src="assets/sfx/film.wav"></audio>
+      <audio id="afilm4" class="clip" data-start="92.04" data-duration="68.04" data-track-index="20" data-media-start='81.04' data-volume='1' src="assets/sfx/film.wav"></audio>
+      <audio id="afilm5" class="clip" data-start="161.68" data-duration="31.47" data-track-index="20" data-media-start='149.08' data-volume='1' src="assets/sfx/film.wav"></audio>
+      <audio id="ains0" class="clip" data-start="0.0" data-duration="1.4" data-track-index="21" data-volume='1' src="assets/sfx/m-hi.wav"></audio>
+      <audio id="ains1" class="clip" data-start="21.7" data-duration="1.8" data-track-index="21" data-volume='1' src="assets/sfx/m-gumball.wav"></audio>
+      <audio id="ains2" class="clip" data-start="34.7" data-duration="2.0" data-track-index="21" data-volume='1' src="assets/sfx/m-laugh.wav"></audio>
+      <audio id="ains3" class="clip" data-start="64.3" data-duration="3.8" data-track-index="21" data-volume='1' src="assets/sfx/m-holmes.wav"></audio>
+      <audio id="ains4" class="clip" data-start="90.04" data-duration="2.0" data-track-index="21" data-volume='1' src="assets/sfx/m-andy.wav"></audio>
+      <audio id="ains5" class="clip" data-start="160.08" data-duration="1.6" data-track-index="21" data-volume='1' src="assets/sfx/m-mbappe.wav"></audio>
+      <audio id="apip1" class="clip" data-start="123.52" data-duration="1.8" data-track-index="22" data-volume='0.7' src="assets/sfx/p-biddy.wav"></audio>
+      <audio id="apip4" class="clip" data-start="183.85" data-duration="4.5" data-track-index="22" data-volume='0.7' src="assets/sfx/p-cat.wav"></audio>
+      <audio id="sfx0" class="clip" data-start="9.9" data-duration="1.4" data-track-index="23" data-volume='0.8' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx1" class="clip" data-start="16.3" data-duration="1.4" data-track-index="24" data-volume='0.7' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx2" class="clip" data-start="30.7" data-duration="1.4" data-track-index="25" data-volume='0.9' data-fade-out='0.2' src="assets/sfx/fahhh.wav"></audio>
+      <audio id="sfx3" class="clip" data-start="31.1" data-duration="3.6" data-track-index="23" data-volume='0.55' data-fade-out='0.2' src="assets/sfx/sad-violin.wav"></audio>
+      <audio id="sfx4" class="clip" data-start="36.8" data-duration="3.1" data-track-index="24" data-volume='0.7' data-fade-out='0.2' src="assets/sfx/dun-dun-dunnn.wav"></audio>
+      <audio id="sfx5" class="clip" data-start="39.9" data-duration="3.0" data-track-index="25" data-volume='0.55' data-fade-out='0.2' src="assets/sfx/among-us-role-reveal.wav"></audio>
+      <audio id="sfx6" class="clip" data-start="40.4" data-duration="1.4" data-track-index="23" data-volume='0.6' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx7" class="clip" data-start="62.1" data-duration="1.4" data-track-index="24" data-volume='0.8' data-fade-out='0.2' src="assets/sfx/spongebob-fail.wav"></audio>
+      <audio id="sfx8" class="clip" data-start="71.63" data-duration="1.4" data-track-index="25" data-volume='0.8' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx9" class="clip" data-start="78.99" data-duration="2.0" data-track-index="23" data-volume='0.5' data-fade-out='0.2' src="assets/sfx/anime-wow.wav"></audio>
+      <audio id="sfx10" class="clip" data-start="130.11" data-duration="1.4" data-track-index="24" data-volume='0.55' data-fade-out='0.2' src="assets/sfx/metal-pipe-clang.wav"></audio>
+      <audio id="sfx11" class="clip" data-start="144.88" data-duration="1.4" data-track-index="25" data-volume='0.6' data-fade-out='0.2' src="assets/sfx/yanito932-beat.wav"></audio>
+      <audio id="sfx12" class="clip" data-start="153.43" data-duration="1.4" data-track-index="23" data-volume='0.9' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx13" class="clip" data-start="162.03" data-duration="1.4" data-track-index="24" data-volume='0.7' data-fade-out='0.2' src="assets/sfx/shocked.wav"></audio>
+      <audio id="sfx14" class="clip" data-start="163.88" data-duration="2.2" data-track-index="25" data-volume='0.8' data-fade-out='0.2' src="assets/sfx/its-like-im-not-even-here.wav"></audio>
+      <audio id="sfx15" class="clip" data-start="166.08" data-duration="1.4" data-track-index="23" data-volume='0.7' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx16" class="clip" data-start="172.48" data-duration="1.4" data-track-index="24" data-volume='0.5' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx17" class="clip" data-start="173.58" data-duration="1.4" data-track-index="25" data-volume='0.5' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx18" class="clip" data-start="174.88" data-duration="1.4" data-track-index="23" data-volume='0.6' data-fade-out='0.2' src="assets/sfx/vine-boom.wav"></audio>
+      <audio id="sfx19" class="clip" data-start="178.05" data-duration="1.4" data-track-index="24" data-volume='0.9' data-fade-out='0.2' src="assets/sfx/bruh.wav"></audio>
+      <audio id="sfx20" class="clip" data-start="183.95" data-duration="4.4" data-track-index="25" data-volume='0.55' data-fade-out='0.2' src="assets/sfx/gg-freaking-ez-CLEAN.wav"></audio>
+      <audio id="sfx21" class="clip" data-start="188.95" data-duration="3.6" data-track-index="23" data-volume='0.5' data-fade-out='0.2' src="assets/sfx/undertaker-bell.wav"></audio>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#insti0", {scale: 0.5, rotation: -4}, {scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.2)"}, 0.0);
+      tl.fromTo("#insti1", {scale: 0.5, rotation: -4}, {scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.2)"}, 21.7);
+      tl.fromTo("#insti2", {scale: 0.5, rotation: -4}, {scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.2)"}, 34.7);
+      tl.fromTo("#insti3", {scale: 0.5, rotation: -4}, {scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.2)"}, 64.3);
+      tl.fromTo("#insti4", {scale: 0.5, rotation: -4}, {scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.2)"}, 90.04);
+      tl.fromTo("#insti5", {scale: 0.5, rotation: -4}, {scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.2)"}, 160.08);
+      tl.fromTo("#capi0", {scale: 0.4, rotation: -9}, {scale: 1, rotation: -3, duration: 0.22, ease: "back.out(2.5)"}, 1.4);
+      tl.fromTo("#capi1", {scale: 0.4, rotation: 6}, {scale: 1, rotation: 2, duration: 0.22, ease: "back.out(2.5)"}, 4.2);
+      tl.fromTo("#capi2", {scale: 0.4, rotation: -6}, {scale: 1, rotation: -2, duration: 0.22, ease: "back.out(2.5)"}, 9.9);
+      tl.fromTo("#capi3", {scale: 0.4, rotation: 9}, {scale: 1, rotation: 3, duration: 0.22, ease: "back.out(2.5)"}, 11.8);
+      tl.fromTo("#capi4", {scale: 0.4, rotation: -3}, {scale: 1, rotation: -1, duration: 0.22, ease: "back.out(2.5)"}, 16.3);
+      tl.fromTo("#capi5", {scale: 0.4, rotation: -9}, {scale: 1, rotation: -3, duration: 0.22, ease: "back.out(2.5)"}, 23.5);
+      tl.fromTo("#capi6", {scale: 0.4, rotation: 6}, {scale: 1, rotation: 2, duration: 0.22, ease: "back.out(2.5)"}, 30.7);
+      tl.fromTo("#capi7", {scale: 0.4, rotation: -6}, {scale: 1, rotation: -2, duration: 0.22, ease: "back.out(2.5)"}, 36.7);
+      tl.fromTo("#capi8", {scale: 0.4, rotation: 9}, {scale: 1, rotation: 3, duration: 0.22, ease: "back.out(2.5)"}, 39.9);
+      tl.fromTo("#capi9", {scale: 0.4, rotation: -3}, {scale: 1, rotation: -1, duration: 0.22, ease: "back.out(2.5)"}, 44.7);
+      tl.fromTo("#capi10", {scale: 0.4, rotation: -9}, {scale: 1, rotation: -3, duration: 0.22, ease: "back.out(2.5)"}, 53.7);
+      tl.fromTo("#capi11", {scale: 0.4, rotation: 6}, {scale: 1, rotation: 2, duration: 0.22, ease: "back.out(2.5)"}, 62.1);
+      tl.fromTo("#capi12", {scale: 0.4, rotation: -6}, {scale: 1, rotation: -2, duration: 0.22, ease: "back.out(2.5)"}, 68.1);
+      tl.fromTo("#capi13", {scale: 0.4, rotation: 9}, {scale: 1, rotation: 3, duration: 0.22, ease: "back.out(2.5)"}, 71.63);
+      tl.fromTo("#capi14", {scale: 0.4, rotation: -3}, {scale: 1, rotation: -1, duration: 0.22, ease: "back.out(2.5)"}, 73.99);
+      tl.fromTo("#capi15", {scale: 0.4, rotation: -9}, {scale: 1, rotation: -3, duration: 0.22, ease: "back.out(2.5)"}, 78.59);
+      tl.fromTo("#capi16", {scale: 0.4, rotation: 6}, {scale: 1, rotation: 2, duration: 0.22, ease: "back.out(2.5)"}, 84.7);
+      tl.fromTo("#capi17", {scale: 0.4, rotation: -6}, {scale: 1, rotation: -2, duration: 0.22, ease: "back.out(2.5)"}, 92.04);
+      tl.fromTo("#capi18", {scale: 0.4, rotation: 9}, {scale: 1, rotation: 3, duration: 0.22, ease: "back.out(2.5)"}, 105.41);
+      tl.fromTo("#capi19", {scale: 0.4, rotation: -3}, {scale: 1, rotation: -1, duration: 0.22, ease: "back.out(2.5)"}, 115.58);
+      tl.fromTo("#capi20", {scale: 0.4, rotation: -9}, {scale: 1, rotation: -3, duration: 0.22, ease: "back.out(2.5)"}, 133.11);
+      tl.fromTo("#capi21", {scale: 0.4, rotation: 6}, {scale: 1, rotation: 2, duration: 0.22, ease: "back.out(2.5)"}, 144.88);
+      tl.fromTo("#capi22", {scale: 0.4, rotation: -6}, {scale: 1, rotation: -2, duration: 0.22, ease: "back.out(2.5)"}, 152.08);
+      tl.fromTo("#capi23", {scale: 0.4, rotation: 9}, {scale: 1, rotation: 3, duration: 0.22, ease: "back.out(2.5)"}, 153.43);
+      tl.fromTo("#capi24", {scale: 0.4, rotation: -3}, {scale: 1, rotation: -1, duration: 0.22, ease: "back.out(2.5)"}, 161.68);
+      tl.fromTo("#capi25", {scale: 0.4, rotation: -9}, {scale: 1, rotation: -3, duration: 0.22, ease: "back.out(2.5)"}, 163.88);
+      tl.fromTo("#capi26", {scale: 0.4, rotation: 6}, {scale: 1, rotation: 2, duration: 0.22, ease: "back.out(2.5)"}, 166.08);
+      tl.fromTo("#capi27", {scale: 0.4, rotation: -6}, {scale: 1, rotation: -2, duration: 0.22, ease: "back.out(2.5)"}, 168.28);
+      tl.fromTo("#capi28", {scale: 0.4, rotation: 9}, {scale: 1, rotation: 3, duration: 0.22, ease: "back.out(2.5)"}, 171.48);
+      tl.fromTo("#capi29", {scale: 0.4, rotation: -3}, {scale: 1, rotation: -1, duration: 0.22, ease: "back.out(2.5)"}, 176.78);
+      tl.fromTo("#capi30", {scale: 0.4, rotation: -9}, {scale: 1, rotation: -3, duration: 0.22, ease: "back.out(2.5)"}, 178.48);
+      tl.fromTo("#capi31", {scale: 0.4, rotation: 6}, {scale: 1, rotation: 2, duration: 0.22, ease: "back.out(2.5)"}, 183.85);
+      tl.fromTo("#capi32", {scale: 0.4, rotation: -6}, {scale: 1, rotation: -2, duration: 0.22, ease: "back.out(2.5)"}, 188.35);
+      tl.fromTo("#aurai1", {scale: 1.8}, {scale: 1, duration: 0.35, ease: "back.out(3)"}, 9.9);
+      tl.fromTo("#aurai2", {scale: 1.8}, {scale: 1, duration: 0.35, ease: "back.out(3)"}, 30.7);
+      tl.fromTo("#aurai3", {scale: 1.8}, {scale: 1, duration: 0.35, ease: "back.out(3)"}, 62.1);
+      tl.fromTo("#aurai4", {scale: 1.8}, {scale: 1, duration: 0.35, ease: "back.out(3)"}, 84.8);
+      tl.fromTo("#aurai5", {scale: 1.8}, {scale: 1, duration: 0.35, ease: "back.out(3)"}, 130.11);
+      tl.fromTo("#aurai6", {scale: 1.8}, {scale: 1, duration: 0.35, ease: "back.out(3)"}, 153.43);
+      tl.fromTo("#aurai7", {scale: 1.8}, {scale: 1, duration: 0.35, ease: "back.out(3)"}, 176.78);
+      tl.fromTo("#wgi0", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 9.98);
+      tl.fromTo("#w0_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 9.98);
+      tl.fromTo("#w0_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 10.14);
+      tl.fromTo("#wgi1", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 16.34);
+      tl.fromTo("#w1_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 16.34);
+      tl.fromTo("#w1_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 16.52);
+      tl.fromTo("#w1_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 16.64);
+      tl.fromTo("#wgi2", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 17.83);
+      tl.fromTo("#w2_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 17.83);
+      tl.fromTo("#w2_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 17.99);
+      tl.fromTo("#wgi3", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 41.38);
+      tl.fromTo("#w3_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 41.38);
+      tl.fromTo("#w3_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 41.4);
+      tl.fromTo("#w3_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 41.95);
+      tl.fromTo("#wgi4", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 42.07);
+      tl.fromTo("#w4_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 42.07);
+      tl.fromTo("#wgi5", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 45.2);
+      tl.fromTo("#w5_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 45.2);
+      tl.fromTo("#w5_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 45.48);
+      tl.fromTo("#w5_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 45.58);
+      tl.fromTo("#wgi6", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 45.7);
+      tl.fromTo("#w6_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 45.7);
+      tl.fromTo("#wgi7", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 46.88);
+      tl.fromTo("#w7_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 46.88);
+      tl.fromTo("#w7_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 47.44);
+      tl.fromTo("#wgi8", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 48.16);
+      tl.fromTo("#w8_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 48.16);
+      tl.fromTo("#w8_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 48.48);
+      tl.fromTo("#wgi9", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 49.67);
+      tl.fromTo("#w9_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 49.67);
+      tl.fromTo("#w9_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 49.77);
+      tl.fromTo("#w9_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 49.99);
+      tl.fromTo("#wgi10", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 50.37);
+      tl.fromTo("#w10_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 50.37);
+      tl.fromTo("#w10_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 50.79);
+      tl.fromTo("#w10_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 51.09);
+      tl.fromTo("#wgi11", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 51.57);
+      tl.fromTo("#w11_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 51.57);
+      tl.fromTo("#wgi12", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 55.18);
+      tl.fromTo("#w12_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 55.18);
+      tl.fromTo("#w12_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 55.5);
+      tl.fromTo("#w12_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 55.6);
+      tl.fromTo("#wgi13", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 55.92);
+      tl.fromTo("#w13_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 55.92);
+      tl.fromTo("#w13_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 56.0);
+      tl.fromTo("#w13_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 56.14);
+      tl.fromTo("#wgi14", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 56.28);
+      tl.fromTo("#w14_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 56.28);
+      tl.fromTo("#w14_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 56.68);
+      tl.fromTo("#w14_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 57.16);
+      tl.fromTo("#wgi15", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 57.62);
+      tl.fromTo("#w15_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 57.62);
+      tl.fromTo("#w15_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 57.74);
+      tl.fromTo("#wgi16", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 58.76);
+      tl.fromTo("#w16_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 58.76);
+      tl.fromTo("#w16_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 58.97);
+      tl.fromTo("#w16_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 59.09);
+      tl.fromTo("#wgi17", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 59.41);
+      tl.fromTo("#w17_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 59.41);
+      tl.fromTo("#w17_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 59.65);
+      tl.fromTo("#w17_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 60.15);
+      tl.fromTo("#wgi18", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 60.81);
+      tl.fromTo("#w18_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 60.81);
+      tl.fromTo("#wgi19", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 68.62);
+      tl.fromTo("#w19_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 68.62);
+      tl.fromTo("#w19_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 68.74);
+      tl.fromTo("#w19_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 68.92);
+      tl.fromTo("#wgi20", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 69.02);
+      tl.fromTo("#w20_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 69.02);
+      tl.fromTo("#wgi21", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 69.54);
+      tl.fromTo("#w21_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 69.54);
+      tl.fromTo("#w21_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 69.64);
+      tl.fromTo("#wgi22", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 70.26);
+      tl.fromTo("#w22_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 70.26);
+      tl.fromTo("#w22_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 70.34);
+      tl.fromTo("#wgi23", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 71.75);
+      tl.fromTo("#w23_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 71.75);
+      tl.fromTo("#w23_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 71.87);
+      tl.fromTo("#w23_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 71.97);
+      tl.fromTo("#wgi24", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 72.37);
+      tl.fromTo("#w24_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 72.37);
+      tl.fromTo("#w24_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 72.69);
+      tl.fromTo("#w24_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 72.81);
+      tl.fromTo("#wgi25", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 74.57);
+      tl.fromTo("#w25_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 74.57);
+      tl.fromTo("#w25_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 74.79);
+      tl.fromTo("#w25_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 74.97);
+      tl.fromTo("#wgi26", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 75.09);
+      tl.fromTo("#w26_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 75.09);
+      tl.fromTo("#w26_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 75.61);
+      tl.fromTo("#w26_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 75.85);
+      tl.fromTo("#wgi27", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 75.95);
+      tl.fromTo("#w27_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 75.95);
+      tl.fromTo("#wgi28", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 77.0);
+      tl.fromTo("#w28_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 77.0);
+      tl.fromTo("#wgi29", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 78.99);
+      tl.fromTo("#w29_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 78.99);
+      tl.fromTo("#w29_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 79.23);
+      tl.fromTo("#w29_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 79.69);
+      tl.fromTo("#wgi30", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 79.87);
+      tl.fromTo("#w30_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 79.87);
+      tl.fromTo("#wgi31", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 80.59);
+      tl.fromTo("#w31_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 80.59);
+      tl.fromTo("#w31_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 80.97);
+      tl.fromTo("#wgi32", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 82.31);
+      tl.fromTo("#w32_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 82.31);
+      tl.fromTo("#w32_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 82.49);
+      tl.fromTo("#w32_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 82.77);
+      tl.fromTo("#wgi33", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 83.01);
+      tl.fromTo("#w33_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 83.01);
+      tl.fromTo("#w33_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 83.37);
+      tl.fromTo("#w33_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 83.49);
+      tl.fromTo("#wgi34", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 84.8);
+      tl.fromTo("#w34_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 84.8);
+      tl.fromTo("#w34_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 84.92);
+      tl.fromTo("#w34_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 85.32);
+      tl.fromTo("#wgi35", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 85.7);
+      tl.fromTo("#w35_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 85.7);
+      tl.fromTo("#w35_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 85.82);
+      tl.fromTo("#w35_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 86.06);
+      tl.fromTo("#wgi36", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 86.24);
+      tl.fromTo("#w36_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 86.24);
+      tl.fromTo("#w36_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 86.38);
+      tl.fromTo("#w36_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 86.68);
+      tl.fromTo("#wgi37", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 87.18);
+      tl.fromTo("#w37_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 87.18);
+      tl.fromTo("#wgi38", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 87.98);
+      tl.fromTo("#w38_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 87.98);
+      tl.fromTo("#w38_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 88.16);
+      tl.fromTo("#w38_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 88.46);
+      tl.fromTo("#wgi39", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 88.96);
+      tl.fromTo("#w39_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 88.96);
+      tl.fromTo("#wgi40", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 92.42);
+      tl.fromTo("#w40_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 92.42);
+      tl.fromTo("#w40_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 92.56);
+      tl.fromTo("#w40_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 92.88);
+      tl.fromTo("#wgi41", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 93.14);
+      tl.fromTo("#w41_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 93.14);
+      tl.fromTo("#wgi42", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 93.86);
+      tl.fromTo("#w42_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 93.86);
+      tl.fromTo("#w42_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 93.92);
+      tl.fromTo("#w42_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 94.16);
+      tl.fromTo("#wgi43", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 94.34);
+      tl.fromTo("#w43_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 94.34);
+      tl.fromTo("#w43_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 94.42);
+      tl.fromTo("#wgi44", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 95.0);
+      tl.fromTo("#w44_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 95.0);
+      tl.fromTo("#w44_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 95.36);
+      tl.fromTo("#w44_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 95.58);
+      tl.fromTo("#wgi45", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 95.74);
+      tl.fromTo("#w45_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 95.74);
+      tl.fromTo("#w45_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 95.9);
+      tl.fromTo("#w45_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 96.4);
+      tl.fromTo("#wgi46", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 96.62);
+      tl.fromTo("#w46_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 96.62);
+      tl.fromTo("#w46_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 96.98);
+      tl.fromTo("#w46_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 97.12);
+      tl.fromTo("#wgi47", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 97.2);
+      tl.fromTo("#w47_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 97.2);
+      tl.fromTo("#w47_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 97.62);
+      tl.fromTo("#wgi48", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 98.5);
+      tl.fromTo("#w48_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 98.5);
+      tl.fromTo("#w48_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 98.77);
+      tl.fromTo("#w48_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 99.27);
+      tl.fromTo("#wgi49", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 100.13);
+      tl.fromTo("#w49_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 100.13);
+      tl.fromTo("#w49_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 100.49);
+      tl.fromTo("#w49_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 100.65);
+      tl.fromTo("#wgi50", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 100.93);
+      tl.fromTo("#w50_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 100.93);
+      tl.fromTo("#w50_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 101.13);
+      tl.fromTo("#wgi51", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 102.17);
+      tl.fromTo("#w51_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 102.17);
+      tl.fromTo("#w51_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 102.27);
+      tl.fromTo("#wgi52", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 103.07);
+      tl.fromTo("#w52_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 103.07);
+      tl.fromTo("#w52_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 103.25);
+      tl.fromTo("#wgi53", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 103.97);
+      tl.fromTo("#w53_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 103.97);
+      tl.fromTo("#w53_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 104.11);
+      tl.fromTo("#wgi54", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 105.77);
+      tl.fromTo("#w54_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 105.77);
+      tl.fromTo("#w54_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 105.95);
+      tl.fromTo("#wgi55", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 106.39);
+      tl.fromTo("#w55_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 106.39);
+      tl.fromTo("#w55_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 106.51);
+      tl.fromTo("#w55_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 106.77);
+      tl.fromTo("#wgi56", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 108.07);
+      tl.fromTo("#w56_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 108.07);
+      tl.fromTo("#w56_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 108.15);
+      tl.fromTo("#wgi57", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 108.79);
+      tl.fromTo("#w57_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 108.79);
+      tl.fromTo("#wgi58", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 109.49);
+      tl.fromTo("#w58_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 109.49);
+      tl.fromTo("#wgi59", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 110.11);
+      tl.fromTo("#w59_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 110.11);
+      tl.fromTo("#wgi60", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 110.88);
+      tl.fromTo("#w60_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 110.88);
+      tl.fromTo("#wgi61", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 111.78);
+      tl.fromTo("#w61_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 111.78);
+      tl.fromTo("#w61_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 111.88);
+      tl.fromTo("#w61_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 111.98);
+      tl.fromTo("#wgi62", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 112.36);
+      tl.fromTo("#w62_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 112.36);
+      tl.fromTo("#wgi63", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 113.02);
+      tl.fromTo("#w63_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 113.02);
+      tl.fromTo("#w63_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 113.28);
+      tl.fromTo("#w63_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 113.6);
+      tl.fromTo("#wgi64", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 113.7);
+      tl.fromTo("#w64_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 113.7);
+      tl.fromTo("#wgi65", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 114.28);
+      tl.fromTo("#w65_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 114.28);
+      tl.fromTo("#wgi66", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 115.96);
+      tl.fromTo("#w66_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 115.96);
+      tl.fromTo("#w66_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 116.16);
+      tl.fromTo("#w66_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 116.24);
+      tl.fromTo("#wgi67", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 117.2);
+      tl.fromTo("#w67_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 117.2);
+      tl.fromTo("#w67_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 117.4);
+      tl.fromTo("#w67_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 117.68);
+      tl.fromTo("#wgi68", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 118.32);
+      tl.fromTo("#w68_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 118.32);
+      tl.fromTo("#w68_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 118.42);
+      tl.fromTo("#w68_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 118.62);
+      tl.fromTo("#wgi69", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 118.74);
+      tl.fromTo("#w69_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 118.74);
+      tl.fromTo("#w69_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 119.2);
+      tl.fromTo("#w69_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 119.68);
+      tl.fromTo("#wgi70", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 119.82);
+      tl.fromTo("#w70_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 119.82);
+      tl.fromTo("#w70_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 120.02);
+      tl.fromTo("#w70_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 120.14);
+      tl.fromTo("#wgi71", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 121.2);
+      tl.fromTo("#w71_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 121.2);
+      tl.fromTo("#wgi72", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 121.8);
+      tl.fromTo("#w72_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 121.8);
+      tl.fromTo("#w72_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 122.64);
+      tl.fromTo("#wgi73", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 123.52);
+      tl.fromTo("#w73_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 123.52);
+      tl.fromTo("#wgi74", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 124.31);
+      tl.fromTo("#w74_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 124.31);
+      tl.fromTo("#w74_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 124.51);
+      tl.fromTo("#wgi75", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 125.65);
+      tl.fromTo("#w75_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 125.65);
+      tl.fromTo("#w75_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 125.93);
+      tl.fromTo("#w75_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 126.29);
+      tl.fromTo("#wgi76", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 126.49);
+      tl.fromTo("#w76_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 126.49);
+      tl.fromTo("#w76_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 126.61);
+      tl.fromTo("#w76_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 126.75);
+      tl.fromTo("#wgi77", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 127.03);
+      tl.fromTo("#w77_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 127.03);
+      tl.fromTo("#w77_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 127.37);
+      tl.fromTo("#wgi78", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 128.13);
+      tl.fromTo("#w78_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 128.13);
+      tl.fromTo("#w78_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 128.33);
+      tl.fromTo("#w78_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 128.37);
+      tl.fromTo("#wgi79", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 128.57);
+      tl.fromTo("#w79_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 128.57);
+      tl.fromTo("#w79_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 128.83);
+      tl.fromTo("#w79_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 129.05);
+      tl.fromTo("#wgi80", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 130.11);
+      tl.fromTo("#w80_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 130.11);
+      tl.fromTo("#w80_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 130.53);
+      tl.fromTo("#w80_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 130.85);
+      tl.fromTo("#wgi81", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 131.13);
+      tl.fromTo("#w81_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 131.13);
+      tl.fromTo("#wgi82", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 131.67);
+      tl.fromTo("#w82_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 131.67);
+      tl.fromTo("#w82_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 131.83);
+      tl.fromTo("#wgi83", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 133.49);
+      tl.fromTo("#w83_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 133.49);
+      tl.fromTo("#w83_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 133.61);
+      tl.fromTo("#w83_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 134.01);
+      tl.fromTo("#wgi84", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 134.29);
+      tl.fromTo("#w84_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 134.29);
+      tl.fromTo("#w84_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 134.41);
+      tl.fromTo("#w84_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 134.59);
+      tl.fromTo("#wgi85", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 135.25);
+      tl.fromTo("#w85_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 135.25);
+      tl.fromTo("#w85_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 135.31);
+      tl.fromTo("#w85_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 135.85);
+      tl.fromTo("#wgi86", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 136.33);
+      tl.fromTo("#w86_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 136.33);
+      tl.fromTo("#w86_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 136.45);
+      tl.fromTo("#wgi87", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 137.35);
+      tl.fromTo("#w87_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 137.35);
+      tl.fromTo("#w87_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 137.47);
+      tl.fromTo("#w87_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 137.85);
+      tl.fromTo("#wgi88", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 139.04);
+      tl.fromTo("#w88_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 139.04);
+      tl.fromTo("#w88_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 139.28);
+      tl.fromTo("#wgi89", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 140.06);
+      tl.fromTo("#w89_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 140.06);
+      tl.fromTo("#w89_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 140.32);
+      tl.fromTo("#wgi90", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 141.24);
+      tl.fromTo("#w90_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 141.24);
+      tl.fromTo("#w90_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 141.48);
+      tl.fromTo("#w90_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 141.52);
+      tl.fromTo("#wgi91", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 141.7);
+      tl.fromTo("#w91_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 141.7);
+      tl.fromTo("#w91_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 141.94);
+      tl.fromTo("#w91_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 142.08);
+      tl.fromTo("#wgi92", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 142.28);
+      tl.fromTo("#w92_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 142.28);
+      tl.fromTo("#w92_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 142.46);
+      tl.fromTo("#w92_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 142.54);
+      tl.fromTo("#wgi93", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 143.16);
+      tl.fromTo("#w93_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 143.16);
+      tl.fromTo("#w93_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 143.56);
+      tl.fromTo("#w93_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 143.92);
+      tl.fromTo("#wgi94", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 145.3);
+      tl.fromTo("#w94_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 145.3);
+      tl.fromTo("#w94_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 145.34);
+      tl.fromTo("#w94_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 145.56);
+      tl.fromTo("#wgi95", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 145.68);
+      tl.fromTo("#w95_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 145.68);
+      tl.fromTo("#w95_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 146.06);
+      tl.fromTo("#wgi96", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 147.27);
+      tl.fromTo("#w96_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 147.27);
+      tl.fromTo("#w96_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 147.45);
+      tl.fromTo("#w96_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 147.69);
+      tl.fromTo("#wgi97", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 147.83);
+      tl.fromTo("#w97_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 147.83);
+      tl.fromTo("#w97_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 148.19);
+      tl.fromTo("#wgi98", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 153.51);
+      tl.fromTo("#w98_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 153.51);
+      tl.fromTo("#wgi99", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 176.84);
+      tl.fromTo("#w99_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 176.84);
+      tl.fromTo("#w99_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 177.0);
+      tl.fromTo("#w99_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 177.45);
+      tl.fromTo("#wgi100", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 178.75);
+      tl.fromTo("#w100_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 178.75);
+      tl.fromTo("#wgi101", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 180.53);
+      tl.fromTo("#w101_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 180.53);
+      tl.fromTo("#wgi102", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 181.46);
+      tl.fromTo("#w102_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 181.46);
+      tl.fromTo("#w102_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 181.52);
+      tl.fromTo("#w102_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 181.66);
+      tl.fromTo("#wgi103", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 181.88);
+      tl.fromTo("#w103_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 181.88);
+      tl.fromTo("#wgi104", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 189.83);
+      tl.fromTo("#w104_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 189.83);
+      tl.fromTo("#w104_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 190.17);
+      tl.fromTo("#wgi105", {scale: 0.7, y: 20}, {scale: 1, y: 0, duration: 0.14, ease: "back.out(2)"}, 190.68);
+      tl.fromTo("#w105_0", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 190.68);
+      tl.fromTo("#w105_1", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 190.8);
+      tl.fromTo("#w105_2", {opacity: 0.35}, {opacity: 1, duration: 0.05}, 191.08);
+      tl.fromTo("#pipw0", {scale: 0.2, rotation: 12}, {scale: 1, rotation: -4, duration: 0.3, ease: "back.out(2)"}, 45.3);
+      tl.fromTo("#pipw1", {scale: 0.2, rotation: 12}, {scale: 1, rotation: 3, duration: 0.3, ease: "back.out(2)"}, 123.52);
+      tl.fromTo("#pipw2", {scale: 0.2, rotation: 12}, {scale: 1, rotation: -3, duration: 0.3, ease: "back.out(2)"}, 133.91);
+      tl.fromTo("#pipw3", {scale: 0.2, rotation: 12}, {scale: 1, rotation: 4, duration: 0.3, ease: "back.out(2)"}, 166.08);
+      tl.fromTo("#pipw4", {scale: 0.2, rotation: 12}, {scale: 1, rotation: -4, duration: 0.3, ease: "back.out(2)"}, 183.85);
+      tl.fromTo("#pipw5", {scale: 0.2, rotation: 12}, {scale: 1, rotation: 3, duration: 0.3, ease: "back.out(2)"}, 188.35);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 9.9);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 9.9);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 9.9);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 9.9);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 9.9);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 9.9);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 16.3);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 16.3);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 16.3);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 16.3);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 16.3);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 16.3);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 30.7);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 30.7);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 30.7);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 30.7);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 30.7);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 30.7);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 40.4);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 40.4);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 40.4);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 40.4);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 40.4);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 40.4);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 62.1);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 62.1);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 62.1);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 62.1);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 62.1);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 62.1);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 71.63);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 71.63);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 71.63);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 71.63);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 71.63);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 71.63);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 130.11);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 130.11);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 130.11);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 130.11);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 130.11);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 130.11);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 153.43);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 153.43);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 153.43);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 153.43);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 153.43);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 153.43);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 166.08);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 166.08);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 166.08);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 166.08);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 166.08);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 166.08);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 172.48);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 172.48);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 172.48);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 172.48);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 172.48);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 172.48);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 173.58);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 173.58);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 173.58);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 173.58);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 173.58);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 173.58);
+      tl.fromTo("#fw0", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 174.88);
+      tl.fromTo("#fw1", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 174.88);
+      tl.fromTo("#fw2", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 174.88);
+      tl.fromTo("#fw3", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 174.88);
+      tl.fromTo("#fw4", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 174.88);
+      tl.fromTo("#fw5", {scale: 1.0}, {scale: 1.09, duration: 0.06, ease: "power2.out", yoyo: true, repeat: 1}, 174.88);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
