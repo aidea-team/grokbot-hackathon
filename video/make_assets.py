@@ -75,9 +75,9 @@ CLIPS = {
     # The whole dashboard (header to input box), never cropped: 1598x960 at the top, a dark band below for the subtitles.
     # *-b = the same, very slightly blurred: the scene keeps the part being explained sharp and the rest soft.
     "d2":            (FOOT / "r2-dashboard-finale.mov", 0.0, 26.7, DASH),
-    "d2-b":          (FOOT / "r2-dashboard-finale.mov", 0.0, 26.7, DASH + ",boxblur=2:1"),
+    "d2-b":          (FOOT / "r2-dashboard-finale.mov", 0.0, 26.7, DASH + ",gblur=sigma=0.9"),
     "d1":            (FOOT / "r1-dashboard-chat.mov", 0.0, 27.68, DASH),
-    "d1-b":          (FOOT / "r1-dashboard-chat.mov", 0.0, 27.68, DASH + ",boxblur=2:1"),
+    "d1-b":          (FOOT / "r1-dashboard-chat.mov", 0.0, 27.68, DASH + ",gblur=sigma=0.9"),
     "r-steps":       (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1760:990:170:900," + FIT),
     "r-objects":     (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1440:810:1250:400," + FIT),
     "r-mujoco":      (FOOT / "r1-dashboard-chat.mov", 8.0, 19.6, "crop=1060:596:180:570," + FIT),

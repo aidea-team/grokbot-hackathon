@@ -36,7 +36,7 @@ Generata da `video/build_film.py`. Durata 2:53. Tutto in inglese, narra il G1 in
 | 2:41 | La dashboard: il messaggio parte | Clic, la musica riparte |
 | 2:43 | Logo e crediti, poi i calci del G1 | "Next year, I'm coming alone." |
 
-Nelle scene della dashboard: schermata intera (1598×960) con una fascia scura sotto per i sottotitoli; la parte spiegata resta nitida e il resto è appena sfocato (copia con `boxblur=2:1`, rivelata con un clip-path).
+Nelle scene della dashboard: schermata intera (1598×960) con una fascia scura sotto per i sottotitoli; la parte spiegata resta nitida e il resto è appena sfocato (copia con `gblur=sigma=0.9`, rivelata con un clip-path).
 
 ## Interviste da girare (stile DMAX)
 
