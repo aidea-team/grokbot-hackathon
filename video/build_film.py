@@ -396,7 +396,8 @@ def captions_file(groups: list[dict]) -> str:
 {FONT_FACES}
 #root {{ position: absolute; inset: 0; pointer-events: none; font-family: "Artific", sans-serif; }}
 .cap {{ position: absolute; left: 0; right: 0; bottom: 92px; text-align: center; }}
-.cap.low {{ bottom: 22px; }}
+.cap.low {{ bottom: 18px; }}
+.cap.low span {{ font-size: 40px; padding: 4px 16px; }}
 .cap span {{ display: inline-block; max-width: 1500px; font-weight: 600; font-size: 48px; line-height: 1.2; padding: 6px 18px;
             background: rgba(10,10,18,.55); text-shadow: 0 2px 3px rgba(0,0,0,.9); }}
   </style>
