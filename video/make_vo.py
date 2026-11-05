@@ -18,7 +18,8 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "assets" / "vo"
+OUT = Path(os.environ["VO_OUT"]) if os.environ.get("VO_OUT") else HERE / "assets" / "vo"
+SPEC = Path(os.environ["VO_SPEC"]) if os.environ.get("VO_SPEC") else HERE / "vo-lines.json"
 LANG = "it"
 
 
@@ -45,7 +46,7 @@ def tts(text: str, voice: str, speed: float, key: str) -> dict:
 
 def main() -> None:
     global LANG
-    spec = json.loads((HERE / "vo-lines.json").read_text())
+    spec = json.loads(SPEC.read_text())
     LANG = spec.get("language", "it")
     only = set(sys.argv[1:])
     key = env_key()

@@ -43,3 +43,6 @@ video/film/renders/
 video/film/.hyperframes/
 video/film/node_modules/
 video/film/.transcode-cache/
+
+# audio generato per la versione brainrot (rigenerabile con make_vo.py)
+video/brainrot/vo/

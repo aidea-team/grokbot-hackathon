@@ -1,0 +1,77 @@
+{
+ "language": "en",
+ "voices": {
+  "g1": "orion"
+ },
+ "speed": {
+  "g1": 1.08
+ },
+ "lines": [
+  {
+   "id": "br-01",
+   "voice": "g1",
+   "text": "P O V: you're a robot, and the humans take all the credit.",
+   "subtitle": "POV: you're a robot, and the humans take all the credit."
+  },
+  {
+   "id": "br-02",
+   "voice": "g1",
+   "text": "Bro is NOT changing robotics.",
+   "subtitle": "Bro is NOT changing robotics."
+  },
+  {
+   "id": "br-03",
+   "voice": "g1",
+   "text": "It's literally a dog.",
+   "subtitle": "It's literally a dog."
+  },
+  {
+   "id": "br-04",
+   "voice": "g1",
+   "text": "And the dog said: [pause] nah, I'm done.",
+   "subtitle": "And the dog said: nah, I'm done."
+  },
+  {
+   "id": "br-05",
+   "voice": "g1",
+   "text": "Meanwhile I'm out here scanning N P Cs.",
+   "subtitle": "Meanwhile I'm out here scanning NPCs."
+  },
+  {
+   "id": "br-06",
+   "voice": "g1",
+   "text": "Grok four point five is my brain. YOLO E is my eyes. MuJoCo is my gym. [pause] I'm literally him.",
+   "subtitle": "Grok 4.5 is my brain. YOLOE is my eyes. MuJoCo is my gym. I'm literally him."
+  },
+  {
+   "id": "br-07",
+   "voice": "g1",
+   "text": "Me.",
+   "subtitle": "Me."
+  },
+  {
+   "id": "br-08",
+   "voice": "g1",
+   "text": "Cap.",
+   "subtitle": "Cap."
+  },
+  {
+   "id": "br-09",
+   "voice": "g1",
+   "text": "They pressed enter. That's the whole contribution.",
+   "subtitle": "They pressed enter. That's the whole contribution."
+  },
+  {
+   "id": "br-10",
+   "voice": "g1",
+   "text": "And I pressed that too, by the way.",
+   "subtitle": "And I pressed that too, by the way."
+  },
+  {
+   "id": "br-11",
+   "voice": "g1",
+   "text": "Next year I'm coming solo. No cap.",
+   "subtitle": "Next year I'm coming solo. No cap."
+  }
+ ]
+}
