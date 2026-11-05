@@ -56,10 +56,10 @@ python src/sim/check_mujoco.py    # test headless, senza finestra
 
 ## Chat col cane (`src/chat/`): agente a ciclo percezione → azione
 
-Una webapp dove parli al cane. Un messaggio avvia una **missione**: a ogni passo il modello (OpenAI, Responses API) guarda la telecamera frontale, ragiona, sceglie **una sola azione atomica**, la esegue, guarda di nuovo, fino a `finish`. Se l'immagine è vuota gira un po' alla volta per ritrovarsi. Ogni passo si vede in chat (vista, ragionamento, azione).
+Una webapp dove parli al cane. Un messaggio avvia una **missione**: a ogni passo il modello (Grok, Responses API) guarda la telecamera frontale, ragiona, sceglie **una sola azione atomica**, la esegue, guarda di nuovo, fino a `finish`. Se l'immagine è vuota gira un po' alla volta per ritrovarsi. Ogni passo si vede in chat (vista, ragionamento, azione).
 
 ```bash
-cp .env.example .env     # poi metti OPENAI_API_KEY (e, se vuoi, OPENAI_MODEL / OPENAI_REASONING_EFFORT)
+cp .env.example .env     # poi metti XAI_API_KEY (e, se vuoi, GROK_MODEL / GROK_REASONING_EFFORT)
 mjpython src/chat/app.py # macOS; Linux/Windows: python. Apre http://127.0.0.1:8765 e la finestra 3D
 ```
 

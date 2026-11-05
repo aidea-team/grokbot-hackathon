@@ -15,22 +15,16 @@ from pathlib import Path
 import cameras
 
 RESOLUTIONS = ["320x240", "512x384", "640x480"]
-EFFORTS = ["", "none", "low", "medium", "high"]  # "" = OPENAI_REASONING_EFFORT from .env
+EFFORTS = ["", "none", "low", "medium", "high"]  # "" = GROK_REASONING_EFFORT from .env
 
 
 @dataclass
 class Settings:
-    # --- cameras (all brains)
+    # --- cameras 
     cams: list[str] = field(default_factory=lambda: [c.name for c in cameras.CAMERAS])  # "front" always on
     resolution: str = "512x384"      # simulator only: the real dog's streams have their own size
     jpeg_quality: int = 80           # simulator only (30-95)
     parallel_capture: bool = True    # grab the cameras at the same time instead of one after the other
-    # --- JEV (Decisions API)
-    jev_session: bool = True         # reuse the HTTP/TLS connection (+ warm it up at mission start)
-    jev_multi: bool = False          # allow a 2nd action (turn/walk) from the same call; simulator only
-    jev_multi_min_conf: float = 0.85 # both actions must reach this confidence
-    jev_reduced_angles: bool = False # no +-90 deg turns: fewer, calmer choices
-    jev_finish_llm: bool = False     # on `finish`, one LLM call writes the answer (JEV cannot write text)
     # --- LLM agent (Responses API)
     llm_effort: str = ""             # "" = from .env
     llm_thought: bool = True         # ask for the `thought` field (output tokens = latency)
@@ -59,8 +53,6 @@ def sanitize(data: dict, base: Settings | None = None) -> Settings:
                 v = v if v in RESOLUTIONS else out.resolution
             elif k == "jpeg_quality":
                 v = min(95, max(30, int(v)))
-            elif k == "jev_multi_min_conf":
-                v = min(0.99, max(0.5, float(v)))
             elif k == "llm_effort":
                 v = v if v in EFFORTS else ""
             elif k == "llm_log_steps":

@@ -116,20 +116,13 @@
         <button id="u-chat" class="btn btn--sm btn--violet" title="Parli al cane in chat">chat</button>
         <button id="u-manual" class="btn btn--sm btn--ghost" title="Controllo manuale: WASD + un pulsante per ogni primitiva del Go1">manuale</button>
       </div>
-      <div class="modeswitch" role="group" aria-label="cervello">
-        <button id="b-llm" class="btn btn--sm btn--violet" title="Agente OpenAI con ragionamento (Responses API): lento, scrive il thought">LLM</button>
-        <button id="b-jev" class="btn btn--sm btn--ghost" title="JEV: OpenAI Decisions API, una sola chiamata veloce che sceglie l'azione (non scrive testo)">JEV</button>
-      </div>
-      <div class="modeswitch" role="group" aria-label="modello">
-        <button id="p-openai" class="btn btn--sm btn--ghost" title="Il cervello LLM usa OpenAI (OPENAI_MODEL)">OpenAI</button>
-        <button id="p-grok" class="btn btn--sm btn--violet" title="Il cervello LLM usa Grok (GROK_MODEL, chiave XAI_API_KEY)">Grok</button>
-      </div>
+      <span class="modeswitch" aria-label="modello"><button id="p-grok" class="btn btn--sm btn--violet" title="Grok (xAI): GROK_MODEL, chiave XAI_API_KEY" disabled>Grok</button></span>
       <select id="speed" class="ui-select" title="Velocità del simulatore">
         <option value="1">1×</option>
         <option value="0.5">0,5×</option>
         <option value="2">2×</option>
       </select>
-      <button id="open-settings" class="btn btn--sm btn--ghost" title="Impostazioni del loop: telecamere, risoluzione, opzioni JEV e LLM (per escludere una ottimizzazione se peggiora)">impostazioni</button>
+      <button id="open-settings" class="btn btn--sm btn--ghost" title="Impostazioni del loop: telecamere, risoluzione e opzioni dell'agente LLM">impostazioni</button>
       <button id="stop" class="btn btn--sm btn--danger" title="Kill switch: interrompe la missione e ferma il cane (anche Esc)">stop</button>
       <button id="reset" class="btn btn--sm btn--ghost" title="Simulatore: riporta cane e oggetti all'inizio. Cane vero: azzera solo l'odometria stimata. In entrambi i casi azzera la conversazione">reset demo</button>
     </div>
@@ -197,20 +190,8 @@
   <div class="opt"><label for="s-parallel_capture">Cattura le camere in parallelo<small>il passo aspetta la più lenta, non la somma</small></label>
     <input id="s-parallel_capture" type="checkbox"></div>
 
-  <h3>JEV (Decisions API)</h3>
-  <div class="opt"><label for="s-jev_session">Riusa la connessione HTTP<small>niente handshake TLS a ogni chiamata</small></label>
-    <input id="s-jev_session" type="checkbox"></div>
-  <div class="opt"><label for="s-jev_multi">Seconda azione dalla stessa chiamata<small>turn/walk senza rivedere le immagini; solo simulatore, solo se entrambe sono sicure</small></label>
-    <input id="s-jev_multi" type="checkbox"></div>
-  <div class="opt"><label for="s-jev_multi_min_conf">Confidenza minima per la seconda azione (0,5–0,99)</label>
-    <input id="s-jev_multi_min_conf" type="number" min="0.5" max="0.99" step="0.01" class="edit-input"></div>
-  <div class="opt"><label for="s-jev_reduced_angles">Niente giri da ±90°<small>meno scelte, angoli più calmi</small></label>
-    <input id="s-jev_reduced_angles" type="checkbox"></div>
-  <div class="opt"><label for="s-jev_finish_llm">Risposta finale scritta dall'LLM<small>JEV non scrive testo: una chiamata in più, solo alla fine</small></label>
-    <input id="s-jev_finish_llm" type="checkbox"></div>
-
   <h3>Agente LLM (Responses API)</h3>
-  <div class="opt"><label for="s-llm_effort">Reasoning effort<small>«da .env» usa OPENAI_/GROK_REASONING_EFFORT; solo modelli con reasoning</small></label>
+  <div class="opt"><label for="s-llm_effort">Reasoning effort<small>«da .env» usa GROK_REASONING_EFFORT; solo modelli con reasoning</small></label>
     <select id="s-llm_effort" class="ui-select"></select></div>
   <div class="opt"><label for="s-llm_thought">Campo «thought» nei tool<small>token di output in più a ogni passo</small></label>
     <input id="s-llm_thought" type="checkbox"></div>
@@ -242,7 +223,7 @@ function render(ev) {
   else if (ev.type === "timing") {
     const steps = [...log.querySelectorAll(`.step[data-n="${ev.n}"]`)], last = steps[steps.length - 1];
     if (last) last.querySelector(".txt").append(el("div", "timing",
-      `${ev.total} s · attesa ${ev.wait} · camere ${ev.cap} · ${ev.brain === "jev" ? "JEV" : "LLM"} ${ev.api}` +
+      `${ev.total} s · attesa ${ev.wait} · camere ${ev.cap} · LLM ${ev.api}` +
       (ev.exec ? ` · esecuzione ${ev.exec}` : "")));
     return;
   } else if (ev.type === "step") {
@@ -297,7 +278,6 @@ function applyRobot(robot, robots) {
   $("m-sim").textContent = go2 ? "mock · Go2" : "mock · MuJoCo";
   $("m-sim").title = go2 ? "Mock cinematico del Go2: stessi comandi, nessuna fisica, vista dall'alto sintetica" : "Simulatore MuJoCo (fisica vera, nessun rischio)";
   $("m-both").hidden = go2;
-  $("b-jev").disabled = go2;
   $("u-manual").title = `Controllo manuale: WASD + un pulsante per ogni primitiva del ${go2 ? "Go2" : "Go1"}`;
   $("primtitle").textContent = `Primitive del ${go2 ? "Go2" : "Go1"} (valori di default)`;
   $("armtext").innerHTML = go2
@@ -314,7 +294,7 @@ async function setRobot(robot) {
   if (!d.ok) render({ type: "error", text: d.error });
   else log.replaceChildren();  // new robot, new conversation
   $("armpanel").hidden = true;
-  applyMode(d); applyBrain(d.brain);
+  applyMode(d);
 }
 $("r-go1").onclick = () => setRobot("go1");
 $("r-go2").onclick = () => setRobot("go2");
@@ -327,35 +307,8 @@ async function setMode(mode, confirm) {
   return d;
 }
 
-function applyBrain(b) {
-  if (!b) return;
-  $("b-llm").className = "btn btn--sm " + (b === "llm" ? "btn--violet" : "btn--ghost");
-  $("b-jev").className = "btn btn--sm " + (b === "jev" ? "btn--violet" : "btn--ghost");
-}
-async function setBrain(brain) {
-  const d = await (await post("/api/brain", { brain })).json();
-  if (!d.ok) render({ type: "error", text: d.error });
-  applyBrain(d.brain);
-}
-function applyProvider(d) {
-  if (!d.provider) return;
-  $("p-openai").className = "btn btn--sm " + (d.provider === "openai" ? "btn--violet" : "btn--ghost");
-  $("p-grok").className = "btn btn--sm " + (d.provider === "grok" ? "btn--violet" : "btn--ghost");
-  $("p-" + d.provider).title = "modello: " + d.model;
-}
-async function setProvider(provider) {
-  const d = await (await post("/api/provider", { provider })).json();
-  if (!d.ok) render({ type: "error", text: d.error });
-  applyProvider(d);
-}
-$("p-openai").onclick = () => setProvider("openai");
-$("p-grok").onclick = () => setProvider("grok");
-$("b-llm").onclick = () => setBrain("llm");
-$("b-jev").onclick = () => setBrain("jev");
-
 /* ---------------------------------------------------------------- settings dialog (applies live, next step) */
-const SETTING_IDS = ["resolution", "jpeg_quality", "parallel_capture", "jev_session", "jev_multi", "jev_multi_min_conf",
-                     "jev_reduced_angles", "jev_finish_llm", "llm_effort", "llm_thought", "llm_log_steps"];
+const SETTING_IDS = ["resolution", "jpeg_quality", "parallel_capture", "llm_effort", "llm_thought", "llm_log_steps"];
 let settingsLoaded = false;
 function fillSettings(d) {
   const s = d.settings;
@@ -495,7 +448,7 @@ async function pollEvents() {
   try {
     const d = await (await fetch(`/api/events?after=${lastId}`)).json();
     for (const ev of d.events) { render(ev); lastId = Math.max(lastId, ev.id); }
-    applyMode(d); applyBrain(d.brain); applyProvider(d);
+    applyMode(d);
     bar.className = "topnav__status" + (d.running ? " is-live" : "");
     bar.dataset.base = d.running ? `passo ${d.step} · ${d.phase}` : "fermo";
   } catch { bar.dataset.base = "server non raggiungibile"; bar.className = "topnav__status"; }

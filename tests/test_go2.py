@@ -270,23 +270,3 @@ def test_agent_tools_and_prompts_follow_the_robot():
         p = system_prompt(mode, None, "go2")
         assert "Go2" in p and "Go1" not in p and "cam1" in p and "cam2" not in p
     assert "REALE" in system_prompt("real", None, "go2") and "SINTETICA" in system_prompt("sim", None, "go2")
-
-
-def test_jev_is_refused_for_the_go2():
-    client, hub, _ = build(go2_real=False)
-    client.post("/api/robot", json={"robot": "go2"})
-    assert not client.post("/api/brain", json={"brain": "jev"}).json()["ok"]
-
-
-if __name__ == "__main__":
-    tests = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_") and callable(f)]
-    failed = 0
-    for name, fn in tests:
-        try:
-            fn()
-            print(f"ok    {name}")
-        except Exception as e:  # noqa: BLE001
-            failed += 1
-            print(f"FAIL  {name}: {type(e).__name__}: {e}")
-    print(f"\n{len(tests) - failed}/{len(tests)} tests passed" if not failed else f"\n{failed} FAILED")
-    sys.exit(1 if failed else 0)

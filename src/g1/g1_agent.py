@@ -1,5 +1,5 @@
 """G1Agent: chat with the G1. An LLM sees the HEAD CAMERA (sim: MuJoCo head_cam, real: the robot's camera), and acts
-through a small whitelist of tools. Same provider switch as the dog's agent (src/llm_provider.py: OpenAI or Grok).
+through a small whitelist of tools. Same LLM config as the dog's agent (src/llm_provider.py: Grok).
 
 Safety (src/g1/README.md): the model never gets raw velocities, Damp/Start, joint control or anything but the tools below.
 Every move is bounded in speed and duration, executed one at a time, and abort()/kill stop it from outside the model.
@@ -128,19 +128,12 @@ class G1Agent:
         self._thread: threading.Thread | None = None
         self.running = False
         self.phase = "idle"
-        self.provider = llm_provider.default_provider()  # "openai" | "grok" (src/llm_provider.py)
 
     # ---- public
-    def set_provider(self, provider: str) -> None:
-        if provider not in llm_provider.PROVIDERS:
-            raise AgentError(f"unknown provider: {provider!r}")
-        self.abort()  # a running mission keeps its model: switching ends it
-        self.provider = provider
-
     def send(self, text: str) -> None:
         if self.running:
             raise AgentError("a mission is already running: stop it (Stop) or wait")
-        lc = llm_provider.config(self.provider)
+        lc = llm_provider.config()
         if not llm_provider.key_ok(lc):
             raise AgentError(llm_provider.missing_key_message(lc))
         mode = self.hub.mode
@@ -174,7 +167,7 @@ class G1Agent:
         return self._frames.get(fid)
 
     def status(self) -> dict:
-        return {"running": self.running, "phase": self.phase, "provider": self.provider, "model": llm_provider.config(self.provider).model}
+        return {"running": self.running, "phase": self.phase, "model": llm_provider.config().model}
 
     # ---- internals
     def _emit(self, kind: str, **f) -> None:
@@ -218,7 +211,7 @@ class G1Agent:
 
     def _mission(self, goal: str, epoch: int, mode: str) -> None:
         from openai import OpenAIError
-        lc = llm_provider.config(self.provider)  # fixed for the whole mission: switching provider aborts it
+        lc = llm_provider.config()
         client = llm_provider.make_client(lc)
         model, effort = lc.model, lc.effort
         max_steps = min(self.MAX_STEPS, 12) if mode == "real" else self.MAX_STEPS

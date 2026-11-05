@@ -81,10 +81,7 @@
   <div class="topnav__inner">
     <span class="topnav__brand"><img src="/ui/aidea-mark.svg" alt="aidea"><span class="topnav__brand-text">g1</span></span>
     <div class="topnav__actions">
-      <div class="seg" role="group" aria-label="model">
-        <button id="p-openai">OpenAI</button>
-        <button id="p-grok" class="on">Grok</button>
-      </div>
+      <span class="seg" aria-label="model"><button id="p-grok" class="on" title="Grok (xAI)" disabled>Grok</button></span>
       <select id="ctl" class="ui-select" aria-label="controller"></select>
       <div class="seg" role="group" aria-label="mode">
         <button id="m-sim" class="on">Simulator</button>
@@ -391,21 +388,13 @@ function applyThinking(d) {
   $("thinking").hidden = !busy;
   if (busy) $("thinktext").textContent = PHASE_LABEL[d.phase] || "thinking";
 }
-function applyProvider(d) {
-  if (!d || !d.provider) return;
-  $("p-openai").classList.toggle("on", d.provider === "openai");
-  $("p-grok").classList.toggle("on", d.provider === "grok");
-  $("p-" + d.provider).title = d.model || "";
-}
-$("p-openai").onclick = async () => applyProvider(await post("api/provider", { provider: "openai" }));
-$("p-grok").onclick = async () => applyProvider(await post("api/provider", { provider: "grok" }));
 async function evpoll() {
   try {
     const d = await (await fetch("api/events?after=" + lastEv)).json();
     if (curSession !== null && d.session !== curSession) { lastEv = 0; log.replaceChildren(); curSession = d.session; setTimeout(evpoll, 0); return; }  // webapp restarted
     curSession = d.session;
     for (const e of d.events) { render(e); lastEv = e.id; }
-    applyProvider(d); applyThinking(d);
+    applyThinking(d);
   } catch {}
   setTimeout(evpoll, 500);
 }

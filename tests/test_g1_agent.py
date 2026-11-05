@@ -173,7 +173,7 @@ def test_mission_stops_a_model_that_keeps_nudging() -> None:
     ag = G1Agent(Hub(r))
     ag.hub.mode = "real"
     real_openai, openai.OpenAI = openai.OpenAI, FakeOpenAI
-    os.environ["OPENAI_API_KEY"] = "sk-test"
+    os.environ["XAI_API_KEY"] = "xai-test"
     try:
         ag._mission("vai avanti di un metro", ag._epoch, "real")
     finally:
@@ -240,7 +240,7 @@ def _scripted_mission(script, body_factory=None):
     ag = G1Agent(Hub(r))
     ag.hub.mode = "real"
     real_openai, openai.OpenAI = openai.OpenAI, FakeOpenAI
-    os.environ["OPENAI_API_KEY"] = "sk-test"
+    os.environ["XAI_API_KEY"] = "xai-test"
     try:
         ag._mission("vai verso il palo rosso", ag._epoch, "real")
     finally:

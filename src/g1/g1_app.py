@@ -61,10 +61,6 @@ class ModeIn(BaseModel):
     confirm: bool = False
 
 
-class ProviderIn(BaseModel):
-    provider: str
-
-
 class CtlIn(BaseModel):
     name: str
 
@@ -356,15 +352,6 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
         return {"ok": True, "warning": warning, **hub.status()}
 
     # ---- chat
-    @app.post("/api/provider")
-    def provider(body: ProviderIn):
-        """OpenAI <-> Grok for the chat agent. Ends the running mission."""
-        try:
-            agent.set_provider(body.provider)
-        except AgentError as e:
-            return {"ok": False, "error": str(e), **agent.status()}
-        return {"ok": True, **agent.status()}
-
     @app.post("/api/chat")
     def chat(body: ChatIn):
         try:
