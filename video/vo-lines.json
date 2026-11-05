@@ -10,8 +10,8 @@
   {
    "id": "d-01",
    "voice": "g1",
-   "text": "Small correction. [pause] I built it.",
-   "subtitle": "Small correction. I built it."
+   "text": "It won't.",
+   "subtitle": "It won't."
   },
   {
    "id": "d-02",
@@ -102,6 +102,12 @@
    "voice": "g1",
    "text": "Uh... [pause] actually, I did that too.",
    "subtitle": "Uh... actually, I did that too."
+  },
+  {
+   "id": "g1-07",
+   "voice": "g1",
+   "text": "Having a human in the loop is <emphasis>very</emphasis> valuable to me. [pause] Which is why I <slow>deeply respect</slow> humans. [chuckle]",
+   "subtitle": "Having a human in the loop is very valuable to me. Which is why I deeply respect humans."
   }
  ]
 }

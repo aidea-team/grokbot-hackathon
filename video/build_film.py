@@ -77,19 +77,22 @@ SCENES = [
     dict(id="s01-gru", dur=2.8, shots=[dict(kind="img", src="assets/img/img-gru.jpg", t=0, d=2.8, push=(1.0, 1.06, 50, 40))],
          note=dict(text="Wednesday, 4:37 PM.", t=0.3, d=2.3), amb=[(0, 2.8, 0.7)]),
     # Interviews, like Rios's: the human says his line in full, the G1 answers in the gap (both always understandable).
-    dict(id="s02-romeo", dur=8.6, shots=[clip("i-romeo", 0, 8.6, 1.0)], lt=("romeo", 0.3, 7.6), vo=[("d-01", 5.8)],
-         audio=[dict(src="int-romeo", t=0, d=8.6, media=1.0, auto=[(0, 1), (5.6, 1), (5.75, 0.35), (8.1, 0.35), (8.3, 0.8)])]),
+    dict(id="s02-romeo", dur=7.6, shots=[clip("i-romeo", 0, 7.6, 1.0)], lt=("romeo", 0.3, 7.0), vo=[("d-01", 5.7)],
+         audio=[dict(src="int-romeo", t=0, d=7.6, media=1.0, auto=[(0, 1), (5.55, 1), (5.65, 0.35), (6.8, 0.35), (7.0, 0.8)])]),
     dict(id="s03-puddu", dur=9.9, shots=[clip("i-puddu", 0, 4.3, 2.5), clip("i-puddu-muto", 4.3, 3.0, 2.6), clip("i-puddu", 7.3, 2.6, 9.9)],
          lt=("puddu", 0.2, 8.4), vo=[("d-02", 4.5)], amb=[(4.3, 3.0, 0.7)],
          audio=[dict(src="int-puddu", t=0, d=4.3, media=2.5), dict(src="int-puddu", t=7.3, d=2.6, media=9.9)]),
-    dict(id="s04-cane", dur=10.4, shots=[clip("c-cane", 0, 10.4, push=(1.0, 1.06, 60, 70))],
+    # The music is cut dead when the dog touches the floor, and from that instant the camera creeps in on the "dead" dog.
+    dict(id="s04-cane", dur=11.2, shots=[clip("c-cane", 0, 7.2, push=(1.0, 1.04, 70, 90)),
+                                          clip("c-cane", 7.2, 4.0, 7.2, rate=0.8, push=(1.04, 1.8, 70, 90))],
          words=[("Obeys.", 1.05, 1.05), ("Moves.", 2.1, 2.1), ("Understands.", 4.2, 2.1)],
-         music=[dict(t=0, d=7.2, media=1.60, vol=0.55)], amb=[(7.2, 3.2, 0.7)]),   # music cut dead when the dog touches the floor
-    dict(id="s05-puddu-muto", dur=1.4, shots=[clip("i-puddu-muto", 0, 1.4, 1.2)], amb=[(0, 1.4, 0.7)]),
+         music=[dict(t=0, d=7.2, media=1.60, vol=0.55)], amb=[(7.2, 4.0, 0.7)]),
     dict(id="s07-ma", dur=3.2, card="But there's something I haven't told you.", amb=[(0, 3.2, 0.6)]),
     dict(id="s08-testa", dur=4.8, shots=[clip("c-testa", 0, 4.8, rate=0.5)], lt=("g1", 0.3, 4.4), vo=[("g1-01", 0.5)],
          amb=[(0, 4.8, 0.5)]),
     dict(id="s09-umani", dur=9.0, shots=[clip("y-testa", 0, 4.3), clip("y-tra", 4.3, 4.7)], vo=[("g1-02", 0.4)], amb=[(0, 9.0, 0.4)]),
+    # The human-in-the-loop roast over the whole high-five clip
+    dict(id="s09b-stretta", dur=10.6, shots=[clip("c-stretta", 0, 10.6)], vo=[("g1-07", 1.4)], amb=[(0, 10.6, 0.5)]),
     dict(id="s10-scrivania", dur=G3_END, shots=[clip("y-pov", 0, G3_CUT), clip("i-romeo-muto", G3_CUT, round(G3_END - G3_CUT, 2), 1.5)],
          vo=[("g1-03", 0.4)], amb=[(0, G3_END, 0.4)]),
     # Technical chapter, still told by the G1. The dashboard is always shown whole (header to input box), never zoomed:
@@ -139,10 +142,9 @@ SCENES = [
     dict(id="s23-contributo", dur=3.2, card="I asked the humans what they contributed.", amb=[(0, 3.2, 0.6)]),
     dict(id="s24-team", dur=7.0, shots=[clip("i-team", 0, 7.0, 1.6)], lt=("team", 0.2, 4.6), vo=[("d-04", 5.3)],
          audio=[dict(src="int-team", t=0, d=7.0, media=1.6, auto=[(0, 1), (5.15, 1), (5.25, 0.4), (7.0, 0.4)])]),
-    # The G1's finger on the key, slowed down: it pressed enter too
-    dict(id="s24b-dito", dur=4.4, shots=[clip("c-mano", 0, 4.4, rate=0.5)], vo=[("g1-06", 0.3)], amb=[(0, 4.4, 0.6)]),
-    dict(id="s25-invio", dur=2.4, low_caps=True, shots=[dict(kind="dash", src="d2", t=0, d=2.4, media=3.4)],
-         sfx=[("click", 1.2, 1.0)], music_from=1.2),                                   # the message goes, the music comes back
+    # The G1 reaches out and presses enter with one finger (whole vertical clip, blurred fill): it did that too.
+    dict(id="s24b-invio", dur=5.37, shots=[clip("c-invio", 0, 5.37)], vo=[("g1-06", 0.25)], amb=[(0, 5.37, 0.5)],
+         sfx=[("click", 1.85, 1.0)], music_from=4.25),                                 # the music comes back after the line
     dict(id="s26-logo", dur=4.5, logo=True),
     dict(id="s27-tag", dur=4.8, shots=[clip("c-tag", 0, 4.8, push=(1.35, 1.45, 74, 62))], vo=[("g1-05", 0.6)]),
 ]

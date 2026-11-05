@@ -50,6 +50,10 @@ CLIPS = {
     "y-pov":     (YOLO / "en-pov.mp4", 0.0, 6.0, FIT),
     "y-arriva":  (YOLO / "en-arriva.mp4", 0.0, 7.5, FIT),
     "y-pov2":    (YOLO / "en-pov2.mp4", 0.0, 7.8, FIT),
+    "c-stretta": (FOOT / "g1-stretta-di-mano.mp4", 0.0, 10.66, FIT),
+    "c-invio":   (FOOT / "g1-preme-invio.mp4", 0.0, 5.37,
+                  "split[a][b];[a]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,boxblur=40:4,"
+                  "eq=brightness=-0.12:saturation=0.85[bg];[b]scale=-2:1080[fg];[bg][fg]overlay=(W-w)/2:0"),
     # vertical phone clip in a 16:9 frame: the same clip blurred and darkened behind fills the width
     "c-vert":    (FOOT / "g1-cammina-con-umani.mp4", 0.0, 4.85,
                   "split[a][b];[a]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,boxblur=40:4,"

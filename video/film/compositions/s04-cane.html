@@ -59,14 +59,16 @@
 
   </style>
   <div id="root" data-composition-id="s04-cane" data-width="1920" data-height="1080">
-    <div class="wrap" id="s04-cane-w0" style="z-index:1"><video id="s04-cane-m0" class="clip full" data-start="0" data-duration="10.4" data-track-index="1" data-media-start="0.0" src="assets/clips/c-cane.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s04-cane-w0" style="z-index:1"><video id="s04-cane-m0" class="clip full" data-start="0" data-duration="7.2" data-track-index="1" data-media-start="0.0" src="assets/clips/c-cane.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s04-cane-w1" style="z-index:2"><video id="s04-cane-m1" class="clip full" data-start="7.2" data-duration="4.0" data-track-index="2" data-media-start="7.2" data-playback-rate="0.8" src="assets/clips/c-cane.mp4" muted playsinline></video></div>
     <div id="s04-cane-word0" class="clip word" data-start="1.05" data-duration="1.05" data-track-index="9" style="z-index:60"><span id="s04-cane-word0-in">Obeys.</span></div>
     <div id="s04-cane-word1" class="clip word" data-start="2.1" data-duration="2.1" data-track-index="10" style="z-index:60"><span id="s04-cane-word1-in">Moves.</span></div>
     <div id="s04-cane-word2" class="clip word" data-start="4.2" data-duration="2.1" data-track-index="11" style="z-index:60"><span id="s04-cane-word2-in">Understands.</span></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s04-cane-w0", {scale: 1.0, transformOrigin: "60% 70%"}, {scale: 1.06, duration: 10.4, ease: "none"}, 0);
+    tl.fromTo("#s04-cane-w0", {scale: 1.0, transformOrigin: "70% 90%"}, {scale: 1.04, duration: 7.2, ease: "none"}, 0);
+    tl.fromTo("#s04-cane-w1", {scale: 1.04, transformOrigin: "70% 90%"}, {scale: 1.8, duration: 4.0, ease: "none"}, 7.2);
     tl.fromTo("#s04-cane-word0-in", {opacity: 0, filter: "blur(10px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out"}, 1.05);
     tl.fromTo("#s04-cane-word1-in", {opacity: 0, filter: "blur(10px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out"}, 2.1);
     tl.fromTo("#s04-cane-word2-in", {opacity: 0, filter: "blur(10px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out"}, 4.2);
