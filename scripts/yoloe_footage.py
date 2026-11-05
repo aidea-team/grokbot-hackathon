@@ -64,8 +64,9 @@ def draw(rgb: np.ndarray, dets, backend: str, seg_ms: float, italian: bool, soli
         tag = (ITALIAN.get(d.label, d.label) if italian else d.label) + (f" {d.score:.2f}" if d.score is not None else "")
         _text(img, tag, int((d.box[0] + d.box[2]) / 2) - int(6 * scale / 0.45) * len(tag) // 2, int(d.box[1]) + bar,
               color(d.label), scale, taken=taken)
-    _text(img, f"{backend} {seg_ms:.0f} ms | {len(dets)} oggetti | niente profondita' (video da telefono)", 6, bar - 6,
-          (230, 230, 230), scale * 0.9)
+    status = (f"{backend} {seg_ms:.0f} ms | {len(dets)} oggetti | niente profondita' (video da telefono)" if italian else
+              f"{backend} {seg_ms:.0f} ms | {len(dets)} objects | no depth (phone video)")
+    _text(img, status, 6, bar - 6, (230, 230, 230), scale * 0.9)
     return img
 
 
