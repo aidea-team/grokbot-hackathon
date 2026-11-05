@@ -133,6 +133,7 @@ def test_prompt_and_guard_against_micro_movement_loops() -> None:
         for action in CRUISE:  # every locomotion primitive is explained in the prompt
             assert action in p, action
         assert "METRI" in p and "GRADI" in p and "CENTRO" in p and "mezzo metro" in p and "destra" in p
+        assert "target_visible=false" in p and "ESATTAMENTE" in p and "resto fermo" in p  # search protocol + exact centering
     assert describe_call("move", {"steps": [{"action": "walk_forward", "amount": 1}, {"action": "turn_left", "amount": 30}], "thought": "x"}) == \
         "move(walk forward 1 m -> turn left 30°)"
     assert "object" not in describe_call("move", {"steps": [{"action": "walk_forward", "amount": 1}]}).lower()
@@ -206,6 +207,95 @@ def test_agent_gestures_follow_the_body_and_mock_flags_unsimulated() -> None:
         assert any(p["name"] == "high_five" and p["simulated"] for p in ps)
         res = c.post("/api/preset", json={"name": "custom_dance"}).json()
         assert res["ok"] is False and "non è simulato" in res["error"]
+    finally:
+        w.shutdown()
+
+
+def _scripted_mission(script, body_factory=None):
+    """Run a mission against a scripted 'LLM' (no network). Returns (agent, fake loco, prompts the model saw)."""
+    import json
+    import os
+    import types
+    import openai
+    seen: list[str] = []
+
+    class Resp:
+        def __init__(self, name, args):
+            self.output = [types.SimpleNamespace(type="function_call", name=name, arguments=json.dumps(args))]
+            self.output_text = ""
+
+    class FakeOpenAI:
+        def __init__(self, **kw):
+            self.responses, self.i = self, 0
+
+        def create(self, **kw):
+            seen.append(kw["input"][0]["content"][0]["text"])
+            name, args = script[min(self.i, len(script) - 1)]
+            self.i += 1
+            return Resp(name, args)
+
+    r, f = RealG1(), FakeLoco()
+    r._loco, r.state = f, ARMED
+    r.head_jpeg = lambda timeout=3.0: b"jpeg"
+    ag = G1Agent(Hub(r))
+    ag.hub.mode = "real"
+    real_openai, openai.OpenAI = openai.OpenAI, FakeOpenAI
+    os.environ["OPENAI_API_KEY"] = "sk-test"
+    try:
+        ag._mission("vai verso il palo rosso", ag._epoch, "real")
+    finally:
+        openai.OpenAI = real_openai
+    return ag, f, seen
+
+
+def test_lost_target_search_right_then_left_then_stand_still() -> None:
+    look_no = ("look", {"target_visible": False, "thought": "non lo vedo"})
+    ag, f, seen = _scripted_mission([look_no] * 6)  # a model that keeps saying "not visible"
+    steps = [e for e in ag.events(0) if e["kind"] == "step"]
+    finals = [e for e in ag.events(0) if e["kind"] == "final"]
+    assert len(steps) == 3 and len(seen) == 3, (len(steps), len(seen))  # stops at the third miss: no 4th LLM call
+    assert "turn right" in steps[0]["result"] and "30°" in steps[0]["result"], steps[0]["result"]  # first: a small turn to the right
+    assert "turn left" in steps[1]["result"] and "60°" in steps[1]["result"], steps[1]["result"]  # then to the left (back to start + 30)
+    assert "ricerca finita" in steps[2]["result"] and len(finals) == 1
+    assert "resto fermo" in finals[0]["text"].lower() and "indicazioni" in finals[0]["text"]
+    moves = [c for c in f.calls if c[0] == "Move"]
+    assert moves and sum(1 for c in moves if c[1][2] < 0) > 0 and sum(1 for c in moves if c[1][2] > 0) > 0  # right (-yaw) and left (+yaw)
+    assert f.calls[-1][0] == "StopMove"  # and it is standing still at the end
+
+
+def test_search_resets_when_the_target_is_found() -> None:
+    script = [("look", {"target_visible": False, "thought": "no"}), ("look", {"target_visible": True, "thought": "eccolo"}),
+              ("look", {"target_visible": False, "thought": "perso"}), ("finish", {"message": "ok"})]
+    ag, f, seen = _scripted_mission(script)
+    steps = [e for e in ag.events(0) if e["kind"] == "step"]
+    assert "turn right" in steps[0]["result"] and "Ricerca 1/2" in steps[2]["result"], [s["result"][:60] for s in steps]  # restarts from the right
+
+
+def test_pure_turns_do_not_trigger_the_walking_guard() -> None:
+    turn = ("move", {"steps": [{"action": "turn_right", "amount": 10}], "thought": "centro"})
+    ag, f, seen = _scripted_mission([turn] * 5 + [("finish", {"message": "ok"})])
+    steps = [e for e in ag.events(0) if e["kind"] == "step"]
+    assert len(steps) == 5 and all(e["ok"] for e in steps), [(e["ok"], e["result"][:50]) for e in steps]
+
+
+def test_heading_is_held_and_result_reports_asked_vs_measured() -> None:
+    import io
+    import math
+    import numpy as np
+    from PIL import Image
+    w = G1World(width=160, height=90, head_size=(640, 360))
+    w.start()
+    try:
+        time.sleep(2.5)
+        ag = G1Agent(Hub(w))
+        ok, msg = ag._execute("move", {"steps": [{"action": "turn_right", "amount": 20}, {"action": "walk_forward", "amount": 2.0}]}, ag._epoch)
+        time.sleep(0.8)
+        assert ok and "misurato" in msg and "rotta deviata" in msg, msg
+        yaw = w.snapshot()["yaw_deg"]
+        assert -32 <= yaw <= -10, (yaw, msg)  # asked -20: before the fix the gait drifted it to ~-39
+        im = np.asarray(Image.open(io.BytesIO(w.head_jpeg())).convert("RGB")).astype(int)
+        red = (im[..., 0] > 150) & (im[..., 1] < 70) & (im[..., 2] < 70)
+        assert red.sum() > 500, "the red cylinder left the field of view"
     finally:
         w.shutdown()
 

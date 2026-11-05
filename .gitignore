@@ -18,3 +18,6 @@ recordings/
 vendor/
 # log locali (committare a mano solo quelli usati come evidenza)
 logs/
+
+# copie locali di backup (animazioni G1 ecc.)
+backups/

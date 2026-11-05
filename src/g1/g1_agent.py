@@ -26,7 +26,8 @@ AMOUNT = {"walk_forward": (0.2, 3.0), "walk_backward": (0.2, 2.0), "strafe_left"
           "turn_left": (10.0, 180.0), "turn_right": (10.0, 180.0)}  # metres, or degrees for turn_*
 STARTUP_S = {"walk": 0.8, "turn": 0.5}  # open loop (real robot, no odometry yet): time the controller needs to get stepping. CALIBRATE on the robot
 MAX_PLAN_STEPS = 4
-MAX_CONSECUTIVE_MOVES = 3  # then the model must look or finish: no endless nudging toward a distance it cannot measure
+SEARCH_RIGHT_DEG, SEARCH_LEFT_DEG = 30, 60  # lost target: small turn right, then left (60 = back to the start + 30 on the other side), then stand still
+MAX_CONSECUTIVE_MOVES = 3  # WALKING moves in a row, then the model must look or finish (pure turns do not count)
 
 TOOLS = [
     {"type": "function", "name": "move", "description":
@@ -46,9 +47,13 @@ TOOLS = [
      "parameters": {"type": "object", "properties": {
          "name": {"type": "string", "enum": GESTURES}, "thought": {"type": "string"}},
          "required": ["name", "thought"], "additionalProperties": False}},
-    {"type": "function", "name": "look", "description": "Resta fermo e guarda di nuovo (nuova immagine della telecamera).",
-     "parameters": {"type": "object", "properties": {"thought": {"type": "string"}}, "required": ["thought"],
-                    "additionalProperties": False}},
+    {"type": "function", "name": "look", "description":
+        "Resta fermo e guarda di nuovo (nuova immagine della telecamera). Se stai cercando un oggetto e NON lo vedi, chiamalo con "
+        "target_visible=false: la ricerca (una piccola rotazione a destra, poi a sinistra) la fa il sistema; se non lo trova resta fermo e "
+        "chiede indicazioni all'utente. Non ruotare tu per cercare.",
+     "parameters": {"type": "object", "properties": {
+         "target_visible": {"type": "boolean", "description": "false se cerchi un oggetto e non lo vedi; true se lo vedi; ometti se non cerchi nulla"},
+         "thought": {"type": "string"}}, "required": ["thought"], "additionalProperties": False}},
     {"type": "function", "name": "finish", "description": "Obiettivo raggiunto (o impossibile): rispondi all'utente.",
      "parameters": {"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"],
                     "additionalProperties": False}},
@@ -80,12 +85,15 @@ def system_prompt(real: bool) -> str:
         "- turn_left / turn_right: ruoti sul posto a sinistra (antiorario) / destra (orario), in GRADI (10-180).\n"
         "Destra e sinistra sono quelle del ROBOT, non dell'immagine vista da fuori: ciò che sta nella metà destra dell'immagine è alla tua destra. "
         "La velocità non la scegli tu: la camminata è già calibrata, quindi distanza e angolo che indichi sono quelli che farai.\n\n"
-        "COME RAGGIUNGERE UN OGGETTO. 1) Se non lo vedi, ruota (turn_*) e guarda con look. 2) Centralo: se è nella metà destra dell'immagine "
-        "ruota a destra, se è nella sinistra a sinistra" + (" (un oggetto al bordo è a ~35°, a metà strada tra centro e bordo a ~15-20°). " if not real else
-        " (più è lontano dal centro, più devi ruotare). ") + 
-        "3) Avanza con walk_forward di circa i due terzi della distanza che stimi, poi controlla con look e rifinisci. "
-        "4) «Mettiti davanti a X» = fermarti a circa mezzo metro da X, rivolto verso di lui: non urtarlo e non andare oltre. "
-        "Puoi concatenare più passi nella stessa chiamata (es. turn_right 20°, poi walk_forward 2 m).\n\n"
+        "COME RAGGIUNGERE UN OGGETTO. 1) Se NON lo vedi nell'immagine, chiama look con target_visible=false: la ricerca (una piccola rotazione a "
+        "destra, poi una a sinistra) la faccio io; se non lo trovo resto fermo e chiedo indicazioni all'utente. Non ruotare tu per cercare e non "
+        "vagare. 2) Se lo vedi decentrato, ruota ESATTAMENTE dell'angolo che stimi" + (" con (posizione orizzontale − 0,5) × 70°, dove la posizione va da "
+        "0 (bordo sinistro) a 1 (bordo destro): ad esempio un oggetto a 0,85 è a ~25° a destra" if not real else
+        " guardando quanto è lontano dal centro (più è lontano, più devi ruotare)") + "; non ruotare a caso di 30° e non ruotare due volte di "
+        "fila per centrarlo senza guardare. 3) Avanza con walk_forward di circa i due terzi della distanza che stimi, poi controlla con look e "
+        "rifinisci. 4) «Mettiti davanti a X» = fermarti a circa mezzo metro da X, rivolto verso di lui: non urtarlo e non andare oltre. "
+        "Puoi concatenare più passi nella stessa chiamata (es. turn_right 20°, poi walk_forward 2 m). Dopo ogni movimento leggi il risultato: "
+        "ti dice quanto ti sei mosso e ruotato davvero, e se c'è stato uno scostamento rispetto a ciò che avevi chiesto.\n\n"
         "REGOLE. Se l'utente chiede una distanza o un angolo precisi (es. «un metro avanti», «gira di 90°»), fai UNA sola chiamata move con quel "
         "valore: viene eseguito esattamente come chiesto, quindi poi basta un eventuale look e finish. Non fare micro-movimenti (almeno 0,3 m, "
         "almeno 20° per una rotazione): ogni chiamata costa diversi secondi. Non aggiustare a meno che l'immagine mostri un ostacolo o un errore "
@@ -205,6 +213,7 @@ class G1Agent:
         done: list[str] = []
         moved = {"fwd": 0.0, "lat": 0.0, "yaw": 0.0}  # what the model has already been commanded to do this mission
         consec = 0
+        misses = 0  # consecutive look(target_visible=false)
         for step in range(1, max_steps + 1):
             if self._epoch != epoch:
                 return
@@ -248,13 +257,34 @@ class G1Agent:
             if name == "finish":
                 self._emit("final", text=str(args.get("message", "")), frame=fid)
                 return
-            if name == "move" and consec >= MAX_CONSECUTIVE_MOVES:
+            walks = False
+            if name == "move":
+                parsed = self._validate_steps(args)[0] or []
+                walks = any(not a.startswith("turn") for a, _ in parsed)
+            if name == "look" and args.get("target_visible") is False:
+                misses += 1  # the model does not see the target: we search for it, it does not wander
+                if misses >= 3:
+                    self._emit("step", n=step, frame=fid, tool=name, args={"target_visible": False}, thought=thought, ok=True,
+                               result="ricerca finita: davanti, a destra e a sinistra", latency=round(time.monotonic() - t0, 2))
+                    self._emit("final", frame=fid, text="Non trovo l'obiettivo: ho guardato davanti, un po' a destra e un po' a sinistra. "
+                                                        "Resto fermo e aspetto indicazioni.")
+                    return
+                action, amount = ("turn_right", SEARCH_RIGHT_DEG) if misses == 1 else ("turn_left", SEARCH_LEFT_DEG)
+                ok, result = self._move({"steps": [{"action": action, "amount": amount}]}, epoch)
+                result = (f"Ricerca {misses}/2: non vedevi l'obiettivo, ho ruotato {action.replace('_', ' ')} {amount}°. {result} "
+                          "Se ora lo vedi procedi; se non lo vedi richiama look con target_visible=false.")
+            elif name == "move" and walks and consec >= MAX_CONSECUTIVE_MOVES:
                 ok, result = False, (f"hai già fatto {consec} movimenti di fila: guarda (look) per controllare, oppure concludi con finish. "
                                      "Spostamento totale già eseguito: avanti %+.2f m, a sinistra %+.2f m, rotazione %+.0f°." %
                                      (moved["fwd"], moved["lat"], moved["yaw"]))
             else:
                 ok, result = self._execute(name, args, epoch)
-            consec = consec + 1 if (name == "move" and ok) else (consec if name == "move" else 0)
+                if name != "look" or args.get("target_visible") is not False:
+                    misses = 0 if name in ("move", "gesture") or args.get("target_visible") is True else misses
+            if name == "move":
+                consec = consec + 1 if (ok and walks) else consec
+            else:
+                consec = 0
             if name == "move" and ok:
                 for action, amount in (self._validate_steps(args)[0] or []):
                     sign = 1 if action in ("walk_forward", "strafe_left", "turn_left") else -1
@@ -334,6 +364,8 @@ class G1Agent:
         return out, ""
 
     def _move(self, args: dict, epoch: int) -> tuple[bool, str]:
+        """Run the validated steps. Simulator: closed loop (stops at the asked distance/angle, HOLDS the heading while walking, slows down before
+        the end of a turn, and reports asked vs measured). Real robot: timed, no odometry yet."""
         import math
         steps, err = self._validate_steps(args)
         if steps is None:
@@ -341,9 +373,14 @@ class G1Agent:
         body = self.hub.body
         closed = getattr(body, "name", "sim") != "real"  # the simulator reports its pose; the real robot: timed (no odometry wired yet)
         lo, hi = self._limits(body)
+
+        def wrap(a: float) -> float:
+            return (a + math.pi) % (2 * math.pi) - math.pi
+
         self.phase = "cammino"
         start = body.snapshot() if closed else None
-        done_txt: list[str] = []
+        report: list[str] = []
+        deviated = False
         for action, amount in steps:
             cmd = [min(max(c, l), h) for c, l, h in zip(CRUISE[action], lo, hi)]
             axis = max(range(3), key=lambda k: abs(CRUISE[action][k]))
@@ -352,29 +389,44 @@ class G1Agent:
                 return False, f"{action}: il robot non accetta una velocità sufficiente ({speed:.2f})"
             turn = action.startswith("turn")
             target = math.radians(amount) if turn else amount  # rad or m
-            rate = speed  # rad/s or m/s along the commanded axis
-            budget = target / rate * 2.0 + 3.0  # safety timeout
-            if not closed:
-                budget = target / rate + STARTUP_S["turn" if turn else "walk"]
+            budget = target / speed * 2.0 + 3.0 if closed else target / speed + STARTUP_S["turn" if turn else "walk"]
             s0 = body.snapshot() if closed else None
-            t0 = time.monotonic()
+            h0 = math.radians(s0["yaw_deg"]) if closed else 0.0
+            prog, t0 = 0.0, time.monotonic()
             while time.monotonic() - t0 < budget:
                 if self._epoch != epoch:
                     body.stop()
                     return False, "interrotto"
-                body.command(*cmd)
+                now = list(cmd)
+                if closed:
+                    yaw = math.radians(body.snapshot()["yaw_deg"])
+                    if turn:  # slow down over the last ~0.4 rad so it does not overshoot the asked angle
+                        now[2] = math.copysign(max(0.15, min(abs(cmd[2]), 1.5 * (target - prog))), cmd[2])
+                    else:  # hold the heading: the gait drifts in yaw, and a few degrees of drift over 2 m lose the target
+                        now[2] = max(-0.35, min(0.35, 1.5 * wrap(h0 - yaw)))
+                body.command(*now)
                 time.sleep(0.1)
                 if closed:
                     s = body.snapshot()
                     dx, dy = s["x"] - s0["x"], s["y"] - s0["y"]
-                    h0 = math.radians(s0["yaw_deg"])
                     fwd, lat = dx * math.cos(h0) + dy * math.sin(h0), -dx * math.sin(h0) + dy * math.cos(h0)
-                    dyaw = math.radians((s["yaw_deg"] - s0["yaw_deg"] + 180) % 360 - 180)
+                    dyaw = wrap(math.radians(s["yaw_deg"]) - h0)
                     prog = {"walk_forward": fwd, "walk_backward": -fwd, "strafe_left": lat, "strafe_right": -lat,
                             "turn_left": dyaw, "turn_right": -dyaw}[action]
-                    if prog >= target:
+                    if prog >= target - (0.03 if turn else 0.03):
                         break
-            done_txt.append(f"{action} {amount:g}{'°' if turn else ' m'}")
+            if closed:
+                e = body.snapshot()
+                if turn:
+                    got = math.degrees(prog)
+                    deviated |= abs(got - amount) > max(8.0, 0.25 * amount)
+                    report.append(f"{action} {amount:g}° (misurato {got:.0f}°)")
+                else:
+                    drift = math.degrees(wrap(math.radians(e["yaw_deg"]) - h0))
+                    deviated |= abs(prog - amount) > 0.3 or abs(drift) > 12
+                    report.append(f"{action} {amount:g} m (misurato {prog:.2f} m, rotta deviata di {drift:+.0f}°)")
+            else:
+                report.append(f"{action} {amount:g}{'°' if turn else ' m'}")
         body.stop()
         time.sleep(0.4)
         if closed:
@@ -382,6 +434,8 @@ class G1Agent:
             h0 = math.radians(start["yaw_deg"])
             dx, dy = e["x"] - start["x"], e["y"] - start["y"]
             fwd, lat = dx * math.cos(h0) + dy * math.sin(h0), -dx * math.sin(h0) + dy * math.cos(h0)
-            dyaw = (e["yaw_deg"] - start["yaw_deg"] + 180) % 360 - 180
-            return True, f"eseguito ({'; '.join(done_txt)}). Misurato: avanti {fwd:+.2f} m, a sinistra {lat:+.2f} m, rotazione {dyaw:+.0f}°. Non serve aggiustarlo"
-        return True, f"eseguito esattamente come comandato ({'; '.join(done_txt)}). Non serve ripeterlo o aggiustarlo; se vuoi controllare l'ambiente usa look"
+            dyaw = math.degrees(wrap(math.radians(e["yaw_deg"]) - h0))
+            tail = ("ATTENZIONE: scostamento dal richiesto, ricontrolla con look prima di proseguire." if deviated else "Non serve aggiustarlo.")
+            return True, (f"eseguito: {'; '.join(report)}. In totale dall'inizio: avanti {fwd:+.2f} m, a sinistra {lat:+.2f} m, "
+                          f"rotazione {dyaw:+.0f}° (+ = sinistra). {tail}")
+        return True, f"eseguito a tempo come comandato ({'; '.join(report)}). Non serve ripeterlo o aggiustarlo; se vuoi controllare l'ambiente usa look"
