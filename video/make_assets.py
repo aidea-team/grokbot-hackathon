@@ -22,6 +22,15 @@ OUT = REPO / "video" / "film" / "assets"
 FORCE = "--force" in sys.argv
 
 FIT = "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080"
+# Phone HDR (HLG) to SDR bt709, otherwise the renderer takes its slow HDR path and the colours come out flat.
+TONEMAP = ("zscale=tin=arib-std-b67:min=bt2020nc:pin=bt2020:rin=tv:t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
+           "tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,")
+
+
+def is_hlg(src: Path) -> bool:
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=color_transfer",
+                          "-of", "csv=p=0", str(src)], capture_output=True, text=True).stdout.strip()
+    return out in ("arib-std-b67", "smpte2084")
 # id: (source, start s, duration s, ffmpeg crop/scale chain applied after rotation)
 CLIPS = {
     "c-cane":    (FOOT / "g1-porta-a-spasso-il-cane.mp4", 0.0, 10.45, FIT),
@@ -65,8 +74,10 @@ def clips() -> None:
             print(f"skip {cid}: manca {src.name}")
             continue
         try:
-            run(["ffmpeg", "-v", "error", "-y", "-ss", str(ss), "-t", str(t), "-i", str(src), "-an", "-vf", vf + ",fps=30,format=yuv420p",
-                 "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-g", "30", "-movflags", "+faststart", str(dst)])
+            pre = TONEMAP if is_hlg(src) else ""
+            run(["ffmpeg", "-v", "error", "-y", "-ss", str(ss), "-t", str(t), "-i", str(src), "-an", "-vf", pre + vf + ",fps=30,format=yuv420p",
+                 "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-g", "30", "-color_primaries", "bt709", "-color_trc", "bt709",
+                 "-colorspace", "bt709", "-movflags", "+faststart", str(dst)])
             print("clip", cid)
         except subprocess.CalledProcessError:
             dst.unlink(missing_ok=True)
