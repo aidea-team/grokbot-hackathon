@@ -10,51 +10,32 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 - **Grafica:** palette aidea (nero `#0a0a12`, viola `#4300de` / `#8f3fff`, giallo `#fff94a`), font Artific (`src/ui/static/fonts/`), logo `video/assets/aidea-logo.webp`. "aidea" sempre minuscolo, niente trattini lunghi nei testi.
 - **Audio:** l'audio delle clip non ha parlato utile: lo usiamo solo come rumore di sala nei silenzi. Musica: un brano in bundle con brag ("Happy Beats / Business Moves", ende.app, CC BY 4.0, va citato), solo nell'atto 1 e nel finale. Effetti sonori: tasti e clic amplificati (Kenney, in bundle con brag).
 
-## Timeline
+## Timeline (montaggio attuale, bozza v2)
 
-`[in-out]` sono i secondi dentro la clip sorgente. Le clip stanno in `assets/footage/` (ignorata da git), quelle segmentate in `video/assets/yolo/`.
+Generata da `video/build_film.py`: i tempi qui sotto sono quelli del file. Durata 1:46.
 
-### Apertura
+| # | Tempo | Immagine | Audio / testo |
+|---|---|---|---|
+| 1 | 0:00-0:03 | Foto del G1 appeso alla gru, zoom lento | "Mercoledì, ore 16:37." |
+| 2 | 0:03-0:10 | **Romeo** (intervista) | Inglese, poi il doppiatore traduce fedele: "…cambierà la robotica. Per sempre." |
+| 3 | 0:10-0:17 | **Puddu**, con un jump cut a metà | Doppiatore: "È un cane. Cammina." L'inglese continua senza sottotitoli ("…and it understands natural language") |
+| 4 | 0:17-0:28 | Il G1 porta a spasso il cane | Musica epica, parole gialle "Obbedisce." "Si muove." "Capisce."; **la musica si ferma quando il cane si accuccia** |
+| 5 | 0:28-0:30 | **Puddu muto** che guarda in camera | Silenzio |
+| 6 | 0:30-0:36 | Cartelli: "I giudici non sembravano impressionati." / "Ma c'è una cosa che non vi abbiamo detto." | Silenzio |
+| 7 | 0:36-0:41 | Primo piano della testa del G1 (ralenti) | G1: "Il cane l'ho programmato io." |
+| 8 | 0:41-0:50 | Telecamera della testa e G1 tra i partecipanti, segmentati (umani viola, il G1 non riconosciuto) | G1: "Questi sono gli umani…" |
+| 9 | 0:50-0:58 | Soggettiva verso la scrivania segmentata (POV robot), poi **Romeo muto** su "E un umano che si prende il merito." | G1 |
+| 10 | 0:58-1:05 | Jump cut sui tasti | Tasti amplificati, G1: "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide." |
+| 11 | 1:05-1:14 | **Rios** | "Who wrote the code?" → doppiatore: "Il robot." → l'inglese continua ("everybody, AI or human, contributed equally") |
+| 12 | 1:14-1:16 | **Rios muto** | Silenzio |
+| 13 | 1:16-1:22 | Zoom su "Become a real Hacker", scrivania vuota, il G1 che guarda in camera socchiudendo gli occhi | Silenzio |
+| 14 | 1:22-1:26 | Cartello: "Abbiamo chiesto al team quale fosse il loro contributo." | |
+| 15 | 1:26-1:33 | **Team**: "Strategic oversight." "Vision." "Leadership." | Doppiatore: "Abbiamo premuto invio." |
+| 16 | 1:33-1:38 | Registrazione dello schermo: "Go to the desk!", invio, poi la dashboard a 3x col G1 che va da solo | Clic, **la musica riparte sull'invio** |
+| 17 | 1:38-1:42 | Logo aidea | Musica |
+| 18 | 1:42-1:46 | Dopo i titoli: il G1 tira calci da solo nella sala grande | G1: "L'anno prossimo vengo da solo." |
 
-| # | Tempo | Immagine | Audio | Testo a schermo |
-|---|---|---|---|---|
-| 1 | 0:00-0:03 | `foto-g1-appeso-alla-gru.jpg`, zoom lentissimo | Rumore di sala | In basso: "Mercoledì, ore 16:37." |
-| 2 | 0:03-0:09 | **INTERVISTA 1** (Federico Romeo) | Inglese, poi doppiaggio fedele | Lower third DMAX: "FEDERICO ROMEO · AI Engineer · aidea"; sottotitoli |
-
-### Atto 1: il cane
-
-| # | Tempo | Immagine | Audio | Testo a schermo |
-|---|---|---|---|---|
-| 3 | 0:09-0:14 | **INTERVISTA 2** (Francesco Puddu). Inserto di 1,5 s: R4 (chat del cane) se c'è | L'inglese vola, il doppiaggio taglia corto | Sottotitoli: "È un cane. Cammina." |
-| 4 | 0:14-0:20 | `g1-porta-a-spasso-il-cane.mp4` [0-6], zoom lento | Musica epica in crescendo | Parole grandi in giallo, a tempo: "Obbedisce." "Si muove." "Capisce." |
-| 5 | 0:20-0:24 | Stessa clip [6-10]: il cane si accuccia e resta a terra. L'inquadratura resta troppo | **La musica si ferma nell'istante in cui il cane tocca terra** | Nessuno |
-| 6 | 0:24-0:27 | `foto-g1-cane-guinzaglio.heic`, zoom sul ragazzo seduto che fissa la camera | Silenzio | Nessuno |
-| 7 | 0:27-0:30 | Nero | Silenzio | "I giudici non sembravano impressionati." |
-
-### Atto 2: il colpo di scena
-
-| # | Tempo | Immagine | Voce del G1 (piatta) | Testo a schermo |
-|---|---|---|---|---|
-| 8 | 0:30-0:33 | Nero | | "Ma c'è una cosa che non vi abbiamo detto." |
-| 9 | 0:33-0:37 | `g1-scrivania-tasti-frenetici.mp4` [11-13,3]: primo piano della testa, occhi blu. È il confessionale del G1 | "Il cane l'ho programmato io." | Lower third: "G1 U2 · umanoide · ha fatto tutto lui" |
-| 10 | 0:37-0:45 | 0:37-0:41 `yolo-testa-g1.mp4` (gli umani visti dalla testa del G1, sagome viola "umano"), poi 0:41-0:45 `yolo-g1-tra-partecipanti.mp4` [8-12]: umani tutti viola, il G1 in mezzo **non viene riconosciuto come niente** | "Questi sono gli umani. Trentasei ore, quaranta caffè. Ancora litigano sul nome delle variabili." | Nessuno |
-| 11 | 0:45-0:52 | Prima `yolo-pov-robot.mp4` a tutto schermo (soggettiva verso la scrivania, sedie e portatile segmentati), poi schermo diviso: a sinistra `yolo-g1-arriva-scrivania.mp4` (il G1 non viene riconosciuto), a destra la registrazione R1 della dashboard | "Vedo un portatile a due metri. Una sedia a uno e settanta. E un umano che si prende il merito." (numeri da R1) | Nessuno |
-| 12 | 0:52-0:59 | Jump cut a ritmo dei tasti: `g1-scrivania-tasti-frenetici` [0-3], `g1-tasti-closeup` [1-4], `g1-mano-hackertyper` [1-3], `g1-tasti-si-gira` [3-6] | Tasti amplificati. "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide." | Nessuno |
-| 13 | 0:59-1:04 | **INTERVISTA 3** (Federico Rios) | Inglese, poi doppiaggio | Sottotitoli: "Il robot." |
-| 14 | 1:04-1:06 | Zoom secco sulla scritta **"Become a real Hacker"** di Hacker Typer (fermo immagine di `g1-mano-hackertyper`) | Niente | Nessuno |
-| 15 | 1:06-1:09 | `g1-arriva-alla-scrivania.mov` [16-19]: la scrivania vuota col portatile aperto | Rumore di sala | Nessuno |
-| 16 | 1:09-1:12 | `g1-arriva-alla-scrivania.mov` [33,4-36]: il G1 gira la testa verso la camera e socchiude gli occhi | Silenzio | Nessuno |
-
-### Chiusura
-
-| # | Tempo | Immagine | Audio | Testo a schermo |
-|---|---|---|---|---|
-| 17 | 1:12-1:15 | `foto-team-perplesso.heic`, zoom lento | Silenzio | "Abbiamo chiesto al team quale fosse il loro contributo." |
-| 18 | 1:15-1:21 | **INTERVISTA 4** (tutti e tre). Inserto di 0,8 s: R3, il clic su "Start (R)" | Tre voci in inglese, un solo doppiatore. Clic amplificato | Sottotitoli: "Abbiamo premuto Start." |
-| 19 | 1:21-1:25 | Logo aidea su bianco | Silenzio, poi un colpo di musica | Sotto: "Grok Hackathon at the Museum · Pavia" |
-| 20 | 1:25-1:30 | Dopo i titoli: `g1-extra-212938.mp4` [29-35], il G1 da solo nella sala che tira calci | La musica riparte. G1: "L'anno prossimo vengo da solo." | Nessuno |
-
-Riserve: `g1-tra-i-partecipanti.mp4` (camera che segue il G1 tra i tavoli, anche in versione segmentata), `g1-cammina-verso-camera.mp4`, `g1-osserva-umani.mp4`, `g1-stretta-di-mano.mp4`, `pov-verso-scrivania-1/2`.
+Audio delle interviste: video dal telefono, voce dal registratore esterno, allineata con una cross-correlazione con l'audio del telefono (scarti misurati: Romeo +0,93 s, Puddu +0,67 s, Rios −5,67 s, team +1,62 s; nessuna deriva). Sotto il doppiatore l'inglese scende al 15%.
 
 ## Interviste da girare (stile DMAX)
 

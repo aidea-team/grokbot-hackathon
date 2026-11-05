@@ -33,14 +33,14 @@
 .logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
 
   </style>
-  <div id="root" data-composition-id="s12-int3" data-width="1920" data-height="1080">
-    <div id="s12-int3-sl0" class="clip slate" data-start="0" data-duration="5.0" data-track-index="1" style="z-index:1"><div class="slate-tag">SEGNAPOSTO</div><div class="slate-t1">INTERVISTA 3 · Federico Rios</div><div class="slate-t2">“Who wrote the code? Honestly, it was a real team effort. Everybody contributed equally.”</div></div>
-    <div id="s12-int3-lt" class="clip lt" data-start="0.3" data-duration="3.4" data-track-index="7" style="z-index:70"><div class="lt-in" id="s12-int3-lt-in"><div class="lt-name">Federico Rios</div><div class="lt-role">AI Engineer · aidea · responsabile del font delle slide</div></div></div>
+  <div id="root" data-composition-id="s18-team" data-width="1920" data-height="1080">
+    <div class="wrap" id="s18-team-w0" style="z-index:1"><video id="s18-team-m0" class="clip full" data-start="0" data-duration="7.2" data-track-index="1" data-media-start="1.6" src="assets/clips/i-team.mp4" muted playsinline></video></div>
+    <div id="s18-team-lt" class="clip lt" data-start="0.2" data-duration="2.2" data-track-index="7" style="z-index:70"><div class="lt-in" id="s18-team-lt-in"><div class="lt-name">Il team aidea</div><div class="lt-role">Romeo · Puddu · Rios</div></div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s12-int3-lt-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.45, ease: "power3.out"}, 0.3);
-    tl.to("#s12-int3-lt-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 3.4);
-    window.__timelines["s12-int3"] = tl;
+    tl.fromTo("#s18-team-lt-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.45, ease: "power3.out"}, 0.2);
+    tl.to("#s18-team-lt-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 2.1000000000000005);
+    window.__timelines["s18-team"] = tl;
   </script>
 </template>

@@ -1,15 +1,75 @@
 {
- "voices": {"g1": "liora", "doppiatore": "helios"},
- "speed": {"g1": 0.95, "doppiatore": 0.92},
+ "voices": {
+  "g1": "liora",
+  "doppiatore": "helios"
+ },
+ "speed": {
+  "g1": 0.95,
+  "doppiatore": 0.92
+ },
  "lines": [
-  {"id": "d-01", "voice": "doppiatore", "scene": 2,  "text": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. [pause] Per sempre.", "subtitle": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. Per sempre."},
-  {"id": "d-02", "voice": "doppiatore", "scene": 3,  "text": "È un cane. [pause] Cammina.", "subtitle": "È un cane. Cammina."},
-  {"id": "g1-01", "voice": "g1", "scene": 9,  "text": "[sigh] Il cane l'ho programmato io.", "subtitle": "Il cane l'ho programmato io."},
-  {"id": "g1-02", "voice": "g1", "scene": 10, "text": "Questi sono gli umani. [pause] Trentasei ore, quaranta caffè. [pause] E ancora litigano sul nome delle variabili.", "subtitle": "Questi sono gli umani. Trentasei ore, quaranta caffè. E ancora litigano sul nome delle variabili."},
-  {"id": "g1-03", "voice": "g1", "scene": 11, "text": "Vedo una scrivania. Una sedia. Un portatile. [pause] E un umano che si prende il merito.", "subtitle": "Vedo una scrivania. Una sedia. Un portatile. E un umano che si prende il merito."},
-  {"id": "g1-04", "voice": "g1", "scene": 12, "text": "Il codice del cane l'ho scritto io. [pause] Loro hanno scelto il font delle slide.", "subtitle": "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide."},
-  {"id": "d-03", "voice": "doppiatore", "scene": 13, "text": "Il robot.", "subtitle": "Il robot."},
-  {"id": "d-04", "voice": "doppiatore", "scene": 18, "text": "Abbiamo premuto Start.", "subtitle": "Abbiamo premuto Start."},
-  {"id": "g1-05", "voice": "g1", "scene": 20, "text": "[exhale] L'anno prossimo vengo da solo.", "subtitle": "L'anno prossimo vengo da solo."}
+  {
+   "id": "d-01",
+   "voice": "doppiatore",
+   "scene": 2,
+   "text": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. [pause] Per sempre.",
+   "subtitle": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. Per sempre."
+  },
+  {
+   "id": "d-02",
+   "voice": "doppiatore",
+   "scene": 3,
+   "text": "È un cane. [pause] Cammina.",
+   "subtitle": "È un cane. Cammina."
+  },
+  {
+   "id": "g1-01",
+   "voice": "g1",
+   "scene": 9,
+   "text": "[sigh] Il cane l'ho programmato io.",
+   "subtitle": "Il cane l'ho programmato io."
+  },
+  {
+   "id": "g1-02",
+   "voice": "g1",
+   "scene": 10,
+   "text": "Questi sono gli umani. [pause] Trentasei ore, quaranta caffè. [pause] E ancora litigano sul nome delle variabili.",
+   "subtitle": "Questi sono gli umani. Trentasei ore, quaranta caffè. E ancora litigano sul nome delle variabili."
+  },
+  {
+   "id": "g1-03",
+   "voice": "g1",
+   "scene": 11,
+   "text": "Vedo una scrivania. Una sedia. Un portatile. [pause] E un umano che si prende il merito.",
+   "subtitle": "Vedo una scrivania. Una sedia. Un portatile. E un umano che si prende il merito."
+  },
+  {
+   "id": "g1-04",
+   "voice": "g1",
+   "scene": 12,
+   "text": "Il codice del cane l'ho scritto io. [pause] Loro hanno scelto il font delle slide.",
+   "subtitle": "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide."
+  },
+  {
+   "id": "d-03",
+   "voice": "doppiatore",
+   "scene": 13,
+   "text": "Il robot.",
+   "subtitle": "Il robot."
+  },
+  {
+   "id": "d-04",
+   "voice": "doppiatore",
+   "scene": 18,
+   "text": "Abbiamo premuto invio.",
+   "subtitle": "Abbiamo premuto invio."
+  },
+  {
+   "id": "g1-05",
+   "voice": "g1",
+   "scene": 20,
+   "text": "[exhale] L'anno prossimo vengo da solo.",
+   "subtitle": "L'anno prossimo vengo da solo."
+  }
  ]
 }

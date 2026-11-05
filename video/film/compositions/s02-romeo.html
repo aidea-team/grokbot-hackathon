@@ -33,12 +33,14 @@
 .logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
 
   </style>
-  <div id="root" data-composition-id="s19-tag" data-width="1920" data-height="1080">
-    <div class="wrap" id="s19-tag-w0" style="z-index:1"><video id="s19-tag-m0" class="clip full" data-start="0" data-duration="6.0" data-track-index="1" data-media-start="0" src="assets/clips/c-tag.mp4" muted playsinline></video></div>
+  <div id="root" data-composition-id="s02-romeo" data-width="1920" data-height="1080">
+    <div class="wrap" id="s02-romeo-w0" style="z-index:1"><video id="s02-romeo-m0" class="clip full" data-start="0" data-duration="7.6" data-track-index="1" data-media-start="1.0" src="assets/clips/i-romeo.mp4" muted playsinline></video></div>
+    <div id="s02-romeo-lt" class="clip lt" data-start="0.3" data-duration="3.6" data-track-index="7" style="z-index:70"><div class="lt-in" id="s02-romeo-lt-in"><div class="lt-name">Federico Romeo</div><div class="lt-role">AI Engineer · aidea</div></div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s19-tag-w0", {scale: 1.35, transformOrigin: "74% 62%"}, {scale: 1.45, duration: 6.0, ease: "none"}, 0);
-    window.__timelines["s19-tag"] = tl;
+    tl.fromTo("#s02-romeo-lt-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.45, ease: "power3.out"}, 0.3);
+    tl.to("#s02-romeo-lt-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 3.6);
+    window.__timelines["s02-romeo"] = tl;
   </script>
 </template>

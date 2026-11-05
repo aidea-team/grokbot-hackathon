@@ -46,7 +46,22 @@ CLIPS = {
     "y-tra":     (YOLO / "yolo-g1-tra-partecipanti.mp4", 8.0, 5.5, FIT),
     "y-pov":     (YOLO / "yolo-pov-robot.mp4", 0.5, 6.0, FIT),
     "y-arriva":  (YOLO / "yolo-g1-arriva-scrivania.mp4", 3.5, 5.0, FIT),
+    # interviews (phone video; the sound comes from the recorder, see INTERVIEW_AUDIO) and the silent looks to camera
+    "i-romeo":       (FOOT / "int-romeo.mp4", 0.0, 9.8, FIT),
+    "i-puddu":       (FOOT / "int-puddu.mp4", 0.0, 14.8, FIT),
+    "i-rios":        (FOOT / "int-rios.mp4", 0.0, 13.15, FIT),
+    "i-team":        (FOOT / "int-team.mp4", 0.0, 9.7, FIT),
+    "i-romeo-muto":  (FOOT / "int-romeo-muto.mp4", 0.0, 7.7, FIT),
+    "i-puddu-muto":  (FOOT / "int-puddu-muto.mp4", 0.0, 5.7, FIT),
+    "i-rios-muto":   (FOOT / "int-rios-muto.mp4", 0.0, 6.1, FIT),
+    # Francesco's screen recording (2852x1984, Retina): the chat box while the mission is sent, and the whole dashboard
+    "r-chat":        (FOOT / "r1-dashboard-chat.mov", 5.0, 3.6, "crop=1600:900:170:1080," + FIT),
+    "r-dash":        (FOOT / "r1-dashboard-chat.mov", 8.2, 19.0, "crop=2500:1406:180:400," + FIT),
 }
+# Recorder track -> phone timeline: phone_t = recorder_t + offset (s). Measured by cross-correlating the phone's own audio
+# with the recorder (peak z 32-79, same offset within 1 ms on both halves of each take: no drift).
+INTERVIEW_AUDIO = {"romeo": 0.930, "puddu": 0.666, "rios": -5.665, "team": 1.619}
+LOUDNORM = "loudnorm=I=-18:TP=-2:LRA=11"
 # id: (photo, (left, top, right, bottom) as fractions of the upright photo, giving a 16:9 crop)
 PHOTOS = {
     "img-gru":       (FOOT / "foto-g1-appeso-alla-gru.jpg", (0.0, 0.22, 1.0, 0.64)),
@@ -112,8 +127,21 @@ def audio() -> None:
     shutil.copy2(music, d / "music.mp3")
     for i in range(1, 9):
         shutil.copy2(BRAG / "sfx" / "keyboard" / f"keypress-{i:03d}.wav", d / f"key-{i}.wav")
-    for f in VO.glob("*.wav"):
-        shutil.copy2(f, d / f"vo-{f.name}")
+    for f in VO.glob("*.wav"):  # voice lines, levelled like the interviews
+        dst = d / f"vo-{f.name}"
+        if not fresh(dst) or dst.stat().st_mtime < f.stat().st_mtime:
+            run(["ffmpeg", "-v", "error", "-y", "-i", str(f), "-af", LOUDNORM, "-ar", "48000", "-ac", "1", str(dst)])
+    for who, off in INTERVIEW_AUDIO.items():  # recorder audio re-timed onto the phone video, same length as the video
+        dst = d / f"int-{who}.wav"
+        if fresh(dst):
+            continue
+        dur = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                              str(FOOT / f"int-{who}.mp4")], capture_output=True, text=True, check=True).stdout.strip()
+        shift = f"adelay={round(off * 1000)}:all=1," if off > 0 else ""
+        run(["ffmpeg", "-v", "error", "-y", "-ss", str(max(0.0, -off)), "-i", str(FOOT / f"int-{who}.ogg"),
+             "-af", f"{shift}highpass=f=70,{LOUDNORM},apad,atrim=0:{dur}", "-ac", "1", "-ar", "48000", str(dst)])
+        print("audio", dst.name)
+    shutil.copy2(BRAG / "sfx" / "ui" / "mouseclick1.ogg", d / "click.ogg")
 
 
 def static() -> None:

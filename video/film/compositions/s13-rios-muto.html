@@ -33,14 +33,12 @@
 .logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
 
   </style>
-  <div id="root" data-composition-id="s16-perplesso" data-width="1920" data-height="1080">
-    <div class="wrap" id="s16-perplesso-w0" style="z-index:1"><img id="s16-perplesso-m0" class="clip full" data-start="0" data-duration="3.2" data-track-index="1" src="assets/img/img-perplesso.jpg" alt=""></div>
-    <div id="s16-perplesso-note" class="clip note big" data-start="0.3" data-duration="2.8" data-track-index="8" style="z-index:50"><span id="s16-perplesso-note-in">Abbiamo chiesto al team quale fosse il loro contributo.</span></div>
+  <div id="root" data-composition-id="s13-rios-muto" data-width="1920" data-height="1080">
+    <div class="wrap" id="s13-rios-muto-w0" style="z-index:1"><video id="s13-rios-muto-m0" class="clip full" data-start="0" data-duration="1.6" data-track-index="1" data-media-start="1.0" src="assets/clips/i-rios-muto.mp4" muted playsinline></video></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s16-perplesso-w0", {scale: 1.0, transformOrigin: "50% 45%"}, {scale: 1.05, duration: 3.2, ease: "none"}, 0);
-    tl.fromTo("#s16-perplesso-note-in", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.35, ease: "power2.out"}, 0.3);
-    window.__timelines["s16-perplesso"] = tl;
+    tl.set({}, {}, 1.6);
+    window.__timelines["s13-rios-muto"] = tl;
   </script>
 </template>

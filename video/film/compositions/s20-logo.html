@@ -33,12 +33,14 @@
 .logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
 
   </style>
-  <div id="root" data-composition-id="s14-vuota" data-width="1920" data-height="1080">
-    <div class="wrap" id="s14-vuota-w0" style="z-index:1"><video id="s14-vuota-m0" class="clip full" data-start="0" data-duration="3.2" data-track-index="1" data-media-start="0" src="assets/clips/c-vuota.mp4" muted playsinline></video></div>
+  <div id="root" data-composition-id="s20-logo" data-width="1920" data-height="1080">
+    <div id="s20-logo-bg" class="clip logo-bg" data-start="0" data-duration="4.0" data-track-index="1"></div>
+    <img id="s20-logo-logo" class="clip logo-img" src="assets/aidea-logo.webp" alt="aidea" data-start="0" data-duration="4.0" data-track-index="2">
+    <div id="s20-logo-sub" class="clip logo-sub" data-start="0" data-duration="4.0" data-track-index="3"><span id="s20-logo-sub-in">Grok Hackathon at the Museum · Pavia · 2026</span></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.set({}, {}, 3.2);
-    window.__timelines["s14-vuota"] = tl;
+    tl.fromTo("#s20-logo-sub-in", {opacity: 0}, {opacity: 1, duration: 0.5, ease: "power2.out"}, 0.6);
+    window.__timelines["s20-logo"] = tl;
   </script>
 </template>

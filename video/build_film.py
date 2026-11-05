@@ -20,64 +20,95 @@ W, H = 1920, 1080
 
 YELLOW, VIOLET, VIOLET2, INK, SLATE = "#fff94a", "#4300de", "#8f3fff", "#0a0a12", "#14141f"
 
-# Interviews and dashboard recordings: None = placeholder slate; a path under video/film/assets/ = the real clip.
-PLACEHOLDER = {"int1": None, "int2": None, "int3": None, "int4": None, "r1": None, "r3": None}
-
 LT = {  # lower thirds: (name, role)
     "romeo": ("Federico Romeo", "AI Engineer · aidea"),
     "puddu": ("Francesco Puddu", "AI Engineer · aidea · responsabile del cane"),
     "rios": ("Federico Rios", "AI Engineer · aidea · responsabile del font delle slide"),
     "g1": ("G1 U2", "umanoide · ha fatto tutto lui"),
+    "team": ("Il team aidea", "Romeo · Puddu · Rios"),
 }
+INTERVIEW_TEXT = {}  # placeholder slates are no longer used (all interviews arrived)
 
-INTERVIEW_TEXT = {
-    "int1": ("INTERVISTA 1 · Federico Romeo", "In thirty-six hours, we built something that is going to change robotics. Forever."),
-    "int2": ("INTERVISTA 2 · Francesco Puddu", "It's a fully autonomous, multimodal, agentic quadruped. It sees. It plans. It reasons."),
-    "int3": ("INTERVISTA 3 · Federico Rios", "Who wrote the code? Honestly, it was a real team effort. Everybody contributed equally."),
-    "int4": ("INTERVISTA 4 · tutto il team", "Strategic oversight. Vision. Leadership."),
-}
+
+def vo_meta(vid: str) -> dict:
+    return json.loads((VO / f"{vid}.json").read_text())
+
+
+def vo_time(vid: str, phrase: str) -> float:
+    """Seconds into a voice line where `phrase` starts (TTS character timestamps, [tags] ignored)."""
+    ts = vo_meta(vid)["timestamps"]
+    text, times, skip = [], [], False
+    for c, tt in zip(ts["graph_chars"], ts["graph_times"]):
+        if c == "[":
+            skip = True
+        if not skip:
+            text.append(c)
+            times.append(tt[0])
+        if c == "]":
+            skip = False
+    return times["".join(text).index(phrase)]
+
+
+def clip(src, t, d, media=0.0, **kw) -> dict:
+    return dict(kind="video", src=f"assets/clips/{src}.mp4", t=t, d=d, media=media, **kw)
+
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Timeline. Times in seconds on the film clock. Shots inside a scene are on the scene clock (0 = scene start).
-#   shot: dict(kind="video"|"img"|"slate", src, t, d, media=0, rate=1, push=(from, to, ox%, oy%), snap=(at, scale, ox, oy))
+# Timeline. Each scene has a duration; starts follow one another. Inside a scene everything is on the scene clock:
+#   shots: video/img (t, d, media = offset into the clip, rate, push=(from, to, ox%, oy%), snap=(at, scale, ox%, oy%))
+#   vo: [(line id, t)]   audio: interview sound [dict(src, t, d, media, vol, auto=[(t, v)...])]   music, room, keys, sfx
+G3_CUT = round(0.4 + vo_time("g1-03", "E un umano") - 0.12, 2)  # cut to a human on "E un umano che si prende il merito"
+G3_END = round(0.4 + vo_meta("g1-03")["duration"] + 0.7, 2)
+DUCK = 0.15  # interview level under the dubber
 SCENES = [
-    dict(id="s01-gru", start=0.0, dur=3.2, shots=[dict(kind="img", src="assets/img/img-gru.jpg", t=0, d=3.2, push=(1.0, 1.06, 50, 40))],
-         note=dict(text="Mercoledì, ore 16:37.", t=0.4, d=2.6)),
-    dict(id="s02-int1", start=3.2, dur=7.0, shots=[dict(kind="slate", key="int1", t=0, d=7.0)], lt=("romeo", 0.4, 4.0)),
-    dict(id="s03-int2", start=10.2, dur=5.4, shots=[dict(kind="slate", key="int2", t=0, d=5.4)], lt=("puddu", 0.3, 3.6)),
-    dict(id="s04-cane", start=15.6, dur=10.4, shots=[dict(kind="video", src="assets/clips/c-cane.mp4", t=0, d=10.4, push=(1.0, 1.06, 60, 70))],
-         words=[("Obbedisce.", 1.05, 1.05), ("Si muove.", 2.1, 2.1), ("Capisce.", 4.2, 2.1)]),
-    dict(id="s05-seduto", start=26.0, dur=3.2, shots=[dict(kind="img", src="assets/img/img-seduto.jpg", t=0, d=3.2, snap=(0.9, 2.1, 93, 45))]),
-    dict(id="s06-giudici", start=29.2, dur=3.2, card="I giudici non sembravano impressionati."),
-    dict(id="s07-ma", start=32.4, dur=3.0, card="Ma c'è una cosa che non vi abbiamo detto."),
-    dict(id="s08-testa", start=35.4, dur=4.8, shots=[dict(kind="video", src="assets/clips/c-testa.mp4", t=0, d=4.8, rate=0.5)], lt=("g1", 0.4, 3.8)),
-    dict(id="s09-umani", start=40.2, dur=9.2, shots=[dict(kind="video", src="assets/clips/y-testa.mp4", t=0, d=4.4),
-                                                     dict(kind="video", src="assets/clips/y-tra.mp4", t=4.4, d=4.8)]),
-    dict(id="s10-scrivania", start=49.4, dur=8.2, shots=[dict(kind="video", src="assets/clips/y-pov.mp4", t=0, d=4.0, fallback="assets/clips/y-arriva.mp4"),
-                                                         dict(kind="split", left="assets/clips/y-arriva.mp4", right="r1", t=4.0, d=4.2)]),
-    dict(id="s11-tasti", start=57.6, dur=7.2, shots=[dict(kind="video", src="assets/clips/c-hacker.mp4", t=0, d=2.0),
-                                                     dict(kind="video", src="assets/clips/c-closeup.mp4", t=2.0, d=1.8),
-                                                     dict(kind="video", src="assets/clips/c-mano.mp4", t=3.8, d=1.6),
-                                                     dict(kind="video", src="assets/clips/c-scrive.mp4", t=5.4, d=1.8)]),
-    dict(id="s12-int3", start=64.8, dur=5.0, shots=[dict(kind="slate", key="int3", t=0, d=5.0)], lt=("rios", 0.3, 3.4)),
-    dict(id="s13-hacker", start=69.8, dur=2.2, shots=[dict(kind="img", src="assets/img/img-realhacker.jpg", t=0, d=2.2, snap=(0.35, 2.8, 63, 0))]),
-    dict(id="s14-vuota", start=72.0, dur=3.2, shots=[dict(kind="video", src="assets/clips/c-vuota.mp4", t=0, d=3.2)]),
-    dict(id="s15-guarda", start=75.2, dur=2.2, shots=[dict(kind="video", src="assets/clips/c-guarda.mp4", t=0, d=2.2, push=(1.0, 1.08, 50, 35))]),
-    dict(id="s16-perplesso", start=77.4, dur=3.2, shots=[dict(kind="img", src="assets/img/img-perplesso.jpg", t=0, d=3.2, push=(1.0, 1.05, 50, 45))],
-         note=dict(text="Abbiamo chiesto al team quale fosse il loro contributo.", t=0.3, d=2.8, big=True)),
-    dict(id="s17-int4", start=80.6, dur=6.0, shots=[dict(kind="slate", key="int4", t=0, d=5.2), dict(kind="slate", key="r3", t=5.2, d=0.8)]),
-    dict(id="s18-logo", start=86.6, dur=4.0, logo=True),
-    dict(id="s19-tag", start=90.6, dur=6.0, shots=[dict(kind="video", src="assets/clips/c-tag.mp4", t=0, d=6.0, push=(1.35, 1.45, 74, 62))]),
+    dict(id="s01-gru", dur=2.8, shots=[dict(kind="img", src="assets/img/img-gru.jpg", t=0, d=2.8, push=(1.0, 1.06, 50, 40))],
+         note=dict(text="Mercoledì, ore 16:37.", t=0.3, d=2.3), room=[(0, 2.8, 0.6)]),
+    dict(id="s02-romeo", dur=7.6, shots=[clip("i-romeo", 0, 7.6, 1.0)], lt=("romeo", 0.3, 3.6), vo=[("d-01", 0.9)],
+         audio=[dict(src="int-romeo", t=0, d=7.6, media=1.0, auto=[(0, 1), (0.8, 1), (1.0, DUCK), (6.9, DUCK), (7.3, 0.7)])]),
+    dict(id="s03-puddu", dur=6.8, shots=[clip("i-puddu", 0, 4.3, 2.5), clip("i-puddu", 4.3, 2.5, 9.9)], lt=("puddu", 0.2, 3.4),
+         vo=[("d-02", 0.8)],
+         audio=[dict(src="int-puddu", t=0, d=4.3, media=2.5, auto=[(0, 1), (0.7, 1), (0.85, DUCK), (3.3, DUCK), (3.6, 0.95)]),
+                dict(src="int-puddu", t=4.3, d=2.5, media=9.9, vol=0.95)]),
+    dict(id="s04-cane", dur=10.4, shots=[clip("c-cane", 0, 10.4, push=(1.0, 1.06, 60, 70))],
+         words=[("Obbedisce.", 1.05, 1.05), ("Si muove.", 2.1, 2.1), ("Capisce.", 4.2, 2.1)],
+         music=[dict(t=0, d=7.2, media=1.60, vol=0.55)], room=[(7.2, 3.2, 0.6)]),   # music cut dead when the dog touches the floor
+    dict(id="s05-puddu-muto", dur=2.2, shots=[clip("i-puddu-muto", 0, 2.2, 1.2)], room=[(0, 2.2, 0.6)]),
+    dict(id="s06-giudici", dur=3.0, card="I giudici non sembravano impressionati.", room=[(0, 3.0, 0.5)]),
+    dict(id="s07-ma", dur=3.2, card="Ma c'è una cosa che non vi abbiamo detto.", room=[(0, 3.2, 0.5)]),
+    dict(id="s08-testa", dur=4.8, shots=[clip("c-testa", 0, 4.8, rate=0.5)], lt=("g1", 0.4, 3.8), vo=[("g1-01", 0.5)],
+         room=[(0, 4.8, 0.25)]),
+    dict(id="s09-umani", dur=9.0, shots=[clip("y-testa", 0, 4.3), clip("y-tra", 4.3, 4.7)], vo=[("g1-02", 0.4)], room=[(0, 9.0, 0.25)]),
+    dict(id="s10-scrivania", dur=G3_END, shots=[clip("y-pov", 0, G3_CUT), clip("i-romeo-muto", G3_CUT, round(G3_END - G3_CUT, 2), 1.5)],
+         vo=[("g1-03", 0.4)], room=[(0, G3_END, 0.25)]),
+    dict(id="s11-tasti", dur=7.2, shots=[clip("c-hacker", 0, 2.0), clip("c-closeup", 2.0, 1.8), clip("c-mano", 3.8, 1.6),
+                                          clip("c-scrive", 5.4, 1.8)], vo=[("g1-04", 0.3)],
+         keys=[0.1, 0.5, 0.85, 1.3, 2.0, 2.4, 2.75, 3.3, 3.8, 4.2, 4.55, 5.0, 5.4, 5.8, 6.3, 6.7]),
+    dict(id="s12-rios", dur=8.5, shots=[clip("i-rios", 0, 8.5, 0.4)], lt=("rios", 0.2, 3.4), vo=[("d-03", 1.35)],
+         audio=[dict(src="int-rios", t=0, d=8.5, media=0.4, auto=[(0, 1), (1.2, 1), (1.3, DUCK), (2.5, DUCK), (2.7, 0.95)])]),
+    dict(id="s13-rios-muto", dur=1.6, shots=[clip("i-rios-muto", 0, 1.6, 1.0)], room=[(0, 1.6, 0.5)]),
+    dict(id="s14-hacker", dur=2.2, shots=[dict(kind="img", src="assets/img/img-realhacker.jpg", t=0, d=2.2, snap=(0.35, 2.8, 63, 0))],
+         room=[(0, 2.2, 0.5)]),
+    dict(id="s15-vuota", dur=2.2, shots=[clip("c-vuota", 0, 2.2)], room=[(0, 2.2, 0.6)]),
+    dict(id="s16-guarda", dur=2.2, shots=[clip("c-guarda", 0, 2.2, push=(1.0, 1.08, 50, 35))], room=[(0, 2.2, 0.6)]),
+    dict(id="s17-contributo", dur=3.2, card="Abbiamo chiesto al team quale fosse il loro contributo.", room=[(0, 3.2, 0.5)]),
+    dict(id="s18-team", dur=7.2, shots=[clip("i-team", 0, 7.2, 1.6)], lt=("team", 0.2, 2.2), vo=[("d-04", 5.15)],
+         audio=[dict(src="int-team", t=0, d=7.2, media=1.6, auto=[(0, 1), (5.0, 1), (5.1, 0.2), (7.2, 0.2)])]),
+    dict(id="s19-invio", dur=5.2, shots=[clip("r-chat", 0, 2.6, push=(1.0, 1.25, 86, 48)), clip("r-dash", 2.6, 2.6, rate=3)],
+         sfx=[("click", 1.9, 1.0)], music_from=1.9),                                   # the music comes back on "invio"
+    dict(id="s20-logo", dur=4.0, logo=True),
+    dict(id="s21-tag", dur=4.8, shots=[clip("c-tag", 0, 4.8, push=(1.35, 1.45, 74, 62))], vo=[("g1-05", 0.6)]),
 ]
-DURATION = 96.6
+t0 = 0.0
+for _sc in SCENES:
+    _sc["start"] = round(t0, 2)
+    t0 += _sc["dur"]
+DURATION = round(t0, 2)
+_inv = next(sc for sc in SCENES if "music_from" in sc)
+MUSIC_B = dict(start=round(_inv["start"] + _inv["music_from"], 2), media=17.91, vol=0.5)
+MUSIC_B["dur"] = round(DURATION - MUSIC_B["start"], 2)
 
-# Voice lines on the film clock: (vo id, start). Captions follow them.
-VOICE = [("d-01", 3.9), ("d-02", 10.9), ("g1-01", 36.0), ("g1-02", 40.6), ("g1-03", 49.8), ("g1-04", 57.9),
-         ("d-03", 66.6), ("d-04", 84.0), ("g1-05", 92.2)]
-MUSIC = [dict(id="music-a", start=15.6, dur=7.2, media=1.60, vol=0.55),          # cut dead when the dog touches the floor
-         dict(id="music-b", start=86.6, dur=10.0, media=17.91, vol=0.5, fade_out=1.6)]
-ROOMTONE = [(0.0, 3.2, 0.6), (22.8, 12.6, 0.6), (35.4, 14.0, 0.25), (72.0, 8.6, 0.6)]
-KEYS = [57.7, 58.1, 58.45, 58.9, 59.6, 60.0, 60.35, 60.9, 61.4, 61.8, 62.15, 62.6, 63.0, 63.4, 63.9, 64.3]
+# Absolute positions, derived from the scenes
+VOICE = [(vid, round(sc["start"] + t, 2)) for sc in SCENES for vid, t in sc.get("vo", [])]
 
 # ---------------------------------------------------------------------------------------------------------------------
 FONT_FACES = "\n".join(
@@ -280,19 +311,41 @@ def index_file(groups: list[dict]) -> str:
     hosts.append(f'<div id="captions" data-composition-id="captions" data-composition-src="compositions/captions.html" data-start="0" '
                  f'data-duration="{DURATION}" data-track-index="3" data-track-kind="captions" data-width="{W}" data-height="{H}" style="z-index:90"></div>')
     audio = []
+
+    def add(aid: str, src: str, start: float, dur: float, track: int, vol: float = 1.0, media: float | None = None,
+            auto: list | None = None, fade_in: float | None = None, fade_out: float | None = None) -> None:
+        extra = f' data-media-start="{media}"' if media else ""
+        if auto:
+            lane = {"version": 1, "lanes": [{"target": "volume", "points": [{"t": t, "v": v} for t, v in auto]}]}
+            extra += f" data-automation='{json.dumps(lane, separators=(',', ':'))}'"
+        if fade_in:
+            extra += f' data-fade-in="{fade_in}"'
+        if fade_out:
+            extra += f' data-fade-out="{fade_out}"'
+        audio.append(f'<audio id="{aid}" class="clip" src="assets/audio/{src}" data-start="{round(start, 2)}" data-duration="{round(dur, 2)}" '
+                     f'data-track-index="{track}" data-volume="{vol}"{extra}></audio>')
+
     for vid, start in VOICE:
-        d = json.loads((VO / f"{vid}.json").read_text())["duration"]
-        audio.append(f'<audio id="a-{vid}" class="clip" src="assets/audio/vo-{vid}.wav" data-start="{start}" data-duration="{d}" data-track-index="10" data-volume="1"></audio>')
-    for m in MUSIC:
-        fade = f' data-fade-out="{m["fade_out"]}"' if m.get("fade_out") else ""
-        audio.append(f'<audio id="a-{m["id"]}" class="clip" src="assets/audio/music.mp3" data-start="{m["start"]}" data-duration="{m["dur"]}" '
-                     f'data-media-start="{m["media"]}" data-track-index="11" data-volume="{m["vol"]}"{fade}></audio>')
-    for k, (s, d, v) in enumerate(ROOMTONE):
-        audio.append(f'<audio id="a-room{k}" class="clip" src="assets/audio/roomtone.wav" data-start="{s}" data-duration="{d}" '
-                     f'data-track-index="12" data-volume="{v}" data-fade-in="0.2" data-fade-out="0.2"></audio>')
-    for k, s in enumerate(KEYS):
-        audio.append(f'<audio id="a-key{k}" class="clip" src="assets/audio/key-{1 + k % 8}.wav" data-start="{s}" data-duration="0.3" '
-                     f'data-track-index="{13 + k % 2}" data-volume="0.7"></audio>')
+        add(f"a-{vid}", f"vo-{vid}.wav", start, vo_meta(vid)["duration"], 10)
+    room_k = key_k = 0
+    for sc in SCENES:
+        s0 = sc["start"]
+        for j, a in enumerate(sc.get("audio", [])):
+            add(f"a-{sc['id']}-int{j}", f"{a['src']}.wav", s0 + a["t"], a["d"], 11, a.get("vol", 1.0), a.get("media"), a.get("auto"))
+        for j, m in enumerate(sc.get("music", [])):
+            add(f"a-{sc['id']}-music{j}", "music.mp3", s0 + m["t"], m["d"], 12, m["vol"], m["media"])
+        for t, d, v in sc.get("room", []):
+            add(f"a-room{room_k}", "roomtone.wav", s0 + t, min(d, 13.9), 13, v, fade_in=0.15, fade_out=0.15)
+            room_k += 1
+        for t in sc.get("keys", []):
+            add(f"a-key{key_k}", f"key-{1 + key_k % 8}.wav", s0 + t, 0.3, 14 + key_k % 2, 0.7)
+            key_k += 1
+        for name, t, v in sc.get("sfx", []):
+            add(f"a-{sc['id']}-{name}", f"{name}.ogg", s0 + t, 0.06, 16, v)
+    g5 = next(t for vid, t in VOICE if vid == "g1-05")  # duck the closing music under the G1's last line
+    rel = round(g5 - MUSIC_B["start"], 2)
+    add("a-music-b", "music.mp3", MUSIC_B["start"], MUSIC_B["dur"], 12, MUSIC_B["vol"], MUSIC_B["media"],
+        auto=[(0, 1), (rel - 0.2, 1), (rel, 0.45), (MUSIC_B["dur"], 0.45)], fade_out=1.4)
     return f"""<!doctype html>
 <html lang="it">
   <head>

@@ -34,12 +34,12 @@
 
   </style>
   <div id="root" data-composition-id="s06-giudici" data-width="1920" data-height="1080">
-    <div id="s06-giudici-card" class="clip card" data-start="0" data-duration="3.2" data-track-index="1"><div class="card-in" id="s06-giudici-card-in">I giudici non sembravano impressionati.</div></div>
+    <div id="s06-giudici-card" class="clip card" data-start="0" data-duration="3.0" data-track-index="1"><div class="card-in" id="s06-giudici-card-in">I giudici non sembravano impressionati.</div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
     tl.fromTo("#s06-giudici-card-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.5, ease: "power2.out"}, 0.25);
-    tl.to("#s06-giudici-card-in", {opacity: 0, duration: 0.3, ease: "power2.in"}, 2.8000000000000003);
+    tl.to("#s06-giudici-card-in", {opacity: 0, duration: 0.3, ease: "power2.in"}, 2.6);
     window.__timelines["s06-giudici"] = tl;
   </script>
 </template>
