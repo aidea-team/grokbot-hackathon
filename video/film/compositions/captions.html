@@ -1,0 +1,53 @@
+<template>
+  <style>
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Medium.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-SemiBold.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Bold.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Black.woff2") format("woff2"); font-weight: 800; }
+#root { position: absolute; inset: 0; pointer-events: none; font-family: "Artific", sans-serif; }
+.cap { position: absolute; left: 0; right: 0; bottom: 92px; text-align: center; }
+.cap span { display: inline-block; max-width: 1500px; font-weight: 600; font-size: 48px; line-height: 1.2; padding: 6px 18px;
+            background: rgba(10,10,18,.55); text-shadow: 0 2px 3px rgba(0,0,0,.9); }
+  </style>
+  <div id="root" data-composition-id="captions" data-width="1920" data-height="1080">
+    <div id="cap0" class="clip cap" data-start="3.99" data-duration="4.17" data-track-index="1"><span id="cap0-in" style="color:#ffffff">In trentasei ore abbiamo fatto una cosa che cambierà la robotica.</span></div>
+    <div id="cap1" class="clip cap" data-start="8.62" data-duration="1.59" data-track-index="1"><span id="cap1-in" style="color:#ffffff">Per sempre.</span></div>
+    <div id="cap2" class="clip cap" data-start="10.99" data-duration="1.09" data-track-index="1"><span id="cap2-in" style="color:#ffffff">È un cane.</span></div>
+    <div id="cap3" class="clip cap" data-start="12.44" data-duration="1.29" data-track-index="1"><span id="cap3-in" style="color:#ffffff">Cammina.</span></div>
+    <div id="cap4" class="clip cap" data-start="36.96" data-duration="2.13" data-track-index="1"><span id="cap4-in" style="color:#fff94a">Il cane l&#x27;ho programmato io.</span></div>
+    <div id="cap5" class="clip cap" data-start="40.63" data-duration="1.56" data-track-index="1"><span id="cap5-in" style="color:#fff94a">Questi sono gli umani.</span></div>
+    <div id="cap6" class="clip cap" data-start="43.31" data-duration="2.46" data-track-index="1"><span id="cap6-in" style="color:#fff94a">Trentasei ore, quaranta caffè.</span></div>
+    <div id="cap7" class="clip cap" data-start="46.25" data-duration="2.83" data-track-index="1"><span id="cap7-in" style="color:#fff94a">E ancora litigano sul nome delle variabili.</span></div>
+    <div id="cap8" class="clip cap" data-start="49.91" data-duration="1.64" data-track-index="1"><span id="cap8-in" style="color:#fff94a">Vedo una scrivania.</span></div>
+    <div id="cap9" class="clip cap" data-start="51.57" data-duration="1.07" data-track-index="1"><span id="cap9-in" style="color:#fff94a">Una sedia.</span></div>
+    <div id="cap10" class="clip cap" data-start="52.66" data-duration="1.2" data-track-index="1"><span id="cap10-in" style="color:#fff94a">Un portatile.</span></div>
+    <div id="cap11" class="clip cap" data-start="54.78" data-duration="2.49" data-track-index="1"><span id="cap11-in" style="color:#fff94a">E un umano che si prende il merito.</span></div>
+    <div id="cap12" class="clip cap" data-start="57.99" data-duration="2.48" data-track-index="1"><span id="cap12-in" style="color:#fff94a">Il codice del cane l&#x27;ho scritto io.</span></div>
+    <div id="cap13" class="clip cap" data-start="61.09" data-duration="3.27" data-track-index="1"><span id="cap13-in" style="color:#fff94a">Loro hanno scelto il font delle slide.</span></div>
+    <div id="cap14" class="clip cap" data-start="66.69" data-duration="1.35" data-track-index="1"><span id="cap14-in" style="color:#ffffff">Il robot.</span></div>
+    <div id="cap15" class="clip cap" data-start="84.09" data-duration="2.04" data-track-index="1"><span id="cap15-in" style="color:#ffffff">Abbiamo premuto Start.</span></div>
+    <div id="cap16" class="clip cap" data-start="93.11" data-duration="2.51" data-track-index="1"><span id="cap16-in" style="color:#fff94a">L&#x27;anno prossimo vengo da solo.</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#cap0-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 3.99);
+    tl.fromTo("#cap1-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 8.62);
+    tl.fromTo("#cap2-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 10.99);
+    tl.fromTo("#cap3-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 12.44);
+    tl.fromTo("#cap4-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 36.96);
+    tl.fromTo("#cap5-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 40.63);
+    tl.fromTo("#cap6-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 43.31);
+    tl.fromTo("#cap7-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 46.25);
+    tl.fromTo("#cap8-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 49.91);
+    tl.fromTo("#cap9-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 51.57);
+    tl.fromTo("#cap10-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 52.66);
+    tl.fromTo("#cap11-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 54.78);
+    tl.fromTo("#cap12-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 57.99);
+    tl.fromTo("#cap13-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 61.09);
+    tl.fromTo("#cap14-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 66.69);
+    tl.fromTo("#cap15-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 84.09);
+    tl.fromTo("#cap16-in", {opacity: 0}, {opacity: 1, duration: 0.12, ease: "power2.out"}, 93.11);
+    window.__timelines["captions"] = tl;
+  </script>
+</template>

@@ -6,7 +6,7 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 - **Stile:** mockumentary alla The Office, camera a mano, silenzi lunghi un secondo di troppo, cartelli su nero. Le interviste sono in stile DMAX: parliamo in inglese, l'audio originale si abbassa e un doppiatore italiano parla sopra, con i sottotitoli.
 - **Regola comica:** il doppiatore italiano dice sempre la verità. In inglese ci vantiamo, in italiano si sgonfia tutto. La prima intervista è tradotta fedelmente, per far credere che il doppiaggio sia normale.
 - **Il G1 parla in italiano**, con una voce piatta e un po' sprezzante. Nessuno spiega le battute.
-- **Voci:** Grok TTS (`POST /v1/tts`, `language: it`). Provini in `video/assets/vo/provini/`: per il G1 `rex`, `sal`, `orion`, `atlas`; per il doppiatore `leo`, `helios`, `perseus`. **Da scegliere.**
+- **Voci:** Grok TTS (`POST /v1/tts`, `language: it`). Scelte misurando la variazione di tono di tutte le 28 voci: **G1 = `liora`** (la più espressiva, per niente robotica), **doppiatore = `helios`** (la più bassa e piatta, da doppiatore annoiato). Battute in `video/vo-lines.json`, generate con `python video/make_vo.py`.
 - **Grafica:** palette aidea (nero `#0a0a12`, viola `#4300de` / `#8f3fff`, giallo `#fff94a`), font Artific (`src/ui/static/fonts/`), logo `video/assets/aidea-logo.webp`. "aidea" sempre minuscolo, niente trattini lunghi nei testi.
 - **Audio:** l'audio delle clip non ha parlato utile: lo usiamo solo come rumore di sala nei silenzi. Musica: un brano in bundle con brag ("Happy Beats / Business Moves", ende.app, CC BY 4.0, va citato), solo nell'atto 1 e nel finale. Effetti sonori: tasti e clic amplificati (Kenney, in bundle con brag).
 
@@ -19,7 +19,7 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 | # | Tempo | Immagine | Audio | Testo a schermo |
 |---|---|---|---|---|
 | 1 | 0:00-0:03 | `foto-g1-appeso-alla-gru.jpg`, zoom lentissimo | Rumore di sala | In basso: "Mercoledì, ore 16:37." |
-| 2 | 0:03-0:09 | **INTERVISTA 1** (Federico Romeo) | Inglese, poi doppiaggio fedele | Lower third DMAX: "FEDERICO ROMEO · AI engineer"; sottotitoli |
+| 2 | 0:03-0:09 | **INTERVISTA 1** (Federico Romeo) | Inglese, poi doppiaggio fedele | Lower third DMAX: "FEDERICO ROMEO · AI Engineer · aidea"; sottotitoli |
 
 ### Atto 1: il cane
 
@@ -36,14 +36,14 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 | # | Tempo | Immagine | Voce del G1 (piatta) | Testo a schermo |
 |---|---|---|---|---|
 | 8 | 0:30-0:33 | Nero | | "Ma c'è una cosa che non vi abbiamo detto." |
-| 9 | 0:33-0:37 | `g1-scrivania-tasti-frenetici.mp4` [11-13,3]: primo piano della testa, occhi blu. È il confessionale del G1 | "Il cane l'ho programmato io." | Lower third: "G1 U2 · umanoide · reparto software" |
+| 9 | 0:33-0:37 | `g1-scrivania-tasti-frenetici.mp4` [11-13,3]: primo piano della testa, occhi blu. È il confessionale del G1 | "Il cane l'ho programmato io." | Lower third: "G1 U2 · umanoide · ha fatto tutto lui" |
 | 10 | 0:37-0:45 | 0:37-0:41 `yolo-testa-g1.mp4` (gli umani visti dalla testa del G1, sagome viola "umano"), poi 0:41-0:45 `yolo-g1-tra-partecipanti.mp4` [8-12]: umani tutti viola, il G1 in mezzo **non viene riconosciuto come niente** | "Questi sono gli umani. Trentasei ore, quaranta caffè. Ancora litigano sul nome delle variabili." | Nessuno |
-| 11 | 0:45-0:52 | Schermo diviso. A sinistra `yolo-g1-arriva-scrivania.mp4` (girato vero); a destra la registrazione R1 della dashboard, con le distanze | "Vedo un portatile a due metri. Una sedia a uno e settanta. E un umano che si prende il merito." (numeri da R1) | Nessuno |
+| 11 | 0:45-0:52 | Prima `yolo-pov-robot.mp4` a tutto schermo (soggettiva verso la scrivania, sedie e portatile segmentati), poi schermo diviso: a sinistra `yolo-g1-arriva-scrivania.mp4` (il G1 non viene riconosciuto), a destra la registrazione R1 della dashboard | "Vedo un portatile a due metri. Una sedia a uno e settanta. E un umano che si prende il merito." (numeri da R1) | Nessuno |
 | 12 | 0:52-0:59 | Jump cut a ritmo dei tasti: `g1-scrivania-tasti-frenetici` [0-3], `g1-tasti-closeup` [1-4], `g1-mano-hackertyper` [1-3], `g1-tasti-si-gira` [3-6] | Tasti amplificati. "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide." | Nessuno |
 | 13 | 0:59-1:04 | **INTERVISTA 3** (Federico Rios) | Inglese, poi doppiaggio | Sottotitoli: "Il robot." |
-| 14 | 1:04-1:06 | Zoom secco sulla scheda del browser **hackertyper.net** (`g1-scrivania-tasti-frenetici` a 6 s) | Niente | Nessuno |
+| 14 | 1:04-1:06 | Zoom secco sulla scritta **"Become a real Hacker"** di Hacker Typer (fermo immagine di `g1-mano-hackertyper`) | Niente | Nessuno |
 | 15 | 1:06-1:09 | `g1-arriva-alla-scrivania.mov` [16-19]: la scrivania vuota col portatile aperto | Rumore di sala | Nessuno |
-| 16 | 1:09-1:12 | `g1-tasti-si-gira.mov` [9,5-11,5]: il G1 si gira lentamente verso la camera | Silenzio | Nessuno |
+| 16 | 1:09-1:12 | `g1-arriva-alla-scrivania.mov` [33,4-36]: il G1 gira la testa verso la camera e socchiude gli occhi | Silenzio | Nessuno |
 
 ### Chiusura
 
@@ -52,7 +52,7 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 | 17 | 1:12-1:15 | `foto-team-perplesso.heic`, zoom lento | Silenzio | "Abbiamo chiesto al team quale fosse il loro contributo." |
 | 18 | 1:15-1:21 | **INTERVISTA 4** (tutti e tre). Inserto di 0,8 s: R3, il clic su "Start (R)" | Tre voci in inglese, un solo doppiatore. Clic amplificato | Sottotitoli: "Abbiamo premuto Start." |
 | 19 | 1:21-1:25 | Logo aidea su bianco | Silenzio, poi un colpo di musica | Sotto: "Grok Hackathon at the Museum · Pavia" |
-| 20 | 1:25-1:30 | Dopo i titoli: `g1-balla.mp4` in cornice verticale | La musica riparte. G1: "Questo invece l'ho imparato da solo." | Nessuno |
+| 20 | 1:25-1:30 | Dopo i titoli: `g1-extra-212938.mp4` [29-35], il G1 da solo nella sala che tira calci | La musica riparte. G1: "L'anno prossimo vengo da solo." | Nessuno |
 
 Riserve: `g1-tra-i-partecipanti.mp4` (camera che segue il G1 tra i tavoli, anche in versione segmentata), `g1-cammina-verso-camera.mp4`, `g1-osserva-umani.mp4`, `g1-stretta-di-mano.mp4`, `pov-verso-scrivania-1/2`.
 
@@ -165,9 +165,20 @@ python scripts/yoloe_footage.py assets/footage/pov-verso-scrivania-1.mp4 -o out/
 | `g1-stretta-di-mano.mp4` (11 s) | Batte il cinque a un uomo in giacca (volto fuori campo) |
 | `pov-verso-scrivania-1.mp4`, `pov-verso-scrivania-2.mov` | Soggettiva dal cockpit del simulatore di volo alla scrivania |
 | `g1-balla.mp4` (7 s, verticale, bassa risoluzione) | Il G1 balla |
+| `pov-robot.mov` (8 s, 4K) | Soggettiva fluida dal cockpit alla scrivania col portatile: la versione segmentata è la scena 11 |
+| `g1-extra-212938.mp4` (50 s) | Il G1 da solo nella sala grande, a 29-42 s tira calci |
+
+## Composizione
+
+La composizione HyperFrames è in `video/film/`, generata da `video/build_film.py` (timeline, scritte, sottotitoli dai tempi del TTS, audio). Interviste e registrazioni mancanti sono cartelli "SEGNAPOSTO". Per rigenerare:
+
+```bash
+python video/make_vo.py && python video/make_assets.py && python video/build_film.py
+cd video/film && npx hyperframes check && npx hyperframes render --quality draft -o renders/bozza.mp4
+```
+
+Lower third: Romeo "AI Engineer · aidea", Puddu "AI Engineer · aidea · responsabile del cane", Rios "AI Engineer · aidea · responsabile del font delle slide" (richiamo alla battuta del G1).
 
 ## Da decidere
 
-- Le due voci, dai provini.
-- I ruoli nei lower third di Francesco Puddu e Federico Rios.
 - Se l'intervista 4 regge con tre persone in un'inquadratura sola, o se la giriamo come tre primi piani montati di fila.
