@@ -129,8 +129,7 @@ Pattern del cookbook ufficiale (phone + web): inviare `session.update` alla rice
 Le stesse voci valgono per Speech to Speech e TTS; ogni voce parla tutte le lingue supportate. Default `eve`.
 
 - Voci "storiche" (cookbook phone): `ara`, `rex`, `sal`, `eve`, `leo`.
-- Esempio di risposta `GET /v1/tts/voices` nella API reference (26 voci): `carina, zagan, helix, orion, luna, iris, altair, zenith, perseus, helios, lux, kepler, rigel, cosmo, celeste, ursa, sirius, lumen, castor, naksh, atlas, ara, eve, leo, rex, sal`.
-  ⚠️ È un esempio di documentazione: verificate la lista reale con `curl -s https://api.x.ai/v1/tts/voices -H "Authorization: Bearer $XAI_API_KEY"`. Le descrizioni di tono/genere sono solo nella tabella interattiva della pagina TTS (non estraibile) e nella playground della console.
+- Lista reale da `GET /v1/tts/voices` (verificata il 2026-11-05 con la chiave dell'evento, 28 voci, tutte `multilingual`): maschili `altair, atlas, castor, cosmo, helios, helix, kepler, leo, lumen, lux, naksh, orion, perseus, rex, rigel, sal, sirius, zagan, zenith`; femminili `ara, aurora, carina, celeste, eve, iris, liora, luna, ursa`. La risposta dà solo nome e genere: il timbro va sentito (provini TTS in italiano del G1 e del doppiatore in `video/assets/vo/provini/`, non in git).
 - Custom voice: `voice: "<voice_id 8 char>"` (vedi [custom-voices.md](custom-voices.md)).
 - ⚠️ Non documentato se `voice` si possa cambiare a metà sessione con un nuovo `session.update` (utile per "più personaggi"). Strategia sicura: una sessione per personaggio.
 

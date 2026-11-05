@@ -33,3 +33,8 @@ backups/
 # output dei render (brag, HyperFrames) e footage grezzo
 brag-output*/
 assets/footage/
+
+# clip derivate per il video (segmentazione, proxy H.264)
+video/assets/yolo/
+video/assets/clips/
+video/assets/vo/
