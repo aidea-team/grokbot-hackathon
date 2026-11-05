@@ -37,7 +37,7 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 |---|---|---|---|---|
 | 8 | 0:30-0:33 | Nero | | "Ma c'è una cosa che non vi abbiamo detto." |
 | 9 | 0:33-0:37 | `g1-scrivania-tasti-frenetici.mp4` [11-13,3]: primo piano della testa, occhi blu. È il confessionale del G1 | "Il cane l'ho programmato io." | Lower third: "G1 U2 · umanoide · reparto software" |
-| 10 | 0:37-0:45 | `yolo-testa-g1.mp4`: la telecamera della testa vista sulla dashboard, gli umani sono sagome viola "umano" | "Questi sono gli umani. Trentasei ore, quaranta caffè. Ancora litigano sul nome delle variabili." | Nessuno |
+| 10 | 0:37-0:45 | 0:37-0:41 `yolo-testa-g1.mp4` (gli umani visti dalla testa del G1, sagome viola "umano"), poi 0:41-0:45 `yolo-g1-tra-partecipanti.mp4` [8-12]: umani tutti viola, il G1 in mezzo **non viene riconosciuto come niente** | "Questi sono gli umani. Trentasei ore, quaranta caffè. Ancora litigano sul nome delle variabili." | Nessuno |
 | 11 | 0:45-0:52 | Schermo diviso. A sinistra `yolo-g1-arriva-scrivania.mp4` (girato vero); a destra la registrazione R1 della dashboard, con le distanze | "Vedo un portatile a due metri. Una sedia a uno e settanta. E un umano che si prende il merito." (numeri da R1) | Nessuno |
 | 12 | 0:52-0:59 | Jump cut a ritmo dei tasti: `g1-scrivania-tasti-frenetici` [0-3], `g1-tasti-closeup` [1-4], `g1-mano-hackertyper` [1-3], `g1-tasti-si-gira` [3-6] | Tasti amplificati. "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide." | Nessuno |
 | 13 | 0:59-1:04 | **INTERVISTA 3** (Federico Rios) | Inglese, poi doppiaggio | Sottotitoli: "Il robot." |
