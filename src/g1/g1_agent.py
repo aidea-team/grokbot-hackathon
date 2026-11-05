@@ -25,7 +25,7 @@ GESTURES = [n for n in ARM_ACTION_IDS if n != "release_arm"] + ["wave_hand"]
 # DISTANCE or an ANGLE and the code walks at a speed above that floor. Clipped to the body's own limits.
 CRUISE = {"walk_forward": (0.4, 0, 0), "walk_backward": (-0.3, 0, 0), "strafe_left": (0, 0.25, 0), "strafe_right": (0, -0.25, 0),
           "turn_left": (0, 0, 0.6), "turn_right": (0, 0, -0.6)}
-AMOUNT = {"walk_forward": (0.2, 3.0), "walk_backward": (0.2, 2.0), "strafe_left": (0.2, 1.5), "strafe_right": (0.2, 1.5),
+AMOUNT = {"walk_forward": (0.2, 3.0), "walk_backward": (0.2, 2.0), "strafe_left": (0.2, 3.0), "strafe_right": (0.2, 3.0),
           "turn_left": (10.0, 180.0), "turn_right": (10.0, 180.0)}  # metres, or degrees for turn_*
 STARTUP_S = {"walk": 0.8, "turn": 0.5}  # open loop (real robot, no odometry yet): time the controller needs to get stepping. CALIBRATE on the robot
 MAX_PLAN_STEPS = 4
@@ -35,7 +35,7 @@ MAX_CONSECUTIVE_MOVES = 3  # WALKING moves in a row, then the model must look or
 TOOLS = [
     {"type": "function", "name": "move", "description":
         "Ti muovi di una DISTANZA (metri) o ruoti di un ANGOLO (gradi), in una lista di 1-4 passi eseguiti uno dopo l'altro senza pause. "
-        "walk_forward/walk_backward/strafe_left/strafe_right: amount in METRI (0,2-3). turn_left/turn_right: amount in GRADI (10-180). "
+        "walk_forward/walk_backward/strafe_left/strafe_right: amount in METRI (0,2-3; i passi laterali falli decisi, vedi sotto). turn_left/turn_right: amount in GRADI (10-180). "
         "Concatena i passi che ti servono in una sola chiamata (es. gira 90° e poi avanti 1 m) invece di fare tanti micro-movimenti: "
         "tra una chiamata e l'altra passano diversi secondi. Alla fine ti fermi e ricevi una nuova immagine.",
      "parameters": {"type": "object", "properties": {
@@ -84,7 +84,9 @@ def system_prompt(real: bool) -> str:
         "vicine di quanto siano. Non vedi te stesso né ciò che sta dietro o ai lati.\n\n"
         "COME TI MUOVI. Un solo tool, move, con una lista di 1-4 passi eseguiti in sequenza senza pause. Ogni passo ha un'azione e una quantità:\n"
         "- walk_forward / walk_backward: avanti / indietro, quantità in METRI (0,2-3 avanti, 0,2-2 indietro).\n"
-        "- strafe_left / strafe_right: passo laterale a sinistra / destra senza ruotare, in METRI (0,2-1,5).\n"
+        "- strafe_left / strafe_right: passo laterale a sinistra / destra senza ruotare, in METRI (0,2-3). Sii DECISO coi passi laterali: "
+        "uno spostamento laterale utile è lungo (di solito 0,8-2 m, il doppio di quanto ti verrebbe da chiedere); i passettini da 20-40 cm "
+        "durano un attimo, non spostano abbastanza e ti costringono a ripetere. Se l'utente chiede una distanza precisa, usa esattamente quella.\n"
         "- turn_left / turn_right: ruoti sul posto a sinistra (antiorario) / destra (orario), in GRADI (10-180).\n"
         "Destra e sinistra sono quelle del ROBOT, non dell'immagine vista da fuori: ciò che sta nella metà destra dell'immagine è alla tua destra. "
         "La velocità non la scegli tu: la camminata è già calibrata, quindi distanza e angolo che indichi sono quelli che farai.\n\n"

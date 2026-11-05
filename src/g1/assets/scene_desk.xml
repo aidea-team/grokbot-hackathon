@@ -18,9 +18,16 @@
     <material name="trackpad" rgba="0.70 0.71 0.73 1" specular="0.3"/>
     <material name="screen" rgba="0.36 0.30 0.85 1" emission="0.7"/>
     <material name="seat" rgba="0.22 0.23 0.25 1" specular="0.2"/>
+    <material name="terracotta" rgba="0.72 0.38 0.25 1" specular="0.1"/>
+    <material name="soil" rgba="0.18 0.12 0.08 1"/>
+    <material name="trunk" rgba="0.38 0.27 0.17 1"/>
+    <material name="leaf" rgba="0.14 0.46 0.17 1" specular="0.25"/>
+    <material name="leaf2" rgba="0.20 0.55 0.22 1" specular="0.25"/>
+    <material name="fabric" rgba="0.33 0.38 0.46 1"/>
+    <material name="cushion" rgba="0.42 0.48 0.57 1"/>
   </asset>
   <worldbody>
-    <body name="desk" pos="3.0 0 0">
+    <body name="desk" pos="3.3 1.9 0">
       <geom name="desk_top" type="box" size="0.35 0.70 0.015" pos="0 0 0.735" material="wood"/>
       <geom name="desk_leg_fl" type="box" size="0.02 0.02 0.36" pos="-0.31 -0.66 0.36" material="metal"/>
       <geom name="desk_leg_fr" type="box" size="0.02 0.02 0.36" pos="-0.31 0.66 0.36" material="metal"/>
@@ -36,15 +43,42 @@
             contype="0" conaffinity="0"/>
       <geom name="mouse" type="ellipsoid" size="0.055 0.03 0.017" pos="-0.12 -0.27 0.767" material="black"/>
     </body>
-    <!-- plain chair: four metal legs, the back ones go up as the backrest posts; turned 0.35 rad (20 deg), pushed in under the desk's
-         left half (so the head camera sees it whole down to the seat without it hiding the laptop) -->
-    <body name="chair" pos="2.5 0.35 0" euler="0 0 0.35">
+    <!-- Layout (robot at the origin facing +x, y positive = its left; the head camera sees ~35 deg each side):
+           sofa straight ahead (4.8, 0); desk at the left edge of the view (bearing ~30 deg, 3.3, 1.9); plant at the right edge (3.3, -1.9);
+           the chair to the left of the desk, outside the view (3.3, 3.6), turned towards the middle of the room.
+         Plain chair: four metal legs, the back ones go up as the backrest posts. -->
+    <body name="chair" pos="3.3 3.6 0" euler="0 0 3.9">
       <geom name="chair_seat" type="box" size="0.21 0.21 0.012" pos="0 0 0.448" material="seat"/>
       <geom name="chair_leg_fl" type="box" size="0.012 0.012 0.218" pos="0.19 0.19 0.218" material="black"/>
       <geom name="chair_leg_fr" type="box" size="0.012 0.012 0.218" pos="0.19 -0.19 0.218" material="black"/>
       <geom name="chair_post_l" type="box" size="0.012 0.012 0.43" pos="-0.19 0.19 0.43" material="black"/>
       <geom name="chair_post_r" type="box" size="0.012 0.012 0.43" pos="-0.19 -0.19 0.43" material="black"/>
       <geom name="chair_back" type="box" size="0.01 0.20 0.10" pos="-0.19 0 0.75" material="seat"/>
+    </body>
+    <!-- office plant (~1.3 m): terracotta pot, trunk, a crown of leaves (the leaves do not collide, so the robot does not snag). -->
+    <body name="plant" pos="3.3 -1.9 0">
+      <geom name="plant_pot" type="cylinder" size="0.17 0.15" pos="0 0 0.15" material="terracotta"/>
+      <geom name="plant_soil" type="cylinder" size="0.155 0.005" pos="0 0 0.305" material="soil" contype="0" conaffinity="0"/>
+      <geom name="plant_trunk" type="cylinder" size="0.015 0.25" pos="0 0 0.55" material="trunk"/>
+      <geom name="plant_leaves_mid" type="ellipsoid" size="0.26 0.26 0.20" pos="0 0 1.00" material="leaf" contype="0" conaffinity="0"/>
+      <geom name="plant_leaves_top" type="ellipsoid" size="0.19 0.19 0.16" pos="0.06 0.05 1.26" material="leaf2" contype="0" conaffinity="0"/>
+      <geom name="plant_leaves_low" type="ellipsoid" size="0.22 0.22 0.14" pos="-0.10 -0.06 0.80" material="leaf2" contype="0" conaffinity="0"/>
+      <geom name="plant_leaf_a" type="ellipsoid" size="0.20 0.05 0.015" pos="0.28 0.0 0.90" euler="0 0.5 0" material="leaf" contype="0" conaffinity="0"/>
+      <geom name="plant_leaf_b" type="ellipsoid" size="0.20 0.05 0.015" pos="-0.26 0.12 0.95" euler="0 -0.5 0.8" material="leaf" contype="0" conaffinity="0"/>
+      <geom name="plant_leaf_c" type="ellipsoid" size="0.20 0.05 0.015" pos="0.05 -0.28 0.92" euler="0 0.4 1.57" material="leaf" contype="0" conaffinity="0"/>
+    </body>
+    <!-- two-seater sofa 1.8 x 0.9 m, seat 0.48 m, back 0.85 m, facing the robot (yaw pi) -->
+    <body name="sofa" pos="4.8 0 0" euler="0 0 3.1416">
+      <geom name="sofa_base" type="box" size="0.45 0.90 0.13" pos="0 0 0.22" material="fabric"/>
+      <geom name="sofa_cushion_l" type="box" size="0.38 0.34 0.07" pos="0.05 0.34 0.41" material="cushion"/>
+      <geom name="sofa_cushion_r" type="box" size="0.38 0.34 0.07" pos="0.05 -0.34 0.41" material="cushion"/>
+      <geom name="sofa_back" type="box" size="0.12 0.90 0.30" pos="-0.33 0 0.55" material="fabric"/>
+      <geom name="sofa_arm_l" type="box" size="0.45 0.11 0.20" pos="0 0.79 0.45" material="fabric"/>
+      <geom name="sofa_arm_r" type="box" size="0.45 0.11 0.20" pos="0 -0.79 0.45" material="fabric"/>
+      <geom name="sofa_foot_fl" type="box" size="0.03 0.03 0.045" pos="0.40 0.84 0.045" material="black"/>
+      <geom name="sofa_foot_fr" type="box" size="0.03 0.03 0.045" pos="0.40 -0.84 0.045" material="black"/>
+      <geom name="sofa_foot_bl" type="box" size="0.03 0.03 0.045" pos="-0.40 0.84 0.045" material="black"/>
+      <geom name="sofa_foot_br" type="box" size="0.03 0.03 0.045" pos="-0.40 -0.84 0.045" material="black"/>
     </body>
   </worldbody>
 </mujoco>

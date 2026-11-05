@@ -31,15 +31,15 @@ SCENE = Path(__file__).parent / "assets" / "scene.xml"
 # "default": two coloured cylinders 4 m ahead (chat/camera tests). "desk": a desk with an open laptop and a mouse, and a plain chair,
 # for perception.
 SCENES = {"default": SCENE, "desk": Path(__file__).parent / "assets" / "scene_desk.xml"}
-# Where the robot (re)starts, (x, y, yaw rad): in the desk scene ~1.7 m from the desk's front edge, to the right of the chair, facing
-# the desk's centre (3.0, 0): laptop and mouse centred in the head camera, the chair (almost whole) on the left.
-SCENE_START = {"desk": (1.0, -0.65, float(np.arctan2(0.65, 2.0)))}
-# External view (azimuth = viewing direction, elevation, distance): desk scene = the robot in profile with the desk in front of it.
-SCENE_ORBIT = {"desk": (-50.0, -22.0, 3.8)}
+# Where the robot (re)starts, (x, y, yaw rad): in the desk scene at the origin facing +x: the sofa straight ahead, the desk at the left
+# edge of the head camera's view and the plant at the right edge (the chair is further left, out of view).
+SCENE_START = {"desk": (0.0, 0.0, 0.0)}
+# External view (azimuth = viewing direction, elevation, distance): desk scene = from behind and a bit to the left, the whole room ahead.
+SCENE_ORBIT = {"desk": (-25.0, -25.0, 6.0)}
 # The desk scene starts with lab29: standing still with zero command, gym12 walks off by itself (~1.7 m and 30 deg in 10 s, measured).
 SCENE_CONTROLLER = {"desk": "lab29"}
 # ...and even lab29 turns away slowly (~35 deg in 2 min). The real G1 stands still without Move: in these scenes, with no command,
-# small corrective commands bring the robot back to where it was left (at start: facing the desk).
+# small corrective commands bring the robot back to where it was left (at start: facing the sofa).
 HOLD_POSE_SCENES = {"desk"}
 
 # Two interchangeable leg/whole-body controllers (both Unitree's, both in the simulator only):
@@ -477,7 +477,7 @@ class G1World:
         if np.hypot(fwd, side) < 0.06 and abs(eyaw) < np.radians(3):
             return np.zeros(3, np.float32)
         lo, hi = self.limits()
-        cap = np.array([0.25, 0.15, 0.3], np.float32)
+        cap = np.array([0.25, 0.15, 0.2], np.float32)  # yaw 0.2: the lab29 limit before it was raised to 1.0 for the keys; a stronger hold oscillates
         return np.clip(np.array([0.8 * fwd, 0.8 * side, 1.2 * eyaw], np.float32), np.maximum(lo, -cap), np.minimum(hi, cap))
 
     def _step_upper(self, dt: float, now: float) -> None:
