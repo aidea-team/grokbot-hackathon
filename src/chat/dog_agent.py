@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 
 import cameras
 import jev
+import llm_provider
 import commands
 import go2_commands
 from real_body import DISARMED, HALTED, RealBody
@@ -34,7 +35,6 @@ from scene import describe
 from settings import Settings, SettingsStore
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MODEL = "gpt-4o-mini"
 HISTORY_MISSIONS = 8  # past missions (goal + final message) kept in the prompt
 MAX_EVENTS, MAX_FRAMES = 1000, 400
 
@@ -245,7 +245,14 @@ class DogAgent:
         self._running = False
         self._epoch = 0  # bumped by abort()/reset(): a stale mission thread exits silently
         self._phase, self._step = "idle", 0
-        self.brain = "llm"  # "llm" = OpenAI reasoning agent (Responses API); "jev" = Decisions API (src/chat/jev.py)
+        self.brain = "llm"  # "llm" = reasoning agent (Responses API); "jev" = OpenAI Decisions API (src/chat/jev.py)
+        self.provider = llm_provider.default_provider()  # who backs the "llm" brain: "openai" or "grok" (src/llm_provider.py)
+
+    def set_provider(self, provider: str) -> None:
+        if provider not in llm_provider.PROVIDERS:
+            raise AgentError(f"provider sconosciuto: {provider!r}")
+        self.abort()  # a running mission keeps its model: switching ends it
+        self.provider = provider
 
     def set_brain(self, brain: str) -> None:
         if brain not in ("llm", "jev"):
@@ -269,9 +276,11 @@ class DogAgent:
     def send(self, text: str) -> None:
         """Start a mission, or hand the message to the running one. Raises AgentError (e.g. no key)."""
         load_dotenv(ROOT / ".env", override=True)  # pick up a key pasted into .env without restarting
-        if not _key_ok(os.environ.get("OPENAI_API_KEY")):
-            raise AgentError("Manca la chiave: metti la tua OPENAI_API_KEY nel file .env della repo "
-                             "(ora c'è il placeholder sk-REPLACE_ME) e rimanda il messaggio. Non serve riavviare.")
+        lc = llm_provider.config(self.provider)
+        if self.brain == "llm" and not llm_provider.key_ok(lc):
+            raise AgentError(llm_provider.missing_key_message(lc) + " Non serve riavviare.")
+        if self.brain == "jev" and not _key_ok(os.environ.get("OPENAI_API_KEY")):
+            raise AgentError("JEV usa la Decisions API di OpenAI: metti OPENAI_API_KEY nel file .env della repo.")
         self._emit("user", text=text)
         with self._lock:
             if self._running:
@@ -307,7 +316,9 @@ class DogAgent:
             return self._frames.get(frame_id)
 
     def status(self) -> dict:
-        return {"running": self._running, "phase": self._phase, "step": self._step, "brain": self.brain}
+        lc = llm_provider.config(self.provider)
+        return {"running": self._running, "phase": self._phase, "step": self._step, "brain": self.brain,
+                "provider": self.provider, "model": lc.model}
 
     # ---------------------------------------------------------------- the loop (mission thread)
     def _run(self, goal: str, epoch: int) -> None:
@@ -330,10 +341,12 @@ class DogAgent:
                                  name="dog-mission").start()
 
     def _mission(self, goal: str, epoch: int) -> None:
-        from openai import OpenAI, OpenAIError
+        from openai import OpenAIError
 
-        model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
-        env_effort = os.environ.get("OPENAI_REASONING_EFFORT") or None  # reasoning models only
+        provider = self.provider  # fixed for the whole mission: switching provider aborts it
+        lc = llm_provider.config(provider)
+        model = lc.model
+        env_effort = lc.effort  # reasoning models only
         actual_mode = self.hub.mode  # fixed for the whole mission: switching mode aborts it
         mode = "real" if actual_mode in ("real", "both") else "sim"  # "both" is the real dog (+ a simulator mirror)
         robot = self.hub.robot  # fixed for the whole mission too: switching robot aborts it
@@ -345,7 +358,7 @@ class DogAgent:
                                  "arma di nuovo dal pulsante REAL prima di dare comandi.")
         else:
             max_steps = int(os.environ.get("DOG_MAX_STEPS") or 40)
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ.get("OPENAI_BASE_URL") or None)
+        client = llm_provider.make_client(lc)
         cfg = self.settings.get()
         if brain == "jev" and cfg.jev_session:
             jev.prewarm()  # open the TLS connection before the first decision
@@ -353,7 +366,7 @@ class DogAgent:
         steps: list[str] = []
         final: str | None = None
         totals = {"wait": 0.0, "cap": 0.0, "api": 0.0, "exec": 0.0}
-        self._log("mission_start", goal=goal, mode=mode, robot=robot, body=actual_mode, model=model, effort=cfg.llm_effort or env_effort,
+        self._log("mission_start", goal=goal, mode=mode, robot=robot, body=actual_mode, provider=provider, model=model, effort=cfg.llm_effort or env_effort,
                   brain=brain, settings=asdict(cfg))
 
         for n in range(1, max_steps + 1):
@@ -409,7 +422,7 @@ class DogAgent:
                     resp = client.responses.create(**kwargs)
                 except OpenAIError as e:
                     self._log("llm_error", error=repr(e))
-                    raise AgentError(f"Errore dall'API OpenAI: {e}") from e
+                    raise AgentError(f"Errore dall'API {lc.label}: {e}") from e
                 calls = [o for o in resp.output if o.type == "function_call"]
                 if calls:
                     try:

@@ -1,5 +1,5 @@
 """G1Agent: chat with the G1. An LLM sees the HEAD CAMERA (sim: MuJoCo head_cam, real: the robot's camera), and acts
-through a small whitelist of tools. Same API/env as the dog's agent (OPENAI_API_KEY, OPENAI_MODEL, OPENAI_BASE_URL).
+through a small whitelist of tools. Same provider switch as the dog's agent (src/llm_provider.py: OpenAI or Grok).
 
 Safety (src/g1/README.md): the model never gets raw velocities, Damp/Start, joint control or anything but the tools below.
 Every move is bounded in speed and duration, executed one at a time, and abort()/kill stop it from outside the model.
@@ -10,12 +10,15 @@ import base64
 import json
 import os
 import secrets
+import sys
 import threading
 import time
+from pathlib import Path
 
 from g1_world import ARM_ACTION_IDS
 
-DEFAULT_MODEL = "gpt-4o-mini"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # src/llm_provider.py
+import llm_provider  # noqa: E402
 GESTURES = [n for n in ARM_ACTION_IDS if n != "release_arm"] + ["wave_hand"]
 # Cruise commands (vx, vy, vyaw) in m/s and rad/s. The real robot does NOT step below ~0.2 m/s and needs about a second to start walking
 # (issue #170 of unitree_sdk2_python + our own test: 0.2 m/s for 2 s gave half a step), so the model never picks a speed: it asks for a
@@ -123,17 +126,24 @@ class G1Agent:
         self._thread: threading.Thread | None = None
         self.running = False
         self.phase = "idle"
+        self.provider = llm_provider.default_provider()  # "openai" | "grok" (src/llm_provider.py)
 
     # ---- public
+    def set_provider(self, provider: str) -> None:
+        if provider not in llm_provider.PROVIDERS:
+            raise AgentError(f"unknown provider: {provider!r}")
+        self.abort()  # a running mission keeps its model: switching ends it
+        self.provider = provider
+
     def send(self, text: str) -> None:
         if self.running:
-            raise AgentError("c'è già una missione in corso: fermala (STOP) o aspetta")
-        key = os.environ.get("OPENAI_API_KEY") or ""
-        if not key or "REPLACE_ME" in key:
-            raise AgentError("Manca OPENAI_API_KEY nel file .env della repo")
+            raise AgentError("a mission is already running: stop it (Stop) or wait")
+        lc = llm_provider.config(self.provider)
+        if not llm_provider.key_ok(lc):
+            raise AgentError(llm_provider.missing_key_message(lc))
         mode = self.hub.mode
         if mode == "real" and not self.hub.real_armed():
-            raise AgentError("Il G1 vero non è armato: arma dal pulsante REAL")
+            raise AgentError("The real G1 is not armed: arm it from the Real button")
         self._epoch += 1
         epoch = self._epoch
         self._emit("user", text=text)
@@ -162,7 +172,7 @@ class G1Agent:
         return self._frames.get(fid)
 
     def status(self) -> dict:
-        return {"running": self.running, "phase": self.phase}
+        return {"running": self.running, "phase": self.phase, "provider": self.provider, "model": llm_provider.config(self.provider).model}
 
     # ---- internals
     def _emit(self, kind: str, **f) -> None:
@@ -205,10 +215,10 @@ class G1Agent:
             time.sleep(0.1)
 
     def _mission(self, goal: str, epoch: int, mode: str) -> None:
-        from openai import OpenAI, OpenAIError
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ.get("OPENAI_BASE_URL") or None)
-        model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
-        effort = os.environ.get("OPENAI_REASONING_EFFORT") or None
+        from openai import OpenAIError
+        lc = llm_provider.config(self.provider)  # fixed for the whole mission: switching provider aborts it
+        client = llm_provider.make_client(lc)
+        model, effort = lc.model, lc.effort
         max_steps = min(self.MAX_STEPS, 12) if mode == "real" else self.MAX_STEPS
         done: list[str] = []
         moved = {"fwd": 0.0, "lat": 0.0, "yaw": 0.0}  # what the model has already been commanded to do this mission
@@ -220,8 +230,8 @@ class G1Agent:
             self.phase = "vedo"
             jpeg = self.hub.body.head_jpeg()
             if jpeg is None:
-                raise AgentError("nessuna immagine dalla telecamera della testa" +
-                                 (": controlla G1_CAMERA_URL" if mode == "real" else ""))
+                raise AgentError("no image from the head camera" +
+                                 (": check G1_CAMERA_URL" if mode == "real" else ""))
             fid = self._store(jpeg)
             text = (f"Obiettivo: {goal}\nPassi fatti finora ({len(done)}): " + ("; ".join(done[-12:]) or "nessuno") +
                     f"\nSpostamento totale già eseguito (come comandato): avanti {moved['fwd']:+.2f} m, a sinistra {moved['lat']:+.2f} m, "
@@ -241,7 +251,7 @@ class G1Agent:
             try:
                 resp = client.responses.create(**kwargs)
             except OpenAIError as e:
-                raise AgentError(f"Errore dall'API: {e}") from e
+                raise AgentError(f"{lc.label} API error: {e}") from e
             if self._epoch != epoch:
                 return
             calls = [o for o in resp.output if o.type == "function_call"]

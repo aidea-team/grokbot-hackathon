@@ -29,7 +29,7 @@ SCENE = Path(__file__).parent / "assets" / "scene.xml"
 #   "gym12": unitree_rl_gym motion.pt, 12 leg joints, arms/waist held by PD at our targets (jog, gestures work); arms forward at ~90 deg
 #   "lab29": unitree_rl_lab velocity/v0 (onnx), ALL 29 joints driven by the policy (arms near its default pose, elbows ~55 deg);
 #            no jog/gestures here (the policy owns the arms); command ranges x [-0.5, 1], y +-0.3, yaw +-0.2
-CONTROLLERS = {"gym12": "unitree_rl_gym · 12 giunti, braccia a 90° (le muovi tu)", "lab29": "unitree_rl_lab · 29 giunti, braccia della policy"}
+CONTROLLERS = {"gym12": "unitree_rl_gym · 12 joints", "lab29": "unitree_rl_lab · 29 joints"}
 
 # Legs: from unitree_rl_gym deploy/deploy_mujoco/configs/g1.yaml
 KPS = np.array([100, 100, 100, 150, 40, 40] * 2, np.float32)

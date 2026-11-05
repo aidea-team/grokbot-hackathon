@@ -287,8 +287,8 @@ class _Camera:
 class RealG1:
     name = "real"
     FSM_WAIT_S = 1.5  # wait before reading the FSM back after a mode request
-    REFUSAL = ("non abilitato sul robot vero: il movimento dei singoli giunti delle braccia richiede il basso livello "
-               "e non lo mandiamo. Usa i gesti (azioni dell'SDK).")
+    REFUSAL = ("not enabled on the real robot: single-joint arm control needs the low level, "
+               "which we never send. Use gestures (SDK actions).")
 
     def __init__(self, iface: str | None = None, camera_url: str | None = None, log=None, limits=None):
         self.iface = iface or os.environ.get("G1_IFACE") or None
@@ -320,7 +320,7 @@ class RealG1:
             from unitree_sdk2py.core.channel import ChannelFactoryInitialize
             from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
         except ImportError as e:  # pragma: no cover - needs the SDK
-            raise RealError("manca unitree_sdk2py (serve l'SDK Unitree e cyclonedds)") from e
+            raise RealError("unitree_sdk2py is missing (needs the Unitree SDK and cyclonedds)") from e
         try:
             configure_dds(self.iface)
             ChannelFactoryInitialize(0, self.iface) if self.iface else ChannelFactoryInitialize(0)
@@ -341,7 +341,7 @@ class RealG1:
                 self._load_actions()
             code, fsm = self._loco.GetFsmId()  # informational only: it never blocks arming
         except Exception as e:  # noqa: BLE001
-            raise RealError(f"connessione al G1 fallita: {e}") from e
+            raise RealError(f"connection to the G1 failed: {e}") from e
         self._fsm, self._fsm_code = (fsm if code == 0 else None), code
         self._stop = False
         if self._watchdog is None:
@@ -377,7 +377,7 @@ class RealG1:
     # ------------------------------------------------------------------ the only things that reach the robot
     def _need_armed(self) -> None:
         if self.state != ARMED or self._loco is None:
-            raise RealError(f"robot vero non armato (stato: {self.state})")
+            raise RealError(f"real robot not armed (state: {self.state})")
 
     def _stop_move(self) -> None:
         self._cmd, self._moving = (0.0, 0.0, 0.0), False
@@ -395,7 +395,7 @@ class RealG1:
         self._cmd, self._cmd_t, self._moving = c, time.monotonic(), True
         code = self._loco.Move(*c)
         if isinstance(code, int) and code != 0:
-            raise RealError(f"il robot ha rifiutato Move (codice {code}): probabilmente non è in modalità normale/camminata")
+            raise RealError(f"the robot refused Move (code {code}): it is probably not in normal/walking mode")
 
     def stop(self) -> None:
         if self.state == ARMED:
@@ -412,7 +412,7 @@ class RealG1:
         """LocoClient.SetFsmId for a whitelisted id; waits and reads the FSM back so the human sees whether the robot really changed."""
         self._need_armed()
         if fsm_id not in ALLOWED_FSM:
-            raise RealError(f"FSM {fsm_id} non ammesso (ammessi: {sorted(ALLOWED_FSM)})")
+            raise RealError(f"FSM {fsm_id} not allowed (allowed: {sorted(ALLOWED_FSM)})")
         self._stop_move()
         code = self._loco.SetFsmId(fsm_id)
         time.sleep(self.FSM_WAIT_S)
@@ -424,7 +424,7 @@ class RealG1:
 
     def damp(self):
         """Damp (motors limp, the robot sags) is deliberately not available on the real robot."""
-        raise RealError("Damp non è disponibile sul robot vero (lo fa cedere): per fermarlo usa STOP o il telecomando")
+        raise RealError("Damp is not available on the real robot (it makes it sag): use STOP or the remote to halt it")
 
     def reset(self) -> dict:
         """LocoClient.Start(): FSM 500."""
@@ -439,7 +439,7 @@ class RealG1:
     def balance_mode(self, mode: int) -> bool:
         self._need_armed()
         if mode not in (0, 1):
-            raise RealError("balance mode ammesso: 0 o 1")
+            raise RealError("balance mode must be 0 or 1")
         self._loco.SetBalanceMode(mode)
         self._ev("g1_balance_mode", mode=mode)
         return True
@@ -481,7 +481,7 @@ class RealG1:
             return True
         if name in self.actions:
             if self._arm_client is None:
-                raise RealError("il servizio delle azioni delle braccia non risponde")
+                raise RealError("the arm actions service does not respond")
             self._busy_until = time.monotonic() + 8.0
             self._arm_client.ExecuteAction(self.actions[name])
             return True
@@ -498,7 +498,7 @@ class RealG1:
         self._busy_until = time.monotonic() + 12.0
         code, _ = self._arm_client._Call(ARM_API_EXECUTE_CUSTOM, json.dumps({"action_name": name}))
         if code != 0:
-            raise RealError(f"il robot ha rifiutato l'azione «{name}» (codice {code})")
+            raise RealError(f"the robot refused the action “{name}” (code {code})")
         return True
 
     def stop_custom(self) -> None:

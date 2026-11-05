@@ -206,7 +206,7 @@ def test_agent_gestures_follow_the_body_and_mock_flags_unsimulated() -> None:
         ps = c.get("/api/presets").json()["presets"]
         assert any(p["name"] == "high_five" and p["simulated"] for p in ps)
         res = c.post("/api/preset", json={"name": "custom_dance"}).json()
-        assert res["ok"] is False and "non è simulato" in res["error"]
+        assert res["ok"] is False and "not simulated" in res["error"]
     finally:
         w.shutdown()
 
