@@ -75,7 +75,8 @@ def test_like_the_real_one_default_and_toggle() -> None:
     w.start()
     try:
         c = TestClient(create_app(w))
-        assert c.get("/api/state").json()["locomotion_only"] is True  # default: the mock accepts what the real robot accepts
+        assert c.get("/api/state").json()["locomotion_only"] is False  # default: the simulator is unrestricted (the real robot never is)
+        assert c.post("/api/locomotion_only", json={"value": True}).json()["locomotion_only"] is True  # API-only switch: "like the real one"
         for route, body in (("/api/jog", {"rates": {"left_shoulder_pitch": 1}}), ("/api/pose", {"pose": {}})):
             assert c.post(route, json=body).json()["ok"] is False, route  # joint-level arm control = low level: not like the real one
         assert c.post("/api/move", json={"vx": 0.3}).json()["ok"]

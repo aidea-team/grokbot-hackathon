@@ -27,6 +27,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))  # llm_provider.py
 for sub in ("chat", "dog", "sim"):
     sys.path.insert(0, str(ROOT / "src" / sub))
 
@@ -65,6 +66,10 @@ class SpeedIn(BaseModel):
 
 class BrainIn(BaseModel):
     brain: str
+
+
+class ProviderIn(BaseModel):
+    provider: str
 
 
 class ModeIn(BaseModel):
@@ -193,6 +198,16 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
         except AgentError as e:
             return {"ok": False, "error": str(e), "brain": agent.brain}
         return {"ok": True, "brain": agent.brain}
+
+    @app.post("/api/provider")
+    def set_provider(body: ProviderIn, request: Request):
+        """OpenAI <-> Grok for the LLM brain. Ends the running mission; the conversation is kept."""
+        _log_call(request)
+        try:
+            agent.set_provider(body.provider)
+        except AgentError as e:
+            return {"ok": False, "error": str(e), **agent.status()}
+        return {"ok": True, **agent.status()}
 
     @app.get("/api/settings")
     def get_settings():

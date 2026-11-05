@@ -26,6 +26,7 @@ from g1_real import ARMED, RealError, RealG1, load_cached_actions, load_cached_c
 from g1_world import ARM_ACTION_IDS, MAX_VX, MAX_VY, MAX_VYAW, PRESETS, SIM_BY_ID, G1World  # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
+DEFAULT_CONTROLLER = "lab29"  # the 29-DoF Unitree policy (unitree_rl_lab); "gym12" stays selectable from the UI
 
 
 class MoveIn(BaseModel):
@@ -55,6 +56,10 @@ class OrbitIn(BaseModel):
 class ModeIn(BaseModel):
     mode: str
     confirm: bool = False
+
+
+class ProviderIn(BaseModel):
+    provider: str
 
 
 class CtlIn(BaseModel):
@@ -88,8 +93,8 @@ class G1Hub:
         self._sim_factory, self._sim, self.real, self.log = sim_factory, None, real, log
         self.mode = "sim"
         # Locomotion-only: the simulator accepts exactly what the real robot accepts (Move/Stop), so what is tried here is what will
-        # reach the robot. ON by default; the real robot is ALWAYS restricted. Reset (R) stays: it is a simulator facility.
-        self.locomotion_only = True
+        # reach the robot. OFF by default in the simulator (joint jog, Damp... available); the real robot is ALWAYS restricted (see `restricted`).
+        self.locomotion_only = False
         self._lock = threading.Lock()
 
     @property
@@ -120,17 +125,17 @@ class G1Hub:
             self.mode = "sim"
         elif mode == "real":
             if self.real is None:
-                raise RealError("Il G1 vero non è abilitato: una persona deve avviare `python src/g1/g1_app.py --real` "
-                                "(e scrivere «go» nel terminale). Resto sul simulatore.")
+                raise RealError("The real G1 is not enabled: a person must launch `python src/g1/g1_app.py --real` "
+                                "(and type `go` in the terminal). Staying on the simulator.")
             if not confirm:
-                raise RealError("Serve la conferma esplicita (checklist) per passare al G1 vero.")
+                raise RealError("Explicit confirmation (checklist) is required to switch to the real G1.")
             try:
                 self.real.arm()
             except RealError as e:  # the camera does not need the robot link: keep it, but nothing can be commanded
-                warning = f"solo camera, robot NON armato: {e}"
+                warning = f"camera only, robot NOT armed: {e}"
             self.mode = "real"
         else:
-            raise RealError(f"modalità sconosciuta: {mode!r}")
+            raise RealError(f"unknown mode: {mode!r}")
         if self.log is not None:
             self.log.event("g1_mode", mode=self.mode, warning=warning)
         return warning
@@ -148,7 +153,7 @@ class G1Hub:
 
 def create_app(world: G1World | None = None, real: RealG1 | None = None, log=None) -> FastAPI:
     app = FastAPI(title="G1")
-    hub = G1Hub((lambda: world) if world is not None else G1World, real, log)
+    hub = G1Hub((lambda: world) if world is not None else (lambda: G1World(controller=DEFAULT_CONTROLLER)), real, log)
     if world is not None:
         world.start()
     agent = G1Agent(hub, log)
@@ -159,21 +164,21 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
             r = fn()
             if isinstance(r, dict):
                 return {"ok": True, **r}
-            return {"ok": True} if r in (None, True) else {"ok": False, "error": "non disponibile"}
+            return {"ok": True} if r in (None, True) else {"ok": False, "error": "not available"}
         except RealError as e:
             return {"ok": False, "error": str(e)}
 
     def refuse_if_restricted():
-        """Joint-level arm control is low level (rt/arm_sdk): never on the real robot, and in the mock only if "come il reale" is off."""
+        """Joint-level arm control is low level (rt/arm_sdk): never on the real robot, and in the simulator it is allowed unless locomotion_only was switched on (API only, no UI)."""
         if hub.restricted:
             return {"ok": False, "error": RealG1.REFUSAL if hub.mode == "real" else
-                    "«come il reale» è attivo: il movimento dei singoli giunti non esiste sul robot vero (toggle in alto)"}
+                    "locomotion_only is on: single-joint arm control does not exist on the real robot"}
         return None
 
     def refuse_if_policy_arms():
         """With the lab29 controller the policy drives the arms: jog and gestures (keyframes on our PD arms) do not apply."""
         if hub.mode == "sim" and hub.sim.controller == "lab29":
-            return {"ok": False, "error": "con il controller lab29 le braccia le muove la policy: passa a gym12 per muoverle o fare i gesti"}
+            return {"ok": False, "error": "with the lab29 controller the policy drives the arms: switch to gym12 to move them or use gestures"}
         return None
 
     @app.get("/")
@@ -235,7 +240,7 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
         # On the real robot the arms move only when it is still, and Move does nothing while a gesture runs: the "come il reale"
         # mock does the same. (On the real robot we just pass Move through: the robot ignores it by itself.)
         if hub.mode == "sim" and hub.locomotion_only and hub.body.is_busy():
-            return {"ok": False, "error": "gesto in corso: come sul robot vero la camminata non risponde finché non finisce"}
+            return {"ok": False, "error": "gesture running: like on the real robot, walking does not respond until it ends"}
         return guard(lambda: hub.body.command(body.vx, body.vy, body.vyaw))
 
     @app.post("/api/stop")
@@ -259,14 +264,14 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
     @app.post("/api/preset")
     def preset(body: NameIn):
         if hub.mode == "sim" and body.name not in PRESETS and SIM_BY_ID.get(hub.sim._robot_ids.get(body.name)) is None:
-            return {"ok": False, "error": f"«{body.name}» non è simulato: esiste solo sul robot vero"}
+            return {"ok": False, "error": f"“{body.name}” is not simulated: it only exists on the real robot"}
         return refuse_if_policy_arms() or guard(lambda: hub.body.play(body.name))
 
     @app.post("/api/custom")
     def custom(body: NameIn):
         """A move taught in the Unitree app, by exact name (real robot only: the mock cannot show it)."""
         if hub.mode != "real":
-            return {"ok": False, "error": "le azioni insegnate dall'app esistono solo sul robot vero"}
+            return {"ok": False, "error": "taught actions only exist on the real robot"}
         r = guard(lambda: hub.body.play_custom(body.name))
         return r if r["ok"] else {**r, "error": r.get("error") if r.get("error") != "non disponibile" else "azione sconosciuta al robot"}
 
@@ -279,7 +284,7 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
     @app.post("/api/damp")
     def damp():
         if hub.restricted:  # like the real robot: no Damp (it makes the robot sag)
-            return {"ok": False, "error": "Damp non è disponibile (lo fa cedere): per fermarlo usa STOP o il telecomando"}
+            return {"ok": False, "error": "Damp is not available (it makes the robot sag): use STOP or the remote to halt it"}
         return guard(lambda: hub.body.damp())
 
     @app.post("/api/start")
@@ -290,7 +295,7 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
     def locomotion_only(body: LoIn):
         """Mock only: switch the simulator between the real robot's set (locomotion) and everything it can do."""
         if hub.mode == "real":
-            return {"ok": False, "error": "sul robot vero è sempre solo locomozione"}
+            return {"ok": False, "error": "the real robot is always locomotion-only"}
         agent.abort()
         hub.sim.stop()
         hub.locomotion_only = bool(body.value)
@@ -300,7 +305,7 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
     def fsm(body: FsmIn):
         """Mode change (SetFsmId, whitelist). Returns what the robot reports afterwards."""
         if hub.restricted and body.id in (1, 702):  # Damp / Lie2StandUp: not on the real robot, so not in the "come il reale" mock
-            return {"ok": False, "error": f"FSM {body.id} non disponibile (può far cedere o danneggiare il robot)"}
+            return {"ok": False, "error": f"FSM {body.id} not available (it can make the robot sag or damage it)"}
         return guard(lambda: hub.body.set_fsm(body.id))
 
     @app.post("/api/stand_height")
@@ -315,13 +320,13 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
     def controller(body: CtlIn):
         """Simulator only: which Unitree walking controller drives the G1 (gym12: 12 legs, arms at 90 deg; lab29: all 29 joints)."""
         if hub.mode != "sim":
-            return {"ok": False, "error": "il controller si sceglie solo nel simulatore"}
+            return {"ok": False, "error": "the controller can only be chosen in the simulator"}
         agent.abort()
         try:
             ok = hub.sim.set_controller(body.name)
         except Exception as e:  # noqa: BLE001  (e.g. onnxruntime missing)
             return {"ok": False, "error": str(e)}
-        return {"ok": bool(ok), **({} if ok else {"error": "controller sconosciuto"}), **hub.status()}
+        return {"ok": bool(ok), **({} if ok else {"error": "unknown controller"}), **hub.status()}
 
     @app.post("/api/orbit")
     def orbit(body: OrbitIn):
@@ -339,6 +344,15 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
         return {"ok": True, "warning": warning, **hub.status()}
 
     # ---- chat
+    @app.post("/api/provider")
+    def provider(body: ProviderIn):
+        """OpenAI <-> Grok for the chat agent. Ends the running mission."""
+        try:
+            agent.set_provider(body.provider)
+        except AgentError as e:
+            return {"ok": False, "error": str(e), **agent.status()}
+        return {"ok": True, **agent.status()}
+
     @app.post("/api/chat")
     def chat(body: ChatIn):
         try:
@@ -355,6 +369,12 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
     def frame(fid: int):
         jpeg = agent.frame(fid)
         return Response(jpeg, media_type="image/jpeg") if jpeg else Response(status_code=404)
+
+    @app.post("/api/chat_reset")
+    def chat_reset():
+        """Empty chat: stops the mission and drops the conversation (events + frames). The robot is not moved."""
+        agent.reset()
+        return {"ok": True}
 
     @app.post("/api/abort")
     def abort():

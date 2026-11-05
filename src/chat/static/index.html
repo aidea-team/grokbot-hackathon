@@ -120,6 +120,10 @@
         <button id="b-llm" class="btn btn--sm btn--violet" title="Agente OpenAI con ragionamento (Responses API): lento, scrive il thought">LLM</button>
         <button id="b-jev" class="btn btn--sm btn--ghost" title="JEV: OpenAI Decisions API, una sola chiamata veloce che sceglie l'azione (non scrive testo)">JEV</button>
       </div>
+      <div class="modeswitch" role="group" aria-label="modello">
+        <button id="p-openai" class="btn btn--sm btn--ghost" title="Il cervello LLM usa OpenAI (OPENAI_MODEL)">OpenAI</button>
+        <button id="p-grok" class="btn btn--sm btn--violet" title="Il cervello LLM usa Grok (GROK_MODEL, chiave XAI_API_KEY)">Grok</button>
+      </div>
       <select id="speed" class="ui-select" title="Velocità del simulatore">
         <option value="1">1×</option>
         <option value="0.5">0,5×</option>
@@ -206,7 +210,7 @@
     <input id="s-jev_finish_llm" type="checkbox"></div>
 
   <h3>Agente LLM (Responses API)</h3>
-  <div class="opt"><label for="s-llm_effort">Reasoning effort<small>«da .env» usa OPENAI_REASONING_EFFORT; solo modelli con reasoning</small></label>
+  <div class="opt"><label for="s-llm_effort">Reasoning effort<small>«da .env» usa OPENAI_/GROK_REASONING_EFFORT; solo modelli con reasoning</small></label>
     <select id="s-llm_effort" class="ui-select"></select></div>
   <div class="opt"><label for="s-llm_thought">Campo «thought» nei tool<small>token di output in più a ogni passo</small></label>
     <input id="s-llm_thought" type="checkbox"></div>
@@ -333,6 +337,19 @@ async function setBrain(brain) {
   if (!d.ok) render({ type: "error", text: d.error });
   applyBrain(d.brain);
 }
+function applyProvider(d) {
+  if (!d.provider) return;
+  $("p-openai").className = "btn btn--sm " + (d.provider === "openai" ? "btn--violet" : "btn--ghost");
+  $("p-grok").className = "btn btn--sm " + (d.provider === "grok" ? "btn--violet" : "btn--ghost");
+  $("p-" + d.provider).title = "modello: " + d.model;
+}
+async function setProvider(provider) {
+  const d = await (await post("/api/provider", { provider })).json();
+  if (!d.ok) render({ type: "error", text: d.error });
+  applyProvider(d);
+}
+$("p-openai").onclick = () => setProvider("openai");
+$("p-grok").onclick = () => setProvider("grok");
 $("b-llm").onclick = () => setBrain("llm");
 $("b-jev").onclick = () => setBrain("jev");
 
@@ -478,7 +495,7 @@ async function pollEvents() {
   try {
     const d = await (await fetch(`/api/events?after=${lastId}`)).json();
     for (const ev of d.events) { render(ev); lastId = Math.max(lastId, ev.id); }
-    applyMode(d); applyBrain(d.brain);
+    applyMode(d); applyBrain(d.brain); applyProvider(d);
     bar.className = "topnav__status" + (d.running ? " is-live" : "");
     bar.dataset.base = d.running ? `passo ${d.step} · ${d.phase}` : "fermo";
   } catch { bar.dataset.base = "server non raggiungibile"; bar.className = "topnav__status"; }
