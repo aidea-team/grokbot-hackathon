@@ -1,5 +1,7 @@
 # grokbot-hackathon
 
+<p align="center"><img src="docs/media/showcase.png" alt="G1 web app (simulator, YOLOE objects with distance and height, depth, Grok tool calls) and live segmentation on footage from the real G1" width="100%"></p>
+
 **Grok-driven control of legged robots, with a physics simulator, live visual perception and a safety layer that is independent of the model.**
 
 Built by team **aidea** (Federico Romeo, Federico Rios, Francesco Puddu) for the *Grok Hackathon at the Museum* (Ctrl+Alt Museum, Pavia, 4–5 November 2026, organised with the Grok team at SpaceXSI).
