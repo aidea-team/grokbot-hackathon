@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "g1"))
 
 import g1_real  # noqa: E402
-from g1_agent import AMOUNT, CRUISE, G1Agent  # noqa: E402
+from g1_agent import AMOUNT, CRUISE, G1Agent, perception_line  # noqa: E402
 from g1_real import ARMED, RealG1  # noqa: E402
 from g1_world import G1World  # noqa: E402
 
@@ -298,6 +298,32 @@ def test_heading_is_held_and_result_reports_asked_vs_measured() -> None:
         assert red.sum() > 500, "the red cylinder left the field of view"
     finally:
         w.shutdown()
+
+
+
+def test_perception_line() -> None:
+    """The measured objects reach the model as one line; stale, disabled or failed perception adds nothing."""
+    objs = [{"label": "chair", "dist_m": 3.61, "bearing_deg": -28.0, "top_m": 0.85},
+            {"label": "desk", "dist_m": 2.03, "bearing_deg": 3.4, "top_m": 0.75},
+            {"label": "mouse", "dist_m": 1.9, "bearing_deg": 0.5, "top_m": None},
+            {"label": "tv", "dist_m": None, "bearing_deg": None, "top_m": None}]
+    r = {"enabled": True, "error": None, "age_s": 0.3, "objects": objs}
+    line = perception_line(r)
+    assert line and line.startswith("Percezione misurata"), line
+    assert line.index("mouse a 1.90 m, davanti") < line.index("desk a 2.03 m, 3° a destra, alto 0.75 m") < \
+        line.index("chair a 3.61 m, 28° a sinistra, alto 0.85 m"), line  # nearest first
+    assert "tv" not in line  # nothing measured, nothing said
+    assert perception_line({**r, "age_s": 9.0}) is None
+    assert perception_line({**r, "enabled": False}) is None
+    assert perception_line({**r, "error": "SAM 3: missing key"}) is None
+    assert perception_line({**r, "objects": []}) is None
+    assert perception_line(None) is None
+    ag = G1Agent(Hub(None))
+    assert ag._perception_line() is None
+    ag.perception = lambda: r
+    assert ag._perception_line() == line
+    ag.perception = lambda: 1 / 0
+    assert ag._perception_line() is None  # a broken perception never stops a mission
 
 
 if __name__ == "__main__":

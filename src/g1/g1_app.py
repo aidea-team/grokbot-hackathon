@@ -165,6 +165,7 @@ def create_app(world: G1World | None = None, real: RealG1 | None = None, log=Non
     agent = G1Agent(hub, log)
     # what the head camera sees, segmented and measured: simulator = exact depth, real = stereo depth (when available)
     perception = LivePerception(lambda: hub.body.head_rgbd(), BACKENDS, log)
+    agent.perception = perception.result  # the agent gets the measured objects (distance, direction, height) at every step
 
     def guard(fn):
         """Run a body command; real-robot refusals come back as {ok: false, error} for the human / the page."""

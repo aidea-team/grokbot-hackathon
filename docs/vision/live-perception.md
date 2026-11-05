@@ -35,6 +35,10 @@ G1_CAMERA_PORT=5610 python tests/test_g1_stereo_stream.py   # terminale 2: disco
 
 Col robot vero (lo avvia una persona, come sempre): `python src/g1/g1_app.py --port 8766 --real`. La camera funziona anche col robot **non armato** ("solo camera"); la profondità viene dallo stereo della testa.
 
+## Cosa arriva all'agente
+
+A ogni passo della chat del G1 (`src/g1/g1_agent.py`), oltre all'immagine della testa, Grok riceve una riga con gli oggetti misurati, dal più vicino: `Percezione misurata (segmentazione + profondità della telecamera, di 0.3 s fa): mouse a 1.90 m, davanti; desk a 2.03 m, 3° a destra, alto 0.75 m; …`. La riga c'è solo se la percezione è attiva, senza errori e l'analisi ha meno di 5 s; altrimenti l'agente lavora sulla sola immagine, come prima. Il prompt gli dice di usare quelle distanze per decidere quanto avanzare e per non urtare gli oggetti, come informazione e non come ordine. Test: `test_perception_line` in `tests/test_g1_agent.py`.
+
 ## Modelli di segmentazione
 
 | Backend | Cosa trova | Tempo per frame (misurato) | Dove |

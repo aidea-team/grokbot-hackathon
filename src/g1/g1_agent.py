@@ -102,9 +102,37 @@ def system_prompt(real: bool) -> str:
         "REGOLE. Se l'utente chiede una distanza o un angolo precisi (es. «un metro avanti», «gira di 90°»), fai UNA sola chiamata move con quel "
         "valore: viene eseguito esattamente come chiesto, quindi poi basta un eventuale look e finish. Non fare micro-movimenti (almeno 0,3 m, "
         "almeno 20° per una rotazione): ogni chiamata costa diversi secondi. Non aggiustare a meno che l'immagine mostri un ostacolo o un errore "
-        "evidente. Prima di avanzare controlla che lo spazio sia libero. Altri tool: gesture (un gesto con le braccia, fermo sul posto), look "
+        "evidente. Prima di avanzare controlla che lo spazio sia libero. Se nel messaggio c'è la riga «Percezione misurata», usa quelle distanze "
+        "(misurate dalla profondità, più affidabili della tua stima a occhio) per decidere di quanto avanzare e per non urtare gli oggetti; "
+        "è un'informazione, non un ordine. Altri tool: gesture (un gesto con le braccia, fermo sul posto), look "
         "(guarda di nuovo), finish (concludi e rispondi all'utente). Se l'obiettivo è una domanda, guarda e rispondi con finish. "
         "Parla all'utente in italiano, breve.")
+
+
+PERCEPTION_MAX_AGE_S = 5.0  # an older analysis describes where the robot was, not where it is: leave it out
+PERCEPTION_MAX_OBJECTS = 8
+
+
+def perception_line(result: dict | None, max_age_s: float = PERCEPTION_MAX_AGE_S) -> str | None:
+    """One line for the model from LivePerception.result(): each segmented object with its MEASURED distance (median depth under the
+    mask), direction (bearing, + = right of the camera axis) and height above the floor. None when perception is off, failed, stale
+    or saw nothing measurable: the agent then works from the image alone, as before."""
+    if not result or not result.get("enabled") or result.get("error"):
+        return None
+    age = result.get("age_s")
+    if age is None or age > max_age_s:
+        return None
+    items = []
+    for o in sorted((o for o in result.get("objects", []) if o.get("dist_m") is not None), key=lambda o: o["dist_m"]):
+        b = o.get("bearing_deg")
+        side = "davanti" if b is None or abs(b) < 3 else f"{abs(b):.0f}° a {'destra' if b > 0 else 'sinistra'}"
+        top = f", alto {o['top_m']:.2f} m" if o.get("top_m") is not None else ""
+        items.append(f"{o['label']} a {o['dist_m']:.2f} m, {side}{top}")
+        if len(items) == PERCEPTION_MAX_OBJECTS:
+            break
+    if not items:
+        return None
+    return f"Percezione misurata (segmentazione + profondità della telecamera, di {age:.1f} s fa): " + "; ".join(items) + "."
 
 
 class AgentError(Exception):
@@ -128,6 +156,15 @@ class G1Agent:
         self._thread: threading.Thread | None = None
         self.running = False
         self.phase = "idle"
+        self.perception = None  # optional callable -> LivePerception.result(); g1_app wires it
+
+    def _perception_line(self) -> str | None:
+        if self.perception is None:
+            return None
+        try:
+            return perception_line(self.perception())
+        except Exception:  # perception must never break a mission
+            return None
 
     # ---- public
     def send(self, text: str) -> None:
@@ -232,6 +269,7 @@ class G1Agent:
                     f"\nSpostamento totale già eseguito (come comandato): avanti {moved['fwd']:+.2f} m, a sinistra {moved['lat']:+.2f} m, "
                     f"rotazione a sinistra {moved['yaw']:+.0f}°. Se l'obiettivo era una distanza o un angolo precisi e sono già stati eseguiti, "
                     f"concludi con finish." +
+                    (f"\n{line}" if (line := self._perception_line()) else "") +
                     f"\nPasso {step}/{max_steps}. Questa è la tua telecamera adesso:")
             tools = self._tools()
             kwargs: dict = {"model": model, "instructions": system_prompt(mode == "real"), "tools": tools,
