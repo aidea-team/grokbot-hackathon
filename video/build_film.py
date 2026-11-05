@@ -59,44 +59,86 @@ def clip(src, t, d, media=0.0, **kw) -> dict:
 #   vo: [(line id, t)]   audio: interview sound [dict(src, t, d, media, vol, auto=[(t, v)...])]   music, room, keys, sfx
 G3_CUT = round(0.4 + vo_time("g1-03", "E un umano") - 0.12, 2)  # cut to a human on "E un umano che si prende il merito"
 G3_END = round(0.4 + vo_meta("g1-03")["duration"] + 0.7, 2)
-DUCK = 0.15  # interview level under the dubber
+DUCK = 0.15  # interview level under the G1's "translation"
+
+
+def vo_end(vid: str, t: float, tail: float = 0.6) -> float:
+    return round(t + vo_meta(vid)["duration"] + tail, 2)
+
+
+T02_HUMANS = round(0.3 + vo_time("t-02", "Gli umani") - 0.1, 2)
 SCENES = [
     dict(id="s01-gru", dur=2.8, shots=[dict(kind="img", src="assets/img/img-gru.jpg", t=0, d=2.8, push=(1.0, 1.06, 50, 40))],
-         note=dict(text="Mercoledì, ore 16:37.", t=0.3, d=2.3), room=[(0, 2.8, 0.6)]),
-    dict(id="s02-romeo", dur=7.6, shots=[clip("i-romeo", 0, 7.6, 1.0)], lt=("romeo", 0.3, 3.6), vo=[("d-01", 0.9)],
-         audio=[dict(src="int-romeo", t=0, d=7.6, media=1.0, auto=[(0, 1), (0.8, 1), (1.0, DUCK), (6.9, DUCK), (7.3, 0.7)])]),
-    dict(id="s03-puddu", dur=6.8, shots=[clip("i-puddu", 0, 4.3, 2.5), clip("i-puddu", 4.3, 2.5, 9.9)], lt=("puddu", 0.2, 3.4),
-         vo=[("d-02", 0.8)],
-         audio=[dict(src="int-puddu", t=0, d=4.3, media=2.5, auto=[(0, 1), (0.7, 1), (0.85, DUCK), (3.3, DUCK), (3.6, 0.95)]),
-                dict(src="int-puddu", t=4.3, d=2.5, media=9.9, vol=0.95)]),
+         note=dict(text="Mercoledì, ore 16:37.", t=0.3, d=2.3), amb=[(0, 2.8, 0.7)]),
+    # Interviews: the real voice plays loud for its first phrase, then drops and the G1 "translates" over it (documentary dub).
+    dict(id="s02-romeo", dur=8.8, shots=[clip("i-romeo", 0, 8.8, 1.0)], lt=("romeo", 0.3, 7.2), vo=[("d-01", 2.1)],
+         audio=[dict(src="int-romeo", t=0, d=8.8, media=1.0, auto=[(0, 1), (1.95, 1), (2.2, DUCK), (7.6, DUCK), (7.9, 0.8)])]),
+    dict(id="s03-puddu", dur=7.4, shots=[clip("i-puddu", 0, 4.9, 2.5), clip("i-puddu", 4.9, 2.5, 9.9)], lt=("puddu", 0.2, 6.8),
+         vo=[("d-02", 2.2)],
+         audio=[dict(src="int-puddu", t=0, d=4.9, media=2.5, auto=[(0, 1), (2.05, 1), (2.3, DUCK), (4.9, DUCK)]),
+                dict(src="int-puddu", t=4.9, d=2.5, media=9.9, vol=0.95)]),
     dict(id="s04-cane", dur=10.4, shots=[clip("c-cane", 0, 10.4, push=(1.0, 1.06, 60, 70))],
          words=[("Obbedisce.", 1.05, 1.05), ("Si muove.", 2.1, 2.1), ("Capisce.", 4.2, 2.1)],
-         music=[dict(t=0, d=7.2, media=1.60, vol=0.55)], room=[(7.2, 3.2, 0.6)]),   # music cut dead when the dog touches the floor
-    dict(id="s05-puddu-muto", dur=2.2, shots=[clip("i-puddu-muto", 0, 2.2, 1.2)], room=[(0, 2.2, 0.6)]),
-    dict(id="s06-giudici", dur=3.0, card="I giudici non sembravano impressionati.", room=[(0, 3.0, 0.5)]),
-    dict(id="s07-ma", dur=3.2, card="Ma c'è una cosa che non vi abbiamo detto.", room=[(0, 3.2, 0.5)]),
-    dict(id="s08-testa", dur=4.8, shots=[clip("c-testa", 0, 4.8, rate=0.5)], lt=("g1", 0.4, 3.8), vo=[("g1-01", 0.5)],
-         room=[(0, 4.8, 0.25)]),
-    dict(id="s09-umani", dur=9.0, shots=[clip("y-testa", 0, 4.3), clip("y-tra", 4.3, 4.7)], vo=[("g1-02", 0.4)], room=[(0, 9.0, 0.25)]),
+         music=[dict(t=0, d=7.2, media=1.60, vol=0.55)], amb=[(7.2, 3.2, 0.7)]),   # music cut dead when the dog touches the floor
+    dict(id="s05-puddu-muto", dur=2.4, shots=[clip("i-puddu-muto", 0, 2.4, 1.2)], amb=[(0, 2.4, 0.7)]),
+    dict(id="s06-perplessi", dur=2.6, shots=[dict(kind="img", src="assets/img/img-perplesso.jpg", t=0, d=2.6, push=(1.0, 1.05, 50, 45))],
+         amb=[(0, 2.6, 0.7)]),
+    dict(id="s07-ma", dur=3.2, card="Ma c'è una cosa che non vi abbiamo detto.", amb=[(0, 3.2, 0.6)]),
+    dict(id="s08-testa", dur=4.8, shots=[clip("c-testa", 0, 4.8, rate=0.5)], lt=("g1", 0.3, 4.4), vo=[("g1-01", 0.5)],
+         amb=[(0, 4.8, 0.5)]),
+    dict(id="s09-umani", dur=9.0, shots=[clip("y-testa", 0, 4.3), clip("y-tra", 4.3, 4.7)], vo=[("g1-02", 0.4)], amb=[(0, 9.0, 0.4)]),
     dict(id="s10-scrivania", dur=G3_END, shots=[clip("y-pov", 0, G3_CUT), clip("i-romeo-muto", G3_CUT, round(G3_END - G3_CUT, 2), 1.5)],
-         vo=[("g1-03", 0.4)], room=[(0, G3_END, 0.25)]),
-    dict(id="s11-tasti", dur=7.2, shots=[clip("c-hacker", 0, 2.0), clip("c-closeup", 2.0, 1.8), clip("c-mano", 3.8, 1.6),
+         vo=[("g1-03", 0.4)], amb=[(0, G3_END, 0.4)]),
+    # Technical chapter, still told by the G1
+    dict(id="s11-capitolo", dur=4.6, chapter=("Capitolo tecnico", "Come funziono", "(spiegato agli umani)"), vo=[("t-01", 0.5)],
+         bed=dict(d="tech", vol=0.13, media=12.02)),
+    dict(id="s12-cervello", dur=vo_end("t-02", 0.3),
+         shots=[clip("r-full", 0, T02_HUMANS, 10.0, snap=(0.5, 2.6, "-119px", "-105px")),
+                dict(kind="img", src="assets/img/img-conumano.jpg", t=T02_HUMANS, d=round(vo_end("t-02", 0.3) - T02_HUMANS, 2),
+                     push=(1.0, 1.06, 55, 30))],
+         ov=[dict(t=1.0, d=round(T02_HUMANS - 1.1, 2), kicker="IL CERVELLO", title="Grok 4.5", sub="API di xAI · Responses API · function calling", bottom=True)],
+         vo=[("t-02", 0.3)]),
+    dict(id="s13-funzioni", dur=vo_end("t-03", 0.3),
+         shots=[clip("c-mano", 0, 1.6), clip("r-typing", 1.6, 3.0, 0.4), clip("r-steps", 4.6, round(vo_end("t-03", 0.3) - 4.6, 2), 0.0,
+                                                                                push=(1.0, 1.12, 30, 62))],
+         ov=[dict(t=5.0, d=round(vo_end("t-03", 0.3) - 5.4, 2), kicker="FUNCTION CALLING", title="move · look · finish",
+                  sub="Grok sceglie una funzione, il G1 la esegue, poi riguarda")],
+         vo=[("t-03", 0.3)]),
+    dict(id="s14-segmentazione", dur=vo_end("t-04", 0.3),
+         shots=[clip("y-pov2", 0, 6.4, 0.2), clip("y-arriva", 6.4, round(vo_end("t-04", 0.3) - 6.4, 2), 0.0)],
+         ov=[dict(t=0.6, d=round(vo_end("t-04", 0.3) - 1.0, 2), kicker="SEGMENTAZIONE", title="YOLOE",
+                  sub="maschere da prompt di testo · in locale, ~3 fps · SAM 3 nel cloud per i casi difficili")],
+         vo=[("t-04", 0.3)]),
+    dict(id="s15-distanza", dur=vo_end("t-05", 0.3),
+         shots=[clip("r-objects", 0, vo_end("t-05", 0.3), 0.3, push=(1.0, 1.1, 70, 55))],
+         ov=[dict(t=0.6, d=round(vo_end("t-05", 0.3) - 1.0, 2), kicker="DISTANZA E ALTEZZA", title="maschera × profondità",
+                  sub="mediana sotto la maschera · altezza dal pavimento · sim: esatta · G1 vero: stereo")],
+         vo=[("t-05", 0.3)]),
+    dict(id="s16-mujoco", dur=vo_end("t-06", 0.3),
+         shots=[clip("r-mujoco", 0, vo_end("t-06", 0.3), 2.0, push=(1.0, 1.08, 45, 55))],
+         ov=[dict(t=0.6, d=round(vo_end("t-06", 0.3) - 1.0, 2), kicker="SIMULATORE", title="MuJoCo",
+                  sub="fisica vera · policy di locomozione Unitree · stessi comandi del G1 reale")],
+         vo=[("t-06", 0.3)], bed_end=True),
+    # Back to the comedy
+    dict(id="s17-tasti", dur=7.2, shots=[clip("c-hacker", 0, 2.0), clip("c-closeup", 2.0, 1.8), clip("c-mano", 3.8, 1.6),
                                           clip("c-scrive", 5.4, 1.8)], vo=[("g1-04", 0.3)],
          keys=[0.1, 0.5, 0.85, 1.3, 2.0, 2.4, 2.75, 3.3, 3.8, 4.2, 4.55, 5.0, 5.4, 5.8, 6.3, 6.7]),
-    dict(id="s12-rios", dur=8.5, shots=[clip("i-rios", 0, 8.5, 0.4)], lt=("rios", 0.2, 3.4), vo=[("d-03", 1.35)],
+    dict(id="s18-rios", dur=8.5, shots=[clip("i-rios", 0, 8.5, 0.4)], lt=("rios", 0.2, 6.8), vo=[("d-03", 1.35)],
          audio=[dict(src="int-rios", t=0, d=8.5, media=0.4, auto=[(0, 1), (1.2, 1), (1.3, DUCK), (2.5, DUCK), (2.7, 0.95)])]),
-    dict(id="s13-rios-muto", dur=1.6, shots=[clip("i-rios-muto", 0, 1.6, 1.0)], room=[(0, 1.6, 0.5)]),
-    dict(id="s14-hacker", dur=2.2, shots=[dict(kind="img", src="assets/img/img-realhacker.jpg", t=0, d=2.2, snap=(0.35, 2.8, 63, 0))],
-         room=[(0, 2.2, 0.5)]),
-    dict(id="s15-vuota", dur=2.2, shots=[clip("c-vuota", 0, 2.2)], room=[(0, 2.2, 0.6)]),
-    dict(id="s16-guarda", dur=2.2, shots=[clip("c-guarda", 0, 2.2, push=(1.0, 1.08, 50, 35))], room=[(0, 2.2, 0.6)]),
-    dict(id="s17-contributo", dur=3.2, card="Abbiamo chiesto al team quale fosse il loro contributo.", room=[(0, 3.2, 0.5)]),
-    dict(id="s18-team", dur=7.2, shots=[clip("i-team", 0, 7.2, 1.6)], lt=("team", 0.2, 2.2), vo=[("d-04", 5.15)],
+    dict(id="s19-rios-muto", dur=1.6, shots=[clip("i-rios-muto", 0, 1.6, 1.0)], amb=[(0, 1.6, 0.7)]),
+    dict(id="s20-hacker", dur=2.2, shots=[dict(kind="img", src="assets/img/img-realhacker.jpg", t=0, d=2.2, snap=(0.35, 2.8, 63, 0))],
+         amb=[(0, 2.2, 0.7)]),
+    dict(id="s21-vuota", dur=2.2, shots=[clip("c-vuota", 0, 2.2)], amb=[(0, 2.2, 0.7)]),
+    dict(id="s22-guarda", dur=2.2, shots=[clip("c-guarda", 0, 2.2, push=(1.0, 1.08, 50, 35))], amb=[(0, 2.2, 0.7)]),
+    dict(id="s23-contributo", dur=3.2, card="Abbiamo chiesto al team quale fosse il loro contributo.", amb=[(0, 3.2, 0.6)]),
+    dict(id="s24-team", dur=7.2, shots=[clip("i-team", 0, 7.2, 1.6)], lt=("team", 0.2, 4.4), vo=[("d-04", 5.15)],
          audio=[dict(src="int-team", t=0, d=7.2, media=1.6, auto=[(0, 1), (5.0, 1), (5.1, 0.2), (7.2, 0.2)])]),
-    dict(id="s19-invio", dur=5.2, shots=[clip("r-chat", 0, 2.6, push=(1.0, 1.25, 86, 48)), clip("r-dash", 2.6, 2.6, rate=3)],
-         sfx=[("click", 1.9, 1.0)], music_from=1.9),                                   # the music comes back on "invio"
-    dict(id="s20-logo", dur=4.0, logo=True),
-    dict(id="s21-tag", dur=4.8, shots=[clip("c-tag", 0, 4.8, push=(1.35, 1.45, 74, 62))], vo=[("g1-05", 0.6)]),
+    # The whole run of the mission, from the click to the robot at the desk (Francesco's screen recording, 1.4x)
+    dict(id="s25-invio", dur=15.9, shots=[clip("r-chat", 0, 1.6, 0.9, push=(1.0, 1.1, 55, 60)), clip("r-full", 1.6, 14.3, 7.6, rate=1.4)],
+         ov=[dict(t=2.2, d=4.0, kicker="MISSIONE", title="«Go to the desk!»", sub="Grok 4.5 decide · il G1 esegue · MuJoCo", small=True)],
+         sfx=[("click", 1.0, 1.0)], music_from=1.0),                                   # the music comes back on "invio"
+    dict(id="s26-logo", dur=4.5, logo=True),
+    dict(id="s27-tag", dur=4.8, shots=[clip("c-tag", 0, 4.8, push=(1.35, 1.45, 74, 62))], vo=[("g1-05", 0.6)]),
 ]
 t0 = 0.0
 for _sc in SCENES:
@@ -142,6 +184,19 @@ BASE_CSS = f"""
 .logo-bg {{ position: absolute; inset: 0; background: #fff; }}
 .logo-img {{ position: absolute; left: 510px; top: 300px; width: 900px; height: 437px; object-fit: contain; }}
 .logo-sub {{ position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }}
+.logo-cred {{ position: absolute; left: 0; right: 0; top: 850px; text-align: center; color: #5a5a74; font-weight: 400; font-size: 28px; }}
+.ov {{ position: absolute; left: 110px; top: 96px; }}
+.ov-in {{ display: inline-flex; flex-direction: column; align-items: flex-start; background: rgba(10,10,18,.78); border-left: 10px solid {YELLOW};
+          padding: 22px 34px 26px 28px; max-width: 1500px; }}
+.ov-k {{ background: {VIOLET}; color: #fff; font-weight: 700; font-size: 26px; letter-spacing: .14em; padding: 5px 14px; }}
+.ov-t {{ color: #fff; font-weight: 800; font-size: 104px; line-height: 1.02; letter-spacing: -0.02em; margin-top: 14px; }}
+.ov-s {{ color: {YELLOW}; font-weight: 500; font-size: 32px; line-height: 1.25; margin-top: 12px; }}
+.ov.small .ov-t {{ font-size: 64px; }}
+.ov.bottom {{ top: auto; bottom: 210px; }}
+.chap {{ position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }}
+.chap-k {{ background: {YELLOW}; color: {INK}; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }}
+.chap-t {{ color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }}
+.chap-s {{ color: {VIOLET2}; font-weight: 500; font-size: 48px; margin-top: 22px; }}
 """
 
 
@@ -177,7 +232,8 @@ def scene_file(sc: dict) -> str:
                 tl(f'tl.fromTo("#{wid}", {{scale: {a}, transformOrigin: "{ox}% {oy}%"}}, {{scale: {b}, duration: {d}, ease: "none"}}, {t});')
             if "snap" in sh:
                 at, s, ox, oy = sh["snap"]
-                tl(f'tl.fromTo("#{wid}", {{scale: 1, transformOrigin: "{ox}% {oy}%"}}, {{scale: {s}, duration: 0.22, ease: "power3.out"}}, {t + at});')
+                origin = f"{ox} {oy}" if isinstance(ox, str) else f"{ox}% {oy}%"
+                tl(f'tl.fromTo("#{wid}", {{scale: 1, transformOrigin: "{origin}"}}, {{scale: {s}, duration: 0.22, ease: "power3.out"}}, {t + at});')
         elif kind == "slate":
             key = sh["key"]
             if key in ("r1", "r3"):
@@ -200,12 +256,32 @@ def scene_file(sc: dict) -> str:
         tl(f'tl.fromTo("#{sid}-card-in", {{opacity: 0, filter: "blur(8px)"}}, {{opacity: 1, filter: "blur(0px)", duration: 0.5, ease: "power2.out"}}, 0.25);')
         tl(f'tl.to("#{sid}-card-in", {{opacity: 0, duration: 0.3, ease: "power2.in"}}, {dur - 0.4});')
 
+    if "chapter" in sc:
+        k, ttl, sub = sc["chapter"]
+        body.append(f'<div id="{sid}-chap" class="clip chap" data-start="0" data-duration="{dur}" data-track-index="1">'
+                    f'<div class="chap-k" id="{sid}-chap-k">{esc(k)}</div><div class="chap-t" id="{sid}-chap-t">{esc(ttl)}</div>'
+                    f'<div class="chap-s" id="{sid}-chap-s">{esc(sub)}</div></div>')
+        tl(f'tl.fromTo("#{sid}-chap-k", {{opacity: 0}}, {{opacity: 1, duration: 0.3, ease: "power2.out"}}, 0.2);')
+        tl(f'tl.fromTo("#{sid}-chap-t", {{opacity: 0, filter: "blur(10px)"}}, {{opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power3.out"}}, 0.35);')
+        tl(f'tl.fromTo("#{sid}-chap-s", {{opacity: 0}}, {{opacity: 1, duration: 0.3, ease: "power2.out"}}, 2.6);')
+
+    for j, o in enumerate(sc.get("ov", [])):
+        cls = "ov" + (" small" if o.get("small") else "") + (" bottom" if o.get("bottom") else "")
+        body.append(f'<div id="{sid}-ov{j}" class="clip {cls}" data-start="{o["t"]}" data-duration="{o["d"]}" data-track-index="{12 + j}" style="z-index:65">'
+                    f'<div class="ov-in" id="{sid}-ov{j}-in"><div class="ov-k">{esc(o["kicker"])}</div><div class="ov-t">{esc(o["title"])}</div>'
+                    f'<div class="ov-s">{esc(o["sub"])}</div></div></div>')
+        tl(f'tl.fromTo("#{sid}-ov{j}-in", {{clipPath: "inset(0 100% 0 0)"}}, {{clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out"}}, {o["t"]});')
+        tl(f'tl.to("#{sid}-ov{j}-in", {{opacity: 0, duration: 0.25, ease: "power2.in"}}, {round(o["t"] + o["d"] - 0.3, 2)});')
+
     if sc.get("logo"):
         body.append(f'<div id="{sid}-bg" class="clip logo-bg" data-start="0" data-duration="{dur}" data-track-index="1"></div>')
         body.append(f'<img id="{sid}-logo" class="clip logo-img" src="assets/aidea-logo.webp" alt="aidea" data-start="0" data-duration="{dur}" data-track-index="2">')
         body.append(f'<div id="{sid}-sub" class="clip logo-sub" data-start="0" data-duration="{dur}" data-track-index="3">'
                     f'<span id="{sid}-sub-in">Grok Hackathon at the Museum · Pavia · 2026</span></div>')
+        body.append(f'<div id="{sid}-cred" class="clip logo-cred" data-start="0" data-duration="{dur}" data-track-index="4">'
+                    f'<span id="{sid}-cred-in">Grok 4.5 (API di xAI) · YOLOE · SAM 3 · MuJoCo · Unitree G1 e Go1</span></div>')
         tl(f'tl.fromTo("#{sid}-sub-in", {{opacity: 0}}, {{opacity: 1, duration: 0.5, ease: "power2.out"}}, 0.6);')
+        tl(f'tl.fromTo("#{sid}-cred-in", {{opacity: 0}}, {{opacity: 1, duration: 0.5, ease: "power2.out"}}, 1.2);')
 
     if "note" in sc:
         n = sc["note"]
@@ -261,14 +337,15 @@ def caption_groups() -> list[dict]:
             if c == "]":
                 skip = False
         s = "".join(text)
-        for m in re.finditer(r"[^.!?]+[.!?]*", s):
-            sent = m.group().strip()
-            if not sent:
-                continue
-            a = m.start() + (len(m.group()) - len(m.group().lstrip()))
-            b = a + len(sent) - 1
+        split = re.compile(r"\S.*?(?:[.!?](?=\s|$)|$)")  # sentence ends; "4.5" and ".env" are not ends
+        spoken = [m for m in split.finditer(s) if m.group().strip()]
+        shown = [m.group().strip() for m in split.finditer(meta["subtitle"]) if m.group().strip()]
+        if len(shown) != len(spoken):  # the subtitle is written differently (digits, names): fall back to what is said
+            shown = [m.group().strip() for m in spoken]
+        for m, sent in zip(spoken, shown):
+            a, b = m.start(), m.start() + len(m.group().rstrip()) - 1
             groups.append(dict(text=sent, start=round(start + ts[a][0] - 0.05, 2), end=round(start + ts[b][1] + 0.35, 2),
-                               g1=vid.startswith("g1")))
+                               g1=meta["voice"] == "liora"))
     for g, nxt in zip(groups, groups[1:]):  # never two on screen
         g["end"] = min(g["end"], nxt["start"] - 0.02)
     return groups
@@ -334,9 +411,13 @@ def index_file(groups: list[dict]) -> str:
             add(f"a-{sc['id']}-int{j}", f"{a['src']}.wav", s0 + a["t"], a["d"], 11, a.get("vol", 1.0), a.get("media"), a.get("auto"))
         for j, m in enumerate(sc.get("music", [])):
             add(f"a-{sc['id']}-music{j}", "music.mp3", s0 + m["t"], m["d"], 12, m["vol"], m["media"])
-        for t, d, v in sc.get("room", []):
-            add(f"a-room{room_k}", "roomtone.wav", s0 + t, min(d, 13.9), 13, v, fade_in=0.15, fade_out=0.15)
+        for t, d, v in sc.get("amb", []):  # soft air, read at its own film time: nothing ever repeats
+            add(f"a-amb{room_k}", "ambient.wav", s0 + t, d, 13, v, media=round(s0 + t, 2), fade_in=0.2, fade_out=0.2)
             room_k += 1
+        if "bed" in sc:  # quiet music bed under the technical chapter, until the scene marked bed_end
+            last = next(x for x in SCENES if x.get("bed_end"))
+            bd = round(last["start"] + last["dur"] - s0, 2)
+            add(f"a-{sc['id']}-bed", "music2.mp3", s0, bd, 17, sc["bed"]["vol"], sc["bed"]["media"], fade_in=1.0, fade_out=1.5)
         for t in sc.get("keys", []):
             add(f"a-key{key_k}", f"key-{1 + key_k % 8}.wav", s0 + t, 0.3, 14 + key_k % 2, 0.7)
             key_k += 1

@@ -1,0 +1,57 @@
+<template>
+  <style>
+
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Medium.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-SemiBold.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Bold.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Artific"; src: url("assets/fonts/Artific-Black.woff2") format("woff2"); font-weight: 800; }
+#root { position: absolute; inset: 0; overflow: hidden; background: #0a0a12; font-family: "Artific", sans-serif; }
+.full { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+.wrap { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.lt { position: absolute; left: 120px; bottom: 210px; }
+.lt-in { display: flex; flex-direction: column; align-items: flex-start; }
+.lt-name { background: #4300de; color: #fff; font-weight: 800; font-size: 54px; letter-spacing: 0.01em; text-transform: uppercase;
+            padding: 8px 24px 6px; line-height: 1.1; }
+.lt-role { background: #fff94a; color: #0a0a12; font-weight: 500; font-size: 32px; padding: 6px 24px; line-height: 1.2; }
+.note { position: absolute; left: 120px; bottom: 110px; color: #fff; font-weight: 500; font-size: 40px;
+         text-shadow: 0 2px 12px rgba(0,0,0,.85), 0 1px 2px #000; }
+.note.big { left: 0; right: 0; bottom: 120px; text-align: center; font-size: 56px; font-weight: 600; }
+.word { position: absolute; right: 120px; top: 120px; text-align: right; color: #fff94a; font-weight: 800; font-size: 220px; letter-spacing: -0.03em;
+         line-height: 1; text-shadow: 0 6px 30px rgba(0,0,0,.55); }
+.card { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
+.card-in { color: #fff; font-weight: 500; font-size: 76px; max-width: 1400px; line-height: 1.15; letter-spacing: -0.01em; }
+.slate { position: absolute; inset: 0; background: #14141f; display: flex; flex-direction: column; justify-content: center; padding: 0 160px; }
+.slate-tag { color: #0a0a12; background: #fff94a; font-weight: 700; font-size: 28px; padding: 6px 16px; align-self: flex-start; letter-spacing: .08em; }
+.slate-t1 { color: #fff; font-weight: 700; font-size: 64px; margin-top: 28px; }
+.slate-t2 { color: #d6d6e5; font-weight: 400; font-size: 44px; margin-top: 20px; font-style: italic; max-width: 1500px; }
+.half { position: absolute; top: 0; width: 960px; height: 1080px; overflow: hidden; }
+.half video, .half .slate { position: absolute; left: -480px; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+.half .slate { left: 0; width: 960px; padding: 0 70px; }
+.logo-bg { position: absolute; inset: 0; background: #fff; }
+.logo-img { position: absolute; left: 510px; top: 300px; width: 900px; height: 437px; object-fit: contain; }
+.logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
+.logo-cred { position: absolute; left: 0; right: 0; top: 850px; text-align: center; color: #5a5a74; font-weight: 400; font-size: 28px; }
+.ov { position: absolute; left: 110px; top: 96px; }
+.ov-in { display: inline-flex; flex-direction: column; align-items: flex-start; background: rgba(10,10,18,.78); border-left: 10px solid #fff94a;
+          padding: 22px 34px 26px 28px; max-width: 1500px; }
+.ov-k { background: #4300de; color: #fff; font-weight: 700; font-size: 26px; letter-spacing: .14em; padding: 5px 14px; }
+.ov-t { color: #fff; font-weight: 800; font-size: 104px; line-height: 1.02; letter-spacing: -0.02em; margin-top: 14px; }
+.ov-s { color: #fff94a; font-weight: 500; font-size: 32px; line-height: 1.25; margin-top: 12px; }
+.ov.small .ov-t { font-size: 64px; }
+.ov.bottom { top: auto; bottom: 210px; }
+.chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
+.chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
+.chap-s { color: #8f3fff; font-weight: 500; font-size: 48px; margin-top: 22px; }
+
+  </style>
+  <div id="root" data-composition-id="s22-guarda" data-width="1920" data-height="1080">
+    <div class="wrap" id="s22-guarda-w0" style="z-index:1"><video id="s22-guarda-m0" class="clip full" data-start="0" data-duration="2.2" data-track-index="1" data-media-start="0.0" src="assets/clips/c-guarda.mp4" muted playsinline></video></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s22-guarda-w0", {scale: 1.0, transformOrigin: "50% 35%"}, {scale: 1.08, duration: 2.2, ease: "none"}, 0);
+    window.__timelines["s22-guarda"] = tl;
+  </script>
+</template>

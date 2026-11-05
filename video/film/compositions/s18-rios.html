@@ -31,16 +31,29 @@
 .logo-bg { position: absolute; inset: 0; background: #fff; }
 .logo-img { position: absolute; left: 510px; top: 300px; width: 900px; height: 437px; object-fit: contain; }
 .logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
+.logo-cred { position: absolute; left: 0; right: 0; top: 850px; text-align: center; color: #5a5a74; font-weight: 400; font-size: 28px; }
+.ov { position: absolute; left: 110px; top: 96px; }
+.ov-in { display: inline-flex; flex-direction: column; align-items: flex-start; background: rgba(10,10,18,.78); border-left: 10px solid #fff94a;
+          padding: 22px 34px 26px 28px; max-width: 1500px; }
+.ov-k { background: #4300de; color: #fff; font-weight: 700; font-size: 26px; letter-spacing: .14em; padding: 5px 14px; }
+.ov-t { color: #fff; font-weight: 800; font-size: 104px; line-height: 1.02; letter-spacing: -0.02em; margin-top: 14px; }
+.ov-s { color: #fff94a; font-weight: 500; font-size: 32px; line-height: 1.25; margin-top: 12px; }
+.ov.small .ov-t { font-size: 64px; }
+.ov.bottom { top: auto; bottom: 210px; }
+.chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
+.chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
+.chap-s { color: #8f3fff; font-weight: 500; font-size: 48px; margin-top: 22px; }
 
   </style>
-  <div id="root" data-composition-id="s20-logo" data-width="1920" data-height="1080">
-    <div id="s20-logo-bg" class="clip logo-bg" data-start="0" data-duration="4.0" data-track-index="1"></div>
-    <img id="s20-logo-logo" class="clip logo-img" src="assets/aidea-logo.webp" alt="aidea" data-start="0" data-duration="4.0" data-track-index="2">
-    <div id="s20-logo-sub" class="clip logo-sub" data-start="0" data-duration="4.0" data-track-index="3"><span id="s20-logo-sub-in">Grok Hackathon at the Museum · Pavia · 2026</span></div>
+  <div id="root" data-composition-id="s18-rios" data-width="1920" data-height="1080">
+    <div class="wrap" id="s18-rios-w0" style="z-index:1"><video id="s18-rios-m0" class="clip full" data-start="0" data-duration="8.5" data-track-index="1" data-media-start="0.4" src="assets/clips/i-rios.mp4" muted playsinline></video></div>
+    <div id="s18-rios-lt" class="clip lt" data-start="0.2" data-duration="6.8" data-track-index="7" style="z-index:70"><div class="lt-in" id="s18-rios-lt-in"><div class="lt-name">Federico Rios</div><div class="lt-role">AI Engineer · aidea · responsabile del font delle slide</div></div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s20-logo-sub-in", {opacity: 0}, {opacity: 1, duration: 0.5, ease: "power2.out"}, 0.6);
-    window.__timelines["s20-logo"] = tl;
+    tl.fromTo("#s18-rios-lt-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.45, ease: "power3.out"}, 0.2);
+    tl.to("#s18-rios-lt-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 6.7);
+    window.__timelines["s18-rios"] = tl;
   </script>
 </template>

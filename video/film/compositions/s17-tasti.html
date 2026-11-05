@@ -31,15 +31,30 @@
 .logo-bg { position: absolute; inset: 0; background: #fff; }
 .logo-img { position: absolute; left: 510px; top: 300px; width: 900px; height: 437px; object-fit: contain; }
 .logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
+.logo-cred { position: absolute; left: 0; right: 0; top: 850px; text-align: center; color: #5a5a74; font-weight: 400; font-size: 28px; }
+.ov { position: absolute; left: 110px; top: 96px; }
+.ov-in { display: inline-flex; flex-direction: column; align-items: flex-start; background: rgba(10,10,18,.78); border-left: 10px solid #fff94a;
+          padding: 22px 34px 26px 28px; max-width: 1500px; }
+.ov-k { background: #4300de; color: #fff; font-weight: 700; font-size: 26px; letter-spacing: .14em; padding: 5px 14px; }
+.ov-t { color: #fff; font-weight: 800; font-size: 104px; line-height: 1.02; letter-spacing: -0.02em; margin-top: 14px; }
+.ov-s { color: #fff94a; font-weight: 500; font-size: 32px; line-height: 1.25; margin-top: 12px; }
+.ov.small .ov-t { font-size: 64px; }
+.ov.bottom { top: auto; bottom: 210px; }
+.chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
+.chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
+.chap-s { color: #8f3fff; font-weight: 500; font-size: 48px; margin-top: 22px; }
 
   </style>
-  <div id="root" data-composition-id="s06-giudici" data-width="1920" data-height="1080">
-    <div id="s06-giudici-card" class="clip card" data-start="0" data-duration="3.0" data-track-index="1"><div class="card-in" id="s06-giudici-card-in">I giudici non sembravano impressionati.</div></div>
+  <div id="root" data-composition-id="s17-tasti" data-width="1920" data-height="1080">
+    <div class="wrap" id="s17-tasti-w0" style="z-index:1"><video id="s17-tasti-m0" class="clip full" data-start="0" data-duration="2.0" data-track-index="1" data-media-start="0.0" src="assets/clips/c-hacker.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s17-tasti-w1" style="z-index:2"><video id="s17-tasti-m1" class="clip full" data-start="2.0" data-duration="1.8" data-track-index="2" data-media-start="0.0" src="assets/clips/c-closeup.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s17-tasti-w2" style="z-index:3"><video id="s17-tasti-m2" class="clip full" data-start="3.8" data-duration="1.6" data-track-index="3" data-media-start="0.0" src="assets/clips/c-mano.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s17-tasti-w3" style="z-index:4"><video id="s17-tasti-m3" class="clip full" data-start="5.4" data-duration="1.8" data-track-index="4" data-media-start="0.0" src="assets/clips/c-scrive.mp4" muted playsinline></video></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s06-giudici-card-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.5, ease: "power2.out"}, 0.25);
-    tl.to("#s06-giudici-card-in", {opacity: 0, duration: 0.3, ease: "power2.in"}, 2.6);
-    window.__timelines["s06-giudici"] = tl;
+    tl.set({}, {}, 7.2);
+    window.__timelines["s17-tasti"] = tl;
   </script>
 </template>

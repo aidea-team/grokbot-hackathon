@@ -31,15 +31,29 @@
 .logo-bg { position: absolute; inset: 0; background: #fff; }
 .logo-img { position: absolute; left: 510px; top: 300px; width: 900px; height: 437px; object-fit: contain; }
 .logo-sub { position: absolute; left: 0; right: 0; top: 790px; text-align: center; color: #2a2a3a; font-weight: 500; font-size: 36px; }
+.logo-cred { position: absolute; left: 0; right: 0; top: 850px; text-align: center; color: #5a5a74; font-weight: 400; font-size: 28px; }
+.ov { position: absolute; left: 110px; top: 96px; }
+.ov-in { display: inline-flex; flex-direction: column; align-items: flex-start; background: rgba(10,10,18,.78); border-left: 10px solid #fff94a;
+          padding: 22px 34px 26px 28px; max-width: 1500px; }
+.ov-k { background: #4300de; color: #fff; font-weight: 700; font-size: 26px; letter-spacing: .14em; padding: 5px 14px; }
+.ov-t { color: #fff; font-weight: 800; font-size: 104px; line-height: 1.02; letter-spacing: -0.02em; margin-top: 14px; }
+.ov-s { color: #fff94a; font-weight: 500; font-size: 32px; line-height: 1.25; margin-top: 12px; }
+.ov.small .ov-t { font-size: 64px; }
+.ov.bottom { top: auto; bottom: 210px; }
+.chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
+.chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
+.chap-s { color: #8f3fff; font-weight: 500; font-size: 48px; margin-top: 22px; }
 
   </style>
-  <div id="root" data-composition-id="s17-contributo" data-width="1920" data-height="1080">
-    <div id="s17-contributo-card" class="clip card" data-start="0" data-duration="3.2" data-track-index="1"><div class="card-in" id="s17-contributo-card-in">Abbiamo chiesto al team quale fosse il loro contributo.</div></div>
+  <div id="root" data-composition-id="s11-capitolo" data-width="1920" data-height="1080">
+    <div id="s11-capitolo-chap" class="clip chap" data-start="0" data-duration="4.6" data-track-index="1"><div class="chap-k" id="s11-capitolo-chap-k">Capitolo tecnico</div><div class="chap-t" id="s11-capitolo-chap-t">Come funziono</div><div class="chap-s" id="s11-capitolo-chap-s">(spiegato agli umani)</div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s17-contributo-card-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.5, ease: "power2.out"}, 0.25);
-    tl.to("#s17-contributo-card-in", {opacity: 0, duration: 0.3, ease: "power2.in"}, 2.8000000000000003);
-    window.__timelines["s17-contributo"] = tl;
+    tl.fromTo("#s11-capitolo-chap-k", {opacity: 0}, {opacity: 1, duration: 0.3, ease: "power2.out"}, 0.2);
+    tl.fromTo("#s11-capitolo-chap-t", {opacity: 0, filter: "blur(10px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power3.out"}, 0.35);
+    tl.fromTo("#s11-capitolo-chap-s", {opacity: 0}, {opacity: 1, duration: 0.3, ease: "power2.out"}, 2.6);
+    window.__timelines["s11-capitolo"] = tl;
   </script>
 </template>

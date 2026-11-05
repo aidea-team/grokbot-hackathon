@@ -10,32 +10,37 @@ Video del team aidea per il Grok Hackathon at the Museum (Pavia, 4-5 novembre 20
 - **Grafica:** palette aidea (nero `#0a0a12`, viola `#4300de` / `#8f3fff`, giallo `#fff94a`), font Artific (`src/ui/static/fonts/`), logo `video/assets/aidea-logo.webp`. "aidea" sempre minuscolo, niente trattini lunghi nei testi.
 - **Audio:** l'audio delle clip non ha parlato utile: lo usiamo solo come rumore di sala nei silenzi. Musica: un brano in bundle con brag ("Happy Beats / Business Moves", ende.app, CC BY 4.0, va citato), solo nell'atto 1 e nel finale. Effetti sonori: tasti e clic amplificati (Kenney, in bundle con brag).
 
-## Timeline (montaggio attuale, bozza v2)
+## Timeline (montaggio attuale, bozza v3)
 
-Generata da `video/build_film.py`: i tempi qui sotto sono quelli del file. Durata 1:46.
+Generata da `video/build_film.py`: i tempi sono quelli del file. Durata 3:05. Tutte le voci fuori campo sono del G1 (Grok TTS, `liora`), anche le "traduzioni" delle interviste: il G1 doppia gli umani e dice la verità.
 
 | # | Tempo | Immagine | Audio / testo |
 |---|---|---|---|
-| 1 | 0:00-0:03 | Foto del G1 appeso alla gru, zoom lento | "Mercoledì, ore 16:37." |
-| 2 | 0:03-0:10 | **Romeo** (intervista) | Inglese, poi il doppiatore traduce fedele: "…cambierà la robotica. Per sempre." |
-| 3 | 0:10-0:17 | **Puddu**, con un jump cut a metà | Doppiatore: "È un cane. Cammina." L'inglese continua senza sottotitoli ("…and it understands natural language") |
-| 4 | 0:17-0:28 | Il G1 porta a spasso il cane | Musica epica, parole gialle "Obbedisce." "Si muove." "Capisce."; **la musica si ferma quando il cane si accuccia** |
-| 5 | 0:28-0:30 | **Puddu muto** che guarda in camera | Silenzio |
-| 6 | 0:30-0:36 | Cartelli: "I giudici non sembravano impressionati." / "Ma c'è una cosa che non vi abbiamo detto." | Silenzio |
-| 7 | 0:36-0:41 | Primo piano della testa del G1 (ralenti) | G1: "Il cane l'ho programmato io." |
-| 8 | 0:41-0:50 | Telecamera della testa e G1 tra i partecipanti, segmentati (umani viola, il G1 non riconosciuto) | G1: "Questi sono gli umani…" |
-| 9 | 0:50-0:58 | Soggettiva verso la scrivania segmentata (POV robot), poi **Romeo muto** su "E un umano che si prende il merito." | G1 |
-| 10 | 0:58-1:05 | Jump cut sui tasti | Tasti amplificati, G1: "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide." |
-| 11 | 1:05-1:14 | **Rios** | "Who wrote the code?" → doppiatore: "Il robot." → l'inglese continua ("everybody, AI or human, contributed equally") |
-| 12 | 1:14-1:16 | **Rios muto** | Silenzio |
-| 13 | 1:16-1:22 | Zoom su "Become a real Hacker", scrivania vuota, il G1 che guarda in camera socchiudendo gli occhi | Silenzio |
-| 14 | 1:22-1:26 | Cartello: "Abbiamo chiesto al team quale fosse il loro contributo." | |
-| 15 | 1:26-1:33 | **Team**: "Strategic oversight." "Vision." "Leadership." | Doppiatore: "Abbiamo premuto invio." |
-| 16 | 1:33-1:38 | Registrazione dello schermo: "Go to the desk!", invio, poi la dashboard a 3x col G1 che va da solo | Clic, **la musica riparte sull'invio** |
-| 17 | 1:38-1:42 | Logo aidea | Musica |
-| 18 | 1:42-1:46 | Dopo i titoli: il G1 tira calci da solo nella sala grande | G1: "L'anno prossimo vengo da solo." |
+| 1 | 0:00-0:03 | Foto del G1 appeso alla gru | "Mercoledì, ore 16:37." |
+| 2 | 0:03-0:12 | **Romeo** | Prima frase in inglese a volume pieno, poi l'inglese scende e il G1 traduce, fedele: "…cambierà la robotica. Per sempre." |
+| 3 | 0:12-0:19 | **Puddu** (jump cut) | Prima frase piena, poi il G1: "È un cane. Cammina." L'inglese riparte: "…and it understands natural language" |
+| 4 | 0:19-0:29 | Il G1 porta a spasso il cane | Musica epica, "Obbedisce." "Si muove." "Capisce."; la musica si ferma quando il cane si accuccia |
+| 5 | 0:29-0:34 | Puddu muto in camera, poi la foto dei due perplessi davanti al G1 | Silenzio (il momento imbarazzante, senza dirlo) |
+| 6 | 0:34-0:38 | Cartello: "Ma c'è una cosa che non vi abbiamo detto." | |
+| 7 | 0:38-0:51 | Testa del G1 (confessionale), poi umani segmentati | "Il cane l'ho programmato io." / "Questi sono gli umani…" |
+| 8 | 0:51-0:60 | POV robot segmentato, poi Romeo muto | "Vedo una scrivania… E un umano che si prende il merito." |
+| 9 | 1:00-1:04 | **Capitolo tecnico: "Come funziono (spiegato agli umani)"** | "Ora vi spiego come funziono. Lentamente." |
+| 10 | 1:04-1:15 | Zoom sulla scheda "Grok" della dashboard, poi Rios col G1 | Riquadro **"Grok 4.5 · API di xAI"**. "Gli umani hanno incollato la chiave nel .env. Il loro momento più tecnico." |
+| 11 | 1:15-1:29 | La mano del G1 sulla tastiera, la chat che si scrive, i passi dell'agente | Riquadro **function calling: move · look · finish**. "Grok guarda la mia telecamera e risponde con una funzione…" |
+| 12 | 1:29-1:41 | Girato vero segmentato (sala, scrivania, il G1 che il modello non riconosce) | Riquadro **YOLOE / SAM 3**. "Gli scrivo sedia, scrivania, portatile, persona, e lui colora tutto." |
+| 13 | 1:41-1:54 | Dashboard: vista oggetti + tabella distanza/altezza | Riquadro **maschera × profondità**. "Sedia, 3,6 metri. Scrivania, 2 metri. Gli umani misurano a occhio." |
+| 14 | 1:54-2:05 | Vista 3D del simulatore col G1 che cammina | Riquadro **MuJoCo**. "Lì posso cadere quanto voglio. Nessuno mi filma." |
+| 15 | 2:05-2:12 | Jump cut sui tasti | "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide." |
+| 16 | 2:12-2:22 | **Rios**, poi Rios muto | "Who wrote the code?" pieno, poi il G1: "Il robot." L'inglese continua |
+| 17 | 2:22-2:29 | "Become a real Hacker", scrivania vuota, il G1 che guarda in camera | Silenzio |
+| 18 | 2:29-2:40 | Cartello sul contributo, poi **il team** | "Strategic oversight. Vision. Leadership." → G1: "Abbiamo premuto invio." |
+| 19 | 2:40-2:56 | Registrazione di Francesco: invio, poi tutta la missione a 1,4x fino al G1 davanti alla scrivania | Clic, la musica riparte |
+| 20 | 2:56-3:05 | Logo aidea con i crediti tecnici, poi i calci del G1 | "L'anno prossimo vengo da solo." |
 
-Audio delle interviste: video dal telefono, voce dal registratore esterno, allineata con una cross-correlazione con l'audio del telefono (scarti misurati: Romeo +0,93 s, Puddu +0,67 s, Rios −5,67 s, team +1,62 s; nessuna deriva). Sotto il doppiatore l'inglese scende al 15%.
+Audio:
+- Interviste: video dal telefono, voce dal registratore esterno, allineate con una cross-correlazione (Romeo +0,93 s, Puddu +0,67 s, Rios −5,67 s, team +1,62 s; nessuna deriva). Sotto la traduzione l'inglese scende al 15%.
+- Silenzi: un leggero fondo d'aria, letto alla sua posizione nel film, quindi non si ripete mai.
+- Capitolo tecnico: un tappeto musicale basso.
 
 ## Interviste da girare (stile DMAX)
 

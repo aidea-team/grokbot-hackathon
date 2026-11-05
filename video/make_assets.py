@@ -45,7 +45,8 @@ CLIPS = {
     "y-testa":   (YOLO / "yolo-testa-g1.mp4", 2.0, 5.0, "crop=1280:720:0:180," + FIT),
     "y-tra":     (YOLO / "yolo-g1-tra-partecipanti.mp4", 8.0, 5.5, FIT),
     "y-pov":     (YOLO / "yolo-pov-robot.mp4", 0.5, 6.0, FIT),
-    "y-arriva":  (YOLO / "yolo-g1-arriva-scrivania.mp4", 3.5, 5.0, FIT),
+    "y-arriva":  (YOLO / "yolo-g1-arriva-scrivania.mp4", 3.5, 7.5, FIT),
+    "y-pov2":    (YOLO / "yolo-pov-scrivania.mp4", 0.0, 7.8, FIT),
     # interviews (phone video; the sound comes from the recorder, see INTERVIEW_AUDIO) and the silent looks to camera
     "i-romeo":       (FOOT / "int-romeo.mp4", 0.0, 9.8, FIT),
     "i-puddu":       (FOOT / "int-puddu.mp4", 0.0, 14.8, FIT),
@@ -56,7 +57,11 @@ CLIPS = {
     "i-rios-muto":   (FOOT / "int-rios-muto.mp4", 0.0, 6.1, FIT),
     # Francesco's screen recording (2852x1984, Retina): the chat box while the mission is sent, and the whole dashboard
     "r-chat":        (FOOT / "r1-dashboard-chat.mov", 5.0, 3.6, "crop=1600:900:170:1080," + FIT),
-    "r-dash":        (FOOT / "r1-dashboard-chat.mov", 8.2, 19.0, "crop=2500:1406:180:400," + FIT),
+    "r-typing":      (FOOT / "r1-dashboard-chat.mov", 0.6, 4.6, "crop=1600:900:170:1080," + FIT),
+    "r-full":        (FOOT / "r1-dashboard-chat.mov", 0.0, 27.68, "crop=2580:1451:120:200," + FIT),
+    "r-steps":       (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1760:990:170:900," + FIT),
+    "r-objects":     (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1440:810:1250:400," + FIT),
+    "r-mujoco":      (FOOT / "r1-dashboard-chat.mov", 8.0, 19.6, "crop=1060:596:180:570," + FIT),
 }
 # Recorder track -> phone timeline: phone_t = recorder_t + offset (s). Measured by cross-correlating the phone's own audio
 # with the recorder (peak z 32-79, same offset within 1 ms on both halves of each take: no drift).
@@ -67,6 +72,7 @@ PHOTOS = {
     "img-gru":       (FOOT / "foto-g1-appeso-alla-gru.jpg", (0.0, 0.22, 1.0, 0.64)),
     "img-seduto":    (FOOT / "foto-g1-cane-guinzaglio.heic", (0.0, 0.125, 1.0, 0.875)),
     "img-perplesso": (FOOT / "foto-team-perplesso.heic", (0.0, 0.15, 1.0, 0.57)),
+    "img-conumano":  (FOOT / "foto-g1-con-umano.heic", (0.0, 0.14, 1.0, 0.56)),
 }
 
 
@@ -142,6 +148,11 @@ def audio() -> None:
              "-af", f"{shift}highpass=f=70,{LOUDNORM},apad,atrim=0:{dur}", "-ac", "1", "-ar", "48000", str(dst)])
         print("audio", dst.name)
     shutil.copy2(BRAG / "sfx" / "ui" / "mouseclick1.ogg", d / "click.ogg")
+    shutil.copy2(BRAG / "music" / "happy-beats-business-moves-vol-12-by-ende-dot-app.mp3", d / "music2.mp3")
+    amb = d / "ambient.wav"  # soft room air, 4 minutes, no events: placed at its film time so nothing ever repeats
+    if not fresh(amb):
+        run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "anoisesrc=color=brown:amplitude=0.5:duration=240:seed=7",
+             "-af", "highpass=f=40,lowpass=f=420,volume=0.18", "-ac", "2", "-ar", "48000", str(amb)])
 
 
 def static() -> None:

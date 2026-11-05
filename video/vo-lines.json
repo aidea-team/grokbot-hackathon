@@ -10,14 +10,14 @@
  "lines": [
   {
    "id": "d-01",
-   "voice": "doppiatore",
+   "voice": "g1",
    "scene": 2,
    "text": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. [pause] Per sempre.",
    "subtitle": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. Per sempre."
   },
   {
    "id": "d-02",
-   "voice": "doppiatore",
+   "voice": "g1",
    "scene": 3,
    "text": "È un cane. [pause] Cammina.",
    "subtitle": "È un cane. Cammina."
@@ -52,14 +52,14 @@
   },
   {
    "id": "d-03",
-   "voice": "doppiatore",
+   "voice": "g1",
    "scene": 13,
    "text": "Il robot.",
    "subtitle": "Il robot."
   },
   {
    "id": "d-04",
-   "voice": "doppiatore",
+   "voice": "g1",
    "scene": 18,
    "text": "Abbiamo premuto invio.",
    "subtitle": "Abbiamo premuto invio."
@@ -70,6 +70,54 @@
    "scene": 20,
    "text": "[exhale] L'anno prossimo vengo da solo.",
    "subtitle": "L'anno prossimo vengo da solo."
+  },
+  {
+   "id": "t-01",
+   "voice": "g1",
+   "scene": "tech",
+   "text": "Ora vi spiego come funziono. [pause] Lentamente.",
+   "subtitle": "Ora vi spiego come funziono. Lentamente.",
+   "speed": 1.05
+  },
+  {
+   "id": "t-02",
+   "voice": "g1",
+   "scene": "tech",
+   "text": "Il mio cervello è Grok. Grok quattro punto cinque, via API. [pause] Gli umani hanno incollato la chiave nel punto env. Il loro momento più tecnico.",
+   "subtitle": "Il mio cervello è Grok. Grok 4.5, via API. Gli umani hanno incollato la chiave nel .env. Il loro momento più tecnico.",
+   "speed": 1.05
+  },
+  {
+   "id": "t-03",
+   "voice": "g1",
+   "scene": "tech",
+   "text": "Funziona così. Scrivo cosa voglio. Grok guarda la mia telecamera e risponde con una funzione: gira di ventotto gradi, avanza di un metro e venti. Io eseguo, riguardo, e si ricomincia.",
+   "subtitle": "Funziona così. Scrivo cosa voglio. Grok guarda la mia telecamera e risponde con una funzione: gira di 28 gradi, avanza di 1,2 metri. Io eseguo, riguardo, e si ricomincia.",
+   "speed": 1.05
+  },
+  {
+   "id": "t-04",
+   "voice": "g1",
+   "scene": "tech",
+   "text": "Per vedere uso YOLO E: gli scrivo sedia, scrivania, portatile, persona, e lui colora tutto. Tre volte al secondo, senza internet. Per i casi difficili, SAM tre.",
+   "subtitle": "Per vedere uso YOLOE: gli scrivo sedia, scrivania, portatile, persona, e lui colora tutto. Tre volte al secondo, senza internet. Per i casi difficili, SAM 3.",
+   "speed": 1.05
+  },
+  {
+   "id": "t-05",
+   "voice": "g1",
+   "scene": "tech",
+   "text": "Poi misuro: per ogni maschera leggo la profondità della telecamera e prendo la mediana. Sedia, tre metri e sessanta. Scrivania, due metri. [pause] Gli umani misurano a occhio. Si vede.",
+   "subtitle": "Poi misuro: per ogni maschera leggo la profondità della telecamera e prendo la mediana. Sedia, 3,6 metri. Scrivania, 2 metri. Gli umani misurano a occhio. Si vede.",
+   "speed": 1.05
+  },
+  {
+   "id": "t-06",
+   "voice": "g1",
+   "scene": "tech",
+   "text": "E prima di farlo davvero, provo tutto in Mugiòco, un simulatore fisico. Stessi comandi, stesso cervello. [pause] Lì posso cadere quanto voglio. Nessuno mi filma.",
+   "subtitle": "E prima di farlo davvero, provo tutto in MuJoCo, un simulatore fisico. Stessi comandi, stesso cervello. Lì posso cadere quanto voglio. Nessuno mi filma.",
+   "speed": 1.05
   }
  ]
 }
