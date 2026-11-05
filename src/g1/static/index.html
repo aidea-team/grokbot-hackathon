@@ -25,6 +25,11 @@
   #cam { cursor: grab; }
   .tag { position: absolute; top: 6px; left: 8px; font-size: var(--fs-12); color: var(--fg-2); background: rgba(0,0,0,.55); padding: 2px 8px; }
   .nosig { position: absolute; color: var(--fg-3); font-size: var(--fs-14); text-align: center; padding: var(--space-4); }
+  .htabs { position: absolute; bottom: 6px; right: 8px; background: rgba(0,0,0,.55); padding: 2px 8px; gap: var(--space-3); }
+  .htabs button { font-size: 11px; }
+  .pgrid { display: grid; grid-template-columns: 1fr auto auto auto; gap: 2px var(--space-3); font-size: var(--fs-12); font-variant-numeric: tabular-nums; }
+  .pgrid b { color: var(--fg-3); font-weight: 400; }
+  #pq { width: 100%; font-size: var(--fs-12); padding: 4px 8px; margin-top: 4px; }
   .side { width: 310px; flex: none; overflow-y: auto; gap: var(--space-4); }
   .side h3 { margin: 0 0 var(--space-2); font-size: var(--fs-12); color: var(--fg-3); text-transform: uppercase; letter-spacing: .06em; }
   .keys { display: grid; grid-template-columns: repeat(3, 50px); gap: 5px; }
@@ -100,7 +105,8 @@
     </div>
     <div class="views">
       <div class="view" id="mainview"><img id="cam" alt="3D view" draggable="false"><span class="tag" id="maintag">External view</span></div>
-      <div class="view head"><img id="head" alt="head camera"><span class="tag">Head camera</span><div class="nosig" id="nosig" hidden></div></div>
+      <div class="view head"><img id="head" alt="head camera"><span class="tag" id="headtag">Head camera</span><div class="nosig" id="nosig" hidden></div>
+        <div class="seg htabs" id="htabs"><button class="on" data-v="camera">Camera</button><button data-v="annotated">Objects</button><button data-v="depth">Depth</button></div></div>
     </div>
     <div class="chat">
       <div id="log"></div>
@@ -109,6 +115,14 @@
     </div>
   </div>
   <aside class="col side">
+    <section id="psec" hidden>
+      <h3>Perception</h3>
+      <div class="row"><label for="pb">model</label><select id="pb" class="ui-select" style="flex:1"></select></div>
+      <div class="row" id="prow"><label for="pp">every</label><input id="pp" type="range" min="2" max="15" step="1" value="3"><output id="ppo"></output></div>
+      <input id="pq" class="edit-input" placeholder="desk, chair, computer monitor…">
+      <div class="pgrid" id="pobj" style="margin-top:6px"></div>
+      <div class="grid" style="margin-top:6px"><span>info</span><span id="pinfo"></span></div>
+    </section>
     <section>
       <h3>Walk</h3>
       <div class="keyrow">
@@ -174,9 +188,55 @@ function note(t) { const now = Date.now(); if (now - lastErr < 1500) return; las
 for (const [i, o] of [["sp", "spo"], ["tr", "tro"], ["jr", "jro"]]) { const e = $(i); try { e.value = localStorage.getItem("g1_" + i) || e.value; } catch {} const f = () => { $(o).textContent = (+e.value).toFixed(2); try { localStorage.setItem("g1_" + i, e.value); } catch {} }; e.oninput = f; f(); }
 
 // ---------- views
-$("cam").src = "stream.mjpg"; $("head").src = "api/head.mjpg";
-function remount() { const t = Date.now(); $("cam").src = "stream.mjpg?" + t; $("head").src = "api/head.mjpg?" + t; }
-$("head").onerror = () => setTimeout(() => $("head").src = "api/head.mjpg?" + Date.now(), 1500);
+let hview = "camera";  // what the head panel shows: camera | annotated (objects) | depth
+const headSrc = () => (hview === "camera" ? "api/head.mjpg?" : `api/perception.mjpg?view=${hview}&`) + Date.now();
+$("cam").src = "stream.mjpg"; $("head").src = headSrc();
+function remount() { const t = Date.now(); $("cam").src = "stream.mjpg?" + t; $("head").src = headSrc(); }
+$("head").onerror = () => setTimeout(() => $("head").src = headSrc(), 1500);
+
+// ---------- live perception: segmentation + distance / height of what the head camera sees
+function setHeadView(v) {
+  hview = v;
+  document.querySelectorAll("#htabs button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
+  $("headtag").textContent = { camera: "Head camera", annotated: "Objects (distance and height)", depth: "Depth" }[v];
+  $("psec").hidden = v === "camera";
+  $("head").src = headSrc();
+  post("api/perception", { enabled: v !== "camera" }).then(showPerceptionCfg);
+}
+document.querySelectorAll("#htabs button").forEach((b) => b.onclick = () => setHeadView(b.dataset.v));
+function showPerceptionCfg(s) {
+  if (!s || !s.backends) return;
+  const pb = $("pb");
+  if (pb.options.length === 0) s.backends.forEach((b) => pb.add(new Option({ yoloe: "YOLOE · text, local (~3 fps)", yolo: "YOLO · COCO, local (~10 fps)", sam3: "SAM 3 · text, cloud (sampled)" }[b] || b, b)));
+  pb.value = s.backend; $("pp").value = s.period_s; $("ppo").textContent = s.period_s + " s"; $("prow").hidden = s.backend !== "sam3";
+  if (document.activeElement !== $("pq")) $("pq").value = s.prompts.join(", ");
+}
+$("pb").onchange = () => post("api/perception", { backend: $("pb").value }).then(showPerceptionCfg);
+$("pp").oninput = () => { $("ppo").textContent = $("pp").value + " s"; };
+$("pp").onchange = () => post("api/perception", { period_s: +$("pp").value }).then(showPerceptionCfg);
+$("pq").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); post("api/perception", { prompts: $("pq").value.split(",") }).then(showPerceptionCfg); $("pq").blur(); } };
+const fmtM = (v) => v == null ? "-" : v.toFixed(2) + " m";
+async function ppoll() {
+  try {
+    const s = await (await fetch("api/perception")).json();
+    showPerceptionCfg(s);
+    if (s.enabled) {
+      const head = ["object", "distance", "height", "bearing"].map((t) => { const b = document.createElement("b"); b.textContent = t; return b; });
+      const cells = (s.objects || []).slice().sort((a, b) => (a.dist_m ?? 99) - (b.dist_m ?? 99)).flatMap((o) => {
+        const dir = o.bearing_deg == null ? "-" : Math.abs(o.bearing_deg) < 3 ? "ahead" : `${Math.abs(o.bearing_deg).toFixed(0)}° ${o.bearing_deg > 0 ? "right" : "left"}`;
+        return [o.label + (o.score != null ? ` ${o.score.toFixed(2)}` : ""), fmtM(o.dist_m), fmtM(o.top_m), dir].map((t) => { const e = document.createElement("span"); e.textContent = t; return e; });
+      });
+      $("pobj").replaceChildren(...head, ...cells);
+      const t = s.timings || {}, f = s.floor;
+      $("pinfo").textContent = s.error ? "error: " + s.error :
+        `${s.backend}: ${t.seg_ms ?? "-"} ms` + (s.age_s != null ? ` · ${s.age_s} s old` : "") +
+        ` · depth: ${s.depth_source || "none (RGB only)"}` + (f ? ` · camera ${f.height_m} m, pitch ${f.pitch_deg}° (${f.source === "sim" ? "exact" : "floor estimate"})` : " · floor not seen: no heights");
+    }
+  } catch {}
+  setTimeout(ppoll, hview === "camera" ? 2000 : 600);
+}
+ppoll();
+{ const v = new URLSearchParams(location.search).get("head"); if (v === "annotated" || v === "depth") setHeadView(v); }  // ?head=annotated: a dashboard that opens on the objects
 
 // ---------- keyboard: walking, arms, gestures
 const ARMKEYS = { i: ["shoulder_pitch", -1], k: ["shoulder_pitch", 1], j: ["shoulder_roll", 1], l: ["shoulder_roll", -1], u: ["elbow", 1], o: ["elbow", -1], y: ["shoulder_yaw", 1], h: ["shoulder_yaw", -1] };
@@ -262,7 +322,7 @@ async function loadPresets() {
 loadPresets();
 
 // ---------- orbit camera (simulator)
-let az = 145, el = -15, dist = 3, drag = null, orbitT = 0;
+let az = 145, el = -15, dist = 3, drag = null, orbitT = 0, orbitSynced = false;
 const sendOrbit = () => { const t = Date.now(); if (t - orbitT > 50) { orbitT = t; post("api/orbit", { azimuth: az, elevation: el, distance: dist }); } };
 $("cam").onpointerdown = (e) => { drag = [e.clientX, e.clientY]; $("cam").setPointerCapture(e.pointerId); };
 $("cam").onpointerup = () => { drag = null; };
@@ -295,6 +355,7 @@ $("arm").onclick = async () => { const d = await post("api/mode", { mode: "real"
 async function poll() {
   try {
     const s = await (await fetch("api/state")).json(); applyMode(s);
+    if (!orbitSynced && s.orbit) { [az, el, dist] = s.orbit; orbitSynced = true; }  // start dragging from the scene's own view
     const sig = s.camera_error; $("nosig").hidden = !sig; $("nosig").textContent = sig || "";
     const rows = [["x", s.x], ["y", s.y], ["yaw", s.yaw_deg], ["cmd vx", s.vx], ["cmd vy", s.vy], ["cmd ω", s.vyaw], ["action", s.preset || "-"], ["falls", s.falls], ["FSM", s.fsm ?? "-"]];
     $("st").replaceChildren(...rows.flatMap(([k, v]) => { const a = document.createElement("span"), b = document.createElement("span"); a.textContent = k; b.textContent = v ?? "-"; return [a, b]; }));

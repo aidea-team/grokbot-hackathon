@@ -152,15 +152,19 @@ class _Camera:
 
     Default: the custom head's stereo streamer (repo g1-stereo-stream on the head PC, Intel N150): we announce ourselves with a
     UDP broadcast {"magic":"G1ST","op":"hello","port":5600} on port 5601, it answers with a welcome (size/codec/fps) and sends
-    H.264 over RTP to us (3200x1200@60, side-by-side stereo); we repeat the hello every 2 s as heartbeat. ffmpeg decodes it and we
-    keep the LEFT eye as JPEG. Override with G1_CAMERA_URL (anything ffmpeg can read: rtsp://, udp://, http mjpeg).
+    H.264 over RTP to us (3200x1200@60, side-by-side stereo); we repeat the hello every 2 s as heartbeat. ffmpeg decodes it to raw
+    side-by-side frames at EYE_W per eye: the LEFT eye becomes the JPEG (view + agent), the pair feeds stereo depth (head_rgbd).
+    Override with G1_CAMERA_URL (anything ffmpeg can read: rtsp://, udp://, http mjpeg): mono, JPEG only, no depth.
     """
-    DISCOVERY_PORT, VIDEO_PORT, HEARTBEAT_S = 5601, 5600, 2.0
+    # G1_CAMERA_PORT only for tests on one machine: ffmpeg also binds port+1 for RTCP, which there is the fake head's discovery port
+    DISCOVERY_PORT, VIDEO_PORT, HEARTBEAT_S = 5601, int(os.environ.get("G1_CAMERA_PORT", "5600")), 2.0
+    EYE_W = 800  # stereo matching runs at this width per eye (~45 ms per pair on a laptop CPU)
 
     def __init__(self, url: str | None = None, fps: int = 10, width: int = 640):
         self.url, self.fps, self.width = url, fps, width
         self.cond = threading.Condition()
         self.jpeg: bytes | None = None
+        self.pair: tuple[np.ndarray, np.ndarray, float] | None = None  # (left RGB, right RGB, time.monotonic()) of frame n
         self.n = 0
         self.error: str | None = "in attesa della camera…"
         self.info: dict | None = None
@@ -178,6 +182,29 @@ class _Camera:
         with self.cond:
             self.cond.wait_for(lambda: self.n > after, timeout)
             return self.n, self.jpeg
+
+    def get_pair(self, after: int = -1, timeout: float = 2.0) -> tuple[int, tuple[np.ndarray, np.ndarray, float] | None]:
+        """Latest stereo pair newer than `after`; None with a mono source (G1_CAMERA_URL) or before the first frame."""
+        self.get(-1, 0.0)  # starts / keeps alive the reader
+        if self.url is not None:
+            return self.n, None
+        with self.cond:
+            self.cond.wait_for(lambda: self.n > after and self.pair is not None, timeout)
+            return self.n, self.pair
+
+    @staticmethod
+    def _stream_size(welcome: dict) -> tuple[int, int]:
+        """Side-by-side size announced by the streamer ("width"/"height" or "size": "WxH"); 3200x1200 if it does not say."""
+        try:
+            if "width" in welcome and "height" in welcome:
+                return int(welcome["width"]), int(welcome["height"])
+            if "size" in welcome:
+                s = welcome["size"]
+                w, h = (s.lower().split("x") if isinstance(s, str) else s)
+                return int(w), int(h)
+        except (TypeError, ValueError):
+            pass
+        return 3200, 1200
 
     def _discover(self, timeout: float = 6.0) -> dict | None:
         import json
@@ -218,15 +245,36 @@ class _Camera:
                 pass
         sock.close()
 
-    def _ffmpeg(self, sdp_path: str | None) -> subprocess.Popen:
-        vf = f"fps={self.fps},scale={self.width}:-2,format=yuvj420p"
-        if sdp_path:  # stereo side-by-side: keep the left eye
+    def _ffmpeg(self, sdp_path: str | None, eye: tuple[int, int] = (0, 0)) -> subprocess.Popen:
+        if sdp_path:  # stereo side-by-side: raw RGB frames, both eyes at `eye` size each
             src = ["-protocol_whitelist", "file,udp,rtp", "-buffer_size", "8388608", "-fflags", "nobuffer", "-flags", "low_delay", "-i", sdp_path]
-            vf = f"crop=iw/2:ih:0:0,{vf}"
+            out = ["-vf", f"fps={self.fps},scale={2 * eye[0]}:{eye[1]}", "-pix_fmt", "rgb24", "-f", "rawvideo", "pipe:1"]
         else:
             src = ["-fflags", "nobuffer", "-flags", "low_delay", "-i", self.url]
-        return subprocess.Popen(["ffmpeg", "-loglevel", "error", *src, "-vf", vf, "-q:v", "5", "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1"],
-                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            out = ["-vf", f"fps={self.fps},scale={self.width}:-2,format=yuvj420p", "-q:v", "5", "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1"]
+        return subprocess.Popen(["ffmpeg", "-loglevel", "error", *src, *out], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+
+    def _read_stereo(self, ff: subprocess.Popen, eye: tuple[int, int]) -> bool:
+        """Raw side-by-side frames -> left-eye JPEG (scaled to `width`) + the pair. Returns whether any frame arrived."""
+        import io
+        from PIL import Image
+        ew, eh = eye
+        size, got, started = 2 * ew * eh * 3, False, time.monotonic()
+        while time.monotonic() - self._seen < 5.0:
+            raw = ff.stdout.read(size)
+            if len(raw) < size:
+                break
+            if time.monotonic() - started < 2.0:  # the first frames are decoded without a keyframe (grey garbage): skip them
+                continue
+            sbs = np.frombuffer(raw, np.uint8).reshape(eh, 2 * ew, 3)
+            left, right = sbs[:, :ew].copy(), sbs[:, ew:].copy()
+            buf = io.BytesIO()
+            Image.fromarray(left).resize((self.width, round(self.width * eh / ew))).save(buf, "JPEG", quality=80)
+            got, self.error = True, None
+            with self.cond:
+                self.jpeg, self.pair, self.n = buf.getvalue(), (left, right, time.monotonic()), self.n + 1
+                self.cond.notify_all()
+        return got
 
     def _run(self) -> None:
         import tempfile
@@ -250,11 +298,21 @@ class _Camera:
                             f"m=video {self.VIDEO_PORT} RTP/AVP 96\na=rtpmap:96 {codec}/90000\n")
                     f.close()
                     sdp_path = f.name
+                    sw, sh = self._stream_size(welcome)
+                    eye = (self.EYE_W, round(self.EYE_W * sh / (sw / 2) / 2) * 2)  # keep each eye's aspect ratio
                 try:
-                    ff = self._ffmpeg(sdp_path)
+                    ff = self._ffmpeg(sdp_path, eye if sdp_path else (0, 0))
                 except FileNotFoundError:
                     self.error = "ffmpeg non trovato (brew install ffmpeg)"
                     return
+                if sdp_path:
+                    got = self._read_stereo(ff, eye)
+                    ff.kill()
+                    stop.set()
+                    if not got:
+                        self.error = "nessun video dalla camera del robot"
+                        time.sleep(1)
+                    continue
                 buf, got, last = b"", False, time.monotonic()
                 started = time.monotonic()  # the first frames are decoded without a keyframe (grey garbage): skip them
                 while time.monotonic() - self._seen < 5.0 and time.monotonic() - last < 8.0:
@@ -295,6 +353,7 @@ class RealG1:
         self.log = log
         self.state = DISARMED
         self.camera = _Camera(camera_url or os.environ.get("G1_CAMERA_URL") or None)
+        self._stereo = None  # StereoDepth, created on the first head_rgbd()
         self._loco = None
         self._arm_client = None
         self._busy_until = 0.0
@@ -541,3 +600,25 @@ class RealG1:
     def head_jpeg(self, timeout: float = 3.0) -> bytes | None:
         n, _ = self.camera.get(-1, 0.1)
         return self.camera.get(n, timeout)[1]
+
+    def head_rgbd(self, timeout: float = 3.0):
+        """Head camera for live perception: the left eye (rectified) + stereo depth when the source is the stereo head, the camera
+        image alone (no depth, no distances) with a mono G1_CAMERA_URL. The floor (camera height and tilt) is fitted on the depth."""
+        from rgbd import RGBD, Intrinsics, fit_floor
+        n, _ = self.camera.get_pair(-1, 0.0)
+        n, pair = self.camera.get_pair(n, timeout)
+        if pair is None:
+            import io
+            from PIL import Image
+            jpg = self.head_jpeg(timeout)
+            if jpg is None:
+                return None
+            rgb = np.asarray(Image.open(io.BytesIO(jpg)).convert("RGB"))
+            return RGBD(rgb, None, Intrinsics.from_fovy(60.0, rgb.shape[1], rgb.shape[0]), None, time.monotonic(), "mono", n)
+        if self._stereo is None:
+            from stereo import StereoDepth
+            self._stereo = StereoDepth()
+        left, right, t = pair
+        rect, z, K, timings = self._stereo(left, right)
+        source = "stereo" if not self._stereo.calib.guessed else "stereo (non calibrato)"
+        return RGBD(rect, z, K, fit_floor(z, K, tol=0.05), t, source, n, timings)

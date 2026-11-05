@@ -1,0 +1,6 @@
+WARNING Thu Nov  5 12:01:31 2026: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING Thu Nov  5 12:01:42 2026: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING Thu Nov  5 12:01:44 2026: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
