@@ -40,6 +40,7 @@
 .ov-s { color: #fff94a; font-weight: 500; font-size: 32px; line-height: 1.25; margin-top: 12px; }
 .ov.small .ov-t { font-size: 64px; }
 .ov.bottom { top: auto; bottom: 210px; }
+.ov.right { left: auto; right: 110px; }
 .chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
 .chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
@@ -47,15 +48,11 @@
 
   </style>
   <div id="root" data-composition-id="s25-invio" data-width="1920" data-height="1080">
-    <div class="wrap" id="s25-invio-w0" style="z-index:1"><video id="s25-invio-m0" class="clip full" data-start="0" data-duration="1.6" data-track-index="1" data-media-start="0.9" src="assets/clips/r-chat.mp4" muted playsinline></video></div>
-    <div class="wrap" id="s25-invio-w1" style="z-index:2"><video id="s25-invio-m1" class="clip full" data-start="1.6" data-duration="14.3" data-track-index="2" data-media-start="7.6" data-playback-rate="1.4" src="assets/clips/r-full.mp4" muted playsinline></video></div>
-    <div id="s25-invio-ov0" class="clip ov small" data-start="2.2" data-duration="4.0" data-track-index="12" style="z-index:65"><div class="ov-in" id="s25-invio-ov0-in"><div class="ov-k">MISSIONE</div><div class="ov-t">«Go to the desk!»</div><div class="ov-s">Grok 4.5 decide · il G1 esegue · MuJoCo</div></div></div>
+    <div class="wrap" id="s25-invio-w0" style="z-index:1"><video id="s25-invio-m0" class="clip full" data-start="0" data-duration="2.4" data-track-index="1" data-media-start="2.4" src="assets/clips/r2-chat.mp4" muted playsinline></video></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s25-invio-w0", {scale: 1.0, transformOrigin: "55% 60%"}, {scale: 1.1, duration: 1.6, ease: "none"}, 0);
-    tl.fromTo("#s25-invio-ov0-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out"}, 2.2);
-    tl.to("#s25-invio-ov0-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 5.9);
+    tl.fromTo("#s25-invio-w0", {scale: 1.0, transformOrigin: "30% 55%"}, {scale: 1.1, duration: 2.4, ease: "none"}, 0);
     window.__timelines["s25-invio"] = tl;
   </script>
 </template>

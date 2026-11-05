@@ -40,6 +40,7 @@
 .ov-s { color: #fff94a; font-weight: 500; font-size: 32px; line-height: 1.25; margin-top: 12px; }
 .ov.small .ov-t { font-size: 64px; }
 .ov.bottom { top: auto; bottom: 210px; }
+.ov.right { left: auto; right: 110px; }
 .chap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .chap-k { background: #fff94a; color: #0a0a12; font-weight: 700; font-size: 30px; letter-spacing: .16em; padding: 6px 16px; text-transform: uppercase; }
 .chap-t { color: #fff; font-weight: 800; font-size: 150px; letter-spacing: -0.03em; margin-top: 26px; line-height: 1; }
@@ -48,15 +49,15 @@
   </style>
   <div id="root" data-composition-id="s13-funzioni" data-width="1920" data-height="1080">
     <div class="wrap" id="s13-funzioni-w0" style="z-index:1"><video id="s13-funzioni-m0" class="clip full" data-start="0" data-duration="1.6" data-track-index="1" data-media-start="0.0" src="assets/clips/c-mano.mp4" muted playsinline></video></div>
-    <div class="wrap" id="s13-funzioni-w1" style="z-index:2"><video id="s13-funzioni-m1" class="clip full" data-start="1.6" data-duration="3.0" data-track-index="2" data-media-start="0.4" src="assets/clips/r-typing.mp4" muted playsinline></video></div>
-    <div class="wrap" id="s13-funzioni-w2" style="z-index:3"><video id="s13-funzioni-m2" class="clip full" data-start="4.6" data-duration="8.83" data-track-index="3" data-media-start="0.0" src="assets/clips/r-steps.mp4" muted playsinline></video></div>
-    <div id="s13-funzioni-ov0" class="clip ov" data-start="5.0" data-duration="8.03" data-track-index="12" style="z-index:65"><div class="ov-in" id="s13-funzioni-ov0-in"><div class="ov-k">FUNCTION CALLING</div><div class="ov-t">move · look · finish</div><div class="ov-s">Grok sceglie una funzione, il G1 la esegue, poi riguarda</div></div></div>
+    <div class="wrap" id="s13-funzioni-w1" style="z-index:2"><video id="s13-funzioni-m1" class="clip full" data-start="1.6" data-duration="3.0" data-track-index="2" data-media-start="0.45" src="assets/clips/r2-chat.mp4" muted playsinline></video></div>
+    <div class="wrap" id="s13-funzioni-w2" style="z-index:3"><video id="s13-funzioni-m2" class="clip full" data-start="4.6" data-duration="8.77" data-track-index="3" data-media-start="1.0" data-playback-rate="1.8" src="assets/clips/r2-low.mp4" muted playsinline></video></div>
+    <div id="s13-funzioni-ov0" class="clip ov small right" data-start="5.0" data-duration="7.97" data-track-index="12" style="z-index:65"><div class="ov-in" id="s13-funzioni-ov0-in"><div class="ov-k">FUNCTION CALLING</div><div class="ov-t">move · look · finish</div><div class="ov-s">Grok picks a function, I run it, then I look again</div></div></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#s13-funzioni-w2", {scale: 1.0, transformOrigin: "30% 62%"}, {scale: 1.12, duration: 8.83, ease: "none"}, 4.6);
+    tl.fromTo("#s13-funzioni-w2", {scale: 1.0, transformOrigin: "25% 70%"}, {scale: 1.1, duration: 8.77, ease: "none"}, 4.6);
     tl.fromTo("#s13-funzioni-ov0-in", {clipPath: "inset(0 100% 0 0)"}, {clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out"}, 5.0);
-    tl.to("#s13-funzioni-ov0-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 12.73);
+    tl.to("#s13-funzioni-ov0-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 12.67);
     window.__timelines["s13-funzioni"] = tl;
   </script>
 </template>

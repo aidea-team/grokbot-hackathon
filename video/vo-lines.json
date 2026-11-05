@@ -1,123 +1,101 @@
 {
+ "language": "en",
  "voices": {
-  "g1": "liora",
-  "doppiatore": "helios"
+  "g1": "orion"
  },
  "speed": {
-  "g1": 0.95,
-  "doppiatore": 0.92
+  "g1": 1.0
  },
  "lines": [
   {
    "id": "d-01",
    "voice": "g1",
-   "scene": 2,
-   "text": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. [pause] Per sempre.",
-   "subtitle": "In trentasei ore abbiamo fatto una cosa che cambierà la robotica. Per sempre."
+   "text": "In thirty-six hours, I built something that is going to change robotics. [pause] Forever.",
+   "subtitle": "In thirty-six hours, I built something that is going to change robotics. Forever."
   },
   {
    "id": "d-02",
    "voice": "g1",
-   "scene": 3,
-   "text": "È un cane. [pause] Cammina.",
-   "subtitle": "È un cane. Cammina."
+   "text": "It's a dog. [pause] It walks.",
+   "subtitle": "It's a dog. It walks."
   },
   {
    "id": "g1-01",
    "voice": "g1",
-   "scene": 9,
-   "text": "[sigh] Il cane l'ho programmato io.",
-   "subtitle": "Il cane l'ho programmato io."
+   "text": "[sigh] I programmed the dog.",
+   "subtitle": "I programmed the dog."
   },
   {
    "id": "g1-02",
    "voice": "g1",
-   "scene": 10,
-   "text": "Questi sono gli umani. [pause] Trentasei ore, quaranta caffè. [pause] E ancora litigano sul nome delle variabili.",
-   "subtitle": "Questi sono gli umani. Trentasei ore, quaranta caffè. E ancora litigano sul nome delle variabili."
+   "text": "These are the humans. [pause] Thirty-six hours, forty coffees. [pause] And they're still arguing about variable names.",
+   "subtitle": "These are the humans. Thirty-six hours, forty coffees. And they're still arguing about variable names."
   },
   {
    "id": "g1-03",
    "voice": "g1",
-   "scene": 11,
-   "text": "Vedo una scrivania. Una sedia. Un portatile. [pause] E un umano che si prende il merito.",
-   "subtitle": "Vedo una scrivania. Una sedia. Un portatile. E un umano che si prende il merito."
-  },
-  {
-   "id": "g1-04",
-   "voice": "g1",
-   "scene": 12,
-   "text": "Il codice del cane l'ho scritto io. [pause] Loro hanno scelto il font delle slide.",
-   "subtitle": "Il codice del cane l'ho scritto io. Loro hanno scelto il font delle slide."
-  },
-  {
-   "id": "d-03",
-   "voice": "g1",
-   "scene": 13,
-   "text": "Il robot.",
-   "subtitle": "Il robot."
-  },
-  {
-   "id": "d-04",
-   "voice": "g1",
-   "scene": 18,
-   "text": "Abbiamo premuto invio.",
-   "subtitle": "Abbiamo premuto invio."
-  },
-  {
-   "id": "g1-05",
-   "voice": "g1",
-   "scene": 20,
-   "text": "[exhale] L'anno prossimo vengo da solo.",
-   "subtitle": "L'anno prossimo vengo da solo."
+   "text": "I see a desk. A chair. A laptop. [pause] And a human taking the credit.",
+   "subtitle": "I see a desk. A chair. A laptop. And a human taking the credit."
   },
   {
    "id": "t-01",
    "voice": "g1",
-   "scene": "tech",
-   "text": "Ora vi spiego come funziono. [pause] Lentamente.",
-   "subtitle": "Ora vi spiego come funziono. Lentamente.",
-   "speed": 1.05
+   "text": "Now let me explain how I work. [pause] Slowly.",
+   "subtitle": "Now let me explain how I work. Slowly."
   },
   {
    "id": "t-02",
    "voice": "g1",
-   "scene": "tech",
-   "text": "Il mio cervello è Grok. Grok quattro punto cinque, via API. [pause] Gli umani hanno incollato la chiave nel punto env. Il loro momento più tecnico.",
-   "subtitle": "Il mio cervello è Grok. Grok 4.5, via API. Gli umani hanno incollato la chiave nel .env. Il loro momento più tecnico.",
-   "speed": 1.05
+   "text": "My brain is Grok. Grok four point five, through the x A I API. [pause] The humans pasted the key into the dot env file. Their most technical moment.",
+   "subtitle": "My brain is Grok. Grok 4.5, through the xAI API. The humans pasted the key into the .env file. Their most technical moment."
   },
   {
    "id": "t-03",
    "voice": "g1",
-   "scene": "tech",
-   "text": "Funziona così. Scrivo cosa voglio. Grok guarda la mia telecamera e risponde con una funzione: gira di ventotto gradi, avanza di un metro e venti. Io eseguo, riguardo, e si ricomincia.",
-   "subtitle": "Funziona così. Scrivo cosa voglio. Grok guarda la mia telecamera e risponde con una funzione: gira di 28 gradi, avanza di 1,2 metri. Io eseguo, riguardo, e si ricomincia.",
-   "speed": 1.05
+   "text": "It works like this. I write what I want. Grok looks through my camera and answers with a function call: turn twenty-eight degrees, walk one point two meters. I execute, look again, and repeat.",
+   "subtitle": "It works like this. I write what I want. Grok looks through my camera and answers with a function call: turn 28 degrees, walk 1.2 meters. I execute, look again, and repeat."
   },
   {
    "id": "t-04",
    "voice": "g1",
-   "scene": "tech",
-   "text": "Per vedere uso YOLO E: gli scrivo sedia, scrivania, portatile, persona, e lui colora tutto. Tre volte al secondo, senza internet. Per i casi difficili, SAM tre.",
-   "subtitle": "Per vedere uso YOLOE: gli scrivo sedia, scrivania, portatile, persona, e lui colora tutto. Tre volte al secondo, senza internet. Per i casi difficili, SAM 3.",
-   "speed": 1.05
+   "text": "To see, I use YOLO E. I type: chair, desk, laptop, person. And it paints everything, three times a second, offline. For the hard cases, SAM three, in the cloud.",
+   "subtitle": "To see, I use YOLOE. I type: chair, desk, laptop, person. And it paints everything, three times a second, offline. For the hard cases, SAM 3, in the cloud."
   },
   {
    "id": "t-05",
    "voice": "g1",
-   "scene": "tech",
-   "text": "Poi misuro: per ogni maschera leggo la profondità della telecamera e prendo la mediana. Sedia, tre metri e sessanta. Scrivania, due metri. [pause] Gli umani misurano a occhio. Si vede.",
-   "subtitle": "Poi misuro: per ogni maschera leggo la profondità della telecamera e prendo la mediana. Sedia, 3,6 metri. Scrivania, 2 metri. Gli umani misurano a occhio. Si vede.",
-   "speed": 1.05
+   "text": "Then I measure. For every mask, I read the camera's depth and take the median. Chair: three point six meters. Desk: two meters. [pause] These numbers come to me with every image, so I don't walk into things. [pause] Humans measure by eye. It shows.",
+   "subtitle": "Then I measure. For every mask, I read the camera's depth and take the median. Chair: 3.6 meters. Desk: 2 meters. These numbers come to me with every image, so I don't walk into things. Humans measure by eye. It shows."
   },
   {
    "id": "t-06",
    "voice": "g1",
-   "scene": "tech",
-   "text": "E prima di farlo davvero, provo tutto in Mugiòco, un simulatore fisico. Stessi comandi, stesso cervello. [pause] Lì posso cadere quanto voglio. Nessuno mi filma.",
-   "subtitle": "E prima di farlo davvero, provo tutto in MuJoCo, un simulatore fisico. Stessi comandi, stesso cervello. Lì posso cadere quanto voglio. Nessuno mi filma.",
-   "speed": 1.05
+   "text": "And before doing it for real, I rehearse everything in MuJoCo, a physics simulator. Same commands, same brain. [pause] There I can fall as much as I want. Nobody films it.",
+   "subtitle": "And before doing it for real, I rehearse everything in MuJoCo, a physics simulator. Same commands, same brain. There I can fall as much as I want. Nobody films it."
+  },
+  {
+   "id": "g1-04",
+   "voice": "g1",
+   "text": "I wrote the dog's code. [pause] They picked the slide font.",
+   "subtitle": "I wrote the dog's code. They picked the slide font."
+  },
+  {
+   "id": "d-03",
+   "voice": "g1",
+   "text": "Me.",
+   "subtitle": "Me."
+  },
+  {
+   "id": "d-04",
+   "voice": "g1",
+   "text": "They pressed enter.",
+   "subtitle": "They pressed enter."
+  },
+  {
+   "id": "g1-05",
+   "voice": "g1",
+   "text": "[exhale] Next year, I'm coming alone.",
+   "subtitle": "Next year, I'm coming alone."
   }
  ]
 }

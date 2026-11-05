@@ -19,6 +19,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "assets" / "vo"
+LANG = "it"
 
 
 def env_key() -> str:
@@ -34,7 +35,7 @@ def env_key() -> str:
 
 
 def tts(text: str, voice: str, speed: float, key: str) -> dict:
-    body = {"text": text, "voice_id": voice, "language": "it", "speed": speed, "with_timestamps": True,
+    body = {"text": text, "voice_id": voice, "language": LANG, "speed": speed, "with_timestamps": True,
             "output_format": {"codec": "wav", "sample_rate": 48000}}
     req = urllib.request.Request("https://api.x.ai/v1/tts", json.dumps(body).encode(),
                                  {"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
@@ -43,7 +44,9 @@ def tts(text: str, voice: str, speed: float, key: str) -> dict:
 
 
 def main() -> None:
+    global LANG
     spec = json.loads((HERE / "vo-lines.json").read_text())
+    LANG = spec.get("language", "it")
     only = set(sys.argv[1:])
     key = env_key()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -52,7 +55,7 @@ def main() -> None:
             continue
         voice = spec["voices"][line["voice"]]
         speed = line.get("speed", spec.get("speed", {}).get(line["voice"], 1.0))
-        digest = hashlib.sha1(json.dumps([line["text"], voice, speed]).encode()).hexdigest()[:12]
+        digest = hashlib.sha1(json.dumps([line["text"], voice, speed, LANG]).encode()).hexdigest()[:12]
         meta = OUT / f"{line['id']}.json"
         if meta.exists() and json.loads(meta.read_text()).get("digest") == digest and not only:
             continue

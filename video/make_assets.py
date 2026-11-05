@@ -32,6 +32,8 @@ def is_hlg(src: Path) -> bool:
                           "-of", "csv=p=0", str(src)], capture_output=True, text=True).stdout.strip()
     return out in ("arib-std-b67", "smpte2084")
 # id: (source, start s, duration s, ffmpeg crop/scale chain applied after rotation)
+# The y-* clips are the segmented footage made by scripts/yoloe_footage.py (branch sam3) with English labels, e.g.
+#   python scripts/yoloe_footage.py assets/footage/pov-robot.mov -o video/assets/yolo/en-pov.mp4 --start 0.5 --duration 6.1 --solid person
 CLIPS = {
     "c-cane":    (FOOT / "g1-porta-a-spasso-il-cane.mp4", 0.0, 10.45, FIT),
     "c-testa":   (FOOT / "g1-scrivania-tasti-frenetici.mp4", 10.8, 2.45, FIT),
@@ -42,11 +44,15 @@ CLIPS = {
     "c-guarda":  (FOOT / "g1-arriva-alla-scrivania.mov", 33.4, 2.6, "crop=1440:810:1230:250," + FIT),
     "c-vuota":   (FOOT / "g1-arriva-alla-scrivania.mov", 15.0, 5.0, FIT),
     "c-tag":     (FOOT / "g1-extra-212938.mp4", 29.0, 7.0, FIT),
-    "y-testa":   (YOLO / "yolo-testa-g1.mp4", 2.0, 5.0, "crop=1280:720:0:180," + FIT),
-    "y-tra":     (YOLO / "yolo-g1-tra-partecipanti.mp4", 8.0, 5.5, FIT),
-    "y-pov":     (YOLO / "yolo-pov-robot.mp4", 0.5, 6.0, FIT),
-    "y-arriva":  (YOLO / "yolo-g1-arriva-scrivania.mp4", 3.5, 7.5, FIT),
-    "y-pov2":    (YOLO / "yolo-pov-scrivania.mp4", 0.0, 7.8, FIT),
+    "y-testa":   (YOLO / "en-testa.mp4", 0.0, 5.0, "crop=1280:720:0:180," + FIT),
+    "y-tra":     (YOLO / "en-tra.mp4", 0.0, 5.5, FIT),
+    "y-pov":     (YOLO / "en-pov.mp4", 0.0, 6.0, FIT),
+    "y-arriva":  (YOLO / "en-arriva.mp4", 0.0, 7.5, FIT),
+    "y-pov2":    (YOLO / "en-pov2.mp4", 0.0, 7.8, FIT),
+    # vertical phone clip in a 16:9 frame: the same clip blurred and darkened behind fills the width
+    "c-vert":    (FOOT / "g1-cammina-con-umani.mp4", 0.0, 4.85,
+                  "split[a][b];[a]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,boxblur=40:4,"
+                  "eq=brightness=-0.12:saturation=0.85[bg];[b]scale=-2:1080[fg];[bg][fg]overlay=(W-w)/2:0"),
     # interviews (phone video; the sound comes from the recorder, see INTERVIEW_AUDIO) and the silent looks to camera
     "i-romeo":       (FOOT / "int-romeo.mp4", 0.0, 9.8, FIT),
     "i-puddu":       (FOOT / "int-puddu.mp4", 0.0, 14.8, FIT),
@@ -59,6 +65,12 @@ CLIPS = {
     "r-chat":        (FOOT / "r1-dashboard-chat.mov", 5.0, 3.6, "crop=1600:900:170:1080," + FIT),
     "r-typing":      (FOOT / "r1-dashboard-chat.mov", 0.6, 4.6, "crop=1600:900:170:1080," + FIT),
     "r-full":        (FOOT / "r1-dashboard-chat.mov", 0.0, 27.68, "crop=2580:1451:120:200," + FIT),
+    "r-full-low":    (FOOT / "r1-dashboard-chat.mov", 10.0, 17.68, "crop=2580:1451:120:533," + FIT),  # chat steps above the subtitles
+    # Francesco's second recording (26.7 s): "Grok 4.5" in the header, simulator + segmented objects + depth side by side, chat
+    "r2-full":       (FOOT / "r2-dashboard-finale.mov", 0.0, 26.7, "crop=2580:1451:120:200," + FIT),
+    "r2-low":        (FOOT / "r2-dashboard-finale.mov", 9.0, 17.7, "crop=2580:1451:120:533," + FIT),
+    "r2-chat":       (FOOT / "r2-dashboard-finale.mov", 0.8, 4.4, "crop=1600:900:170:1080," + FIT),
+    "r2-percep":     (FOOT / "r2-dashboard-finale.mov", 8.0, 18.7, "crop=1450:816:1240:460," + FIT),
     "r-steps":       (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1760:990:170:900," + FIT),
     "r-objects":     (FOOT / "r1-dashboard-chat.mov", 14.0, 13.6, "crop=1440:810:1250:400," + FIT),
     "r-mujoco":      (FOOT / "r1-dashboard-chat.mov", 8.0, 19.6, "crop=1060:596:180:570," + FIT),
