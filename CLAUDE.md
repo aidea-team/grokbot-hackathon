@@ -37,6 +37,7 @@ La ricerca è stata fatta il **2026-11-03** e sta tutta in [`docs/`](docs/README
 - **`.mcp.json` → `xai-docs`** (`https://docs.x.ai/api/mcp`, nessuna auth, verificato): approvalo al primo `claude`. Prima di scrivere codice su un'API Grok, **cerca nelle docs live con `mcp__xai-docs__search_docs` / `get_doc_page`** invece di andare a memoria: i docs xAI cambiano di continuo.
 - **Skill `grok-api`** (`.claude/skills/grok-api/`): model id, endpoint, formati dei tool, regole di runtime. Si carica quando scrivi codice che chiama Grok.
 - **Scopo del progetto:** far eseguire movimenti base ai robot tramite AI (Grok pianifica e chiama le primitive). Movimenti, cambi di stato e `--real` possono essere avviati anche dall'agente/da Claude, non solo da un umano; restano mock-first, kill switch e watchdog.
+- **Skill per il video della demo** (brag, HyperFrames: `hyperframes`, `hyperframes-cli`, `hyperframes-registry`, `media-use`; opzionale `cunk-esque-mockumentary`): non sono nella repo, si installano in `.claude/skills/` con `./scripts/install-video-skills.sh [--doctor]` (commit fissati, cartelle in `.gitignore`). Servono Node 22+ e FFmpeg; footage grezzo in `assets/footage/` (ignorato da git).
 - Grok Build (`grok`) legge gli stessi `CLAUDE.md`, skill e `.mcp.json`; Cursor legge [AGENTS.md](AGENTS.md), che rimanda qui.
 
 ## Fatti chiave (riassunto, dettagli e fonti nei docs)

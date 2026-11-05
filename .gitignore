@@ -21,3 +21,15 @@ logs/
 
 # copie locali di backup (animazioni G1 ecc.)
 backups/
+
+# skill di terze parti per il video, installate da scripts/install-video-skills.sh
+.claude/skills/brag/
+.claude/skills/brag-slim/
+.claude/skills/hyperframes/
+.claude/skills/hyperframes-cli/
+.claude/skills/hyperframes-registry/
+.claude/skills/media-use/
+.claude/skills/cunk-esque-mockumentary/
+# output dei render (brag, HyperFrames) e footage grezzo
+brag-output*/
+assets/footage/
