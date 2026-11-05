@@ -1,5 +1,5 @@
 """G1Agent: chat with the G1. An LLM sees the HEAD CAMERA (sim: MuJoCo head_cam, real: the robot's camera), and acts
-through a small whitelist of tools. Same API/env as the dog's agent (OPENAI_API_KEY, OPENAI_MODEL, OPENAI_BASE_URL).
+through a small whitelist of tools. Same LLM config as the dog's agent (src/llm_provider.py: Grok).
 
 Safety (src/g1/README.md): the model never gets raw velocities, Damp/Start, joint control or anything but the tools below.
 Every move is bounded in speed and duration, executed one at a time, and abort()/kill stop it from outside the model.
@@ -10,19 +10,22 @@ import base64
 import json
 import os
 import secrets
+import sys
 import threading
 import time
+from pathlib import Path
 
 from g1_world import ARM_ACTION_IDS
 
-DEFAULT_MODEL = "gpt-4o-mini"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # src/llm_provider.py
+import llm_provider  # noqa: E402
 GESTURES = [n for n in ARM_ACTION_IDS if n != "release_arm"] + ["wave_hand"]
 # Cruise commands (vx, vy, vyaw) in m/s and rad/s. The real robot does NOT step below ~0.2 m/s and needs about a second to start walking
 # (issue #170 of unitree_sdk2_python + our own test: 0.2 m/s for 2 s gave half a step), so the model never picks a speed: it asks for a
 # DISTANCE or an ANGLE and the code walks at a speed above that floor. Clipped to the body's own limits.
 CRUISE = {"walk_forward": (0.4, 0, 0), "walk_backward": (-0.3, 0, 0), "strafe_left": (0, 0.25, 0), "strafe_right": (0, -0.25, 0),
           "turn_left": (0, 0, 0.6), "turn_right": (0, 0, -0.6)}
-AMOUNT = {"walk_forward": (0.2, 3.0), "walk_backward": (0.2, 2.0), "strafe_left": (0.2, 1.5), "strafe_right": (0.2, 1.5),
+AMOUNT = {"walk_forward": (0.2, 3.0), "walk_backward": (0.2, 2.0), "strafe_left": (0.2, 3.0), "strafe_right": (0.2, 3.0),
           "turn_left": (10.0, 180.0), "turn_right": (10.0, 180.0)}  # metres, or degrees for turn_*
 STARTUP_S = {"walk": 0.8, "turn": 0.5}  # open loop (real robot, no odometry yet): time the controller needs to get stepping. CALIBRATE on the robot
 MAX_PLAN_STEPS = 4
@@ -32,7 +35,7 @@ MAX_CONSECUTIVE_MOVES = 3  # WALKING moves in a row, then the model must look or
 TOOLS = [
     {"type": "function", "name": "move", "description":
         "Ti muovi di una DISTANZA (metri) o ruoti di un ANGOLO (gradi), in una lista di 1-4 passi eseguiti uno dopo l'altro senza pause. "
-        "walk_forward/walk_backward/strafe_left/strafe_right: amount in METRI (0,2-3). turn_left/turn_right: amount in GRADI (10-180). "
+        "walk_forward/walk_backward/strafe_left/strafe_right: amount in METRI (0,2-3; i passi laterali falli decisi, vedi sotto). turn_left/turn_right: amount in GRADI (10-180). "
         "Concatena i passi che ti servono in una sola chiamata (es. gira 90° e poi avanti 1 m) invece di fare tanti micro-movimenti: "
         "tra una chiamata e l'altra passano diversi secondi. Alla fine ti fermi e ricevi una nuova immagine.",
      "parameters": {"type": "object", "properties": {
@@ -81,7 +84,9 @@ def system_prompt(real: bool) -> str:
         "vicine di quanto siano. Non vedi te stesso né ciò che sta dietro o ai lati.\n\n"
         "COME TI MUOVI. Un solo tool, move, con una lista di 1-4 passi eseguiti in sequenza senza pause. Ogni passo ha un'azione e una quantità:\n"
         "- walk_forward / walk_backward: avanti / indietro, quantità in METRI (0,2-3 avanti, 0,2-2 indietro).\n"
-        "- strafe_left / strafe_right: passo laterale a sinistra / destra senza ruotare, in METRI (0,2-1,5).\n"
+        "- strafe_left / strafe_right: passo laterale a sinistra / destra senza ruotare, in METRI (0,2-3). Sii DECISO coi passi laterali: "
+        "uno spostamento laterale utile è lungo (di solito 0,8-2 m, il doppio di quanto ti verrebbe da chiedere); i passettini da 20-40 cm "
+        "durano un attimo, non spostano abbastanza e ti costringono a ripetere. Se l'utente chiede una distanza precisa, usa esattamente quella.\n"
         "- turn_left / turn_right: ruoti sul posto a sinistra (antiorario) / destra (orario), in GRADI (10-180).\n"
         "Destra e sinistra sono quelle del ROBOT, non dell'immagine vista da fuori: ciò che sta nella metà destra dell'immagine è alla tua destra. "
         "La velocità non la scegli tu: la camminata è già calibrata, quindi distanza e angolo che indichi sono quelli che farai.\n\n"
@@ -127,13 +132,13 @@ class G1Agent:
     # ---- public
     def send(self, text: str) -> None:
         if self.running:
-            raise AgentError("c'è già una missione in corso: fermala (STOP) o aspetta")
-        key = os.environ.get("OPENAI_API_KEY") or ""
-        if not key or "REPLACE_ME" in key:
-            raise AgentError("Manca OPENAI_API_KEY nel file .env della repo")
+            raise AgentError("a mission is already running: stop it (Stop) or wait")
+        lc = llm_provider.config()
+        if not llm_provider.key_ok(lc):
+            raise AgentError(llm_provider.missing_key_message(lc))
         mode = self.hub.mode
         if mode == "real" and not self.hub.real_armed():
-            raise AgentError("Il G1 vero non è armato: arma dal pulsante REAL")
+            raise AgentError("The real G1 is not armed: arm it from the Real button")
         self._epoch += 1
         epoch = self._epoch
         self._emit("user", text=text)
@@ -162,7 +167,7 @@ class G1Agent:
         return self._frames.get(fid)
 
     def status(self) -> dict:
-        return {"running": self.running, "phase": self.phase}
+        return {"running": self.running, "phase": self.phase, "model": llm_provider.config().model}
 
     # ---- internals
     def _emit(self, kind: str, **f) -> None:
@@ -205,10 +210,10 @@ class G1Agent:
             time.sleep(0.1)
 
     def _mission(self, goal: str, epoch: int, mode: str) -> None:
-        from openai import OpenAI, OpenAIError
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ.get("OPENAI_BASE_URL") or None)
-        model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
-        effort = os.environ.get("OPENAI_REASONING_EFFORT") or None
+        from openai import OpenAIError
+        lc = llm_provider.config()
+        client = llm_provider.make_client(lc)
+        model, effort = lc.model, lc.effort
         max_steps = min(self.MAX_STEPS, 12) if mode == "real" else self.MAX_STEPS
         done: list[str] = []
         moved = {"fwd": 0.0, "lat": 0.0, "yaw": 0.0}  # what the model has already been commanded to do this mission
@@ -220,8 +225,8 @@ class G1Agent:
             self.phase = "vedo"
             jpeg = self.hub.body.head_jpeg()
             if jpeg is None:
-                raise AgentError("nessuna immagine dalla telecamera della testa" +
-                                 (": controlla G1_CAMERA_URL" if mode == "real" else ""))
+                raise AgentError("no image from the head camera" +
+                                 (": check G1_CAMERA_URL" if mode == "real" else ""))
             fid = self._store(jpeg)
             text = (f"Obiettivo: {goal}\nPassi fatti finora ({len(done)}): " + ("; ".join(done[-12:]) or "nessuno") +
                     f"\nSpostamento totale già eseguito (come comandato): avanti {moved['fwd']:+.2f} m, a sinistra {moved['lat']:+.2f} m, "
@@ -241,7 +246,7 @@ class G1Agent:
             try:
                 resp = client.responses.create(**kwargs)
             except OpenAIError as e:
-                raise AgentError(f"Errore dall'API: {e}") from e
+                raise AgentError(f"{lc.label} API error: {e}") from e
             if self._epoch != epoch:
                 return
             calls = [o for o in resp.output if o.type == "function_call"]

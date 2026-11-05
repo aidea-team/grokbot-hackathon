@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -23,13 +24,29 @@ from PIL import Image  # noqa: E402
 
 from g1_policy import LstmPolicy  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "vision"))
+from rgbd import RGBD, Floor, Intrinsics  # noqa: E402
+
 SCENE = Path(__file__).parent / "assets" / "scene.xml"
+# "default": two coloured cylinders 4 m ahead (chat/camera tests). "desk": a desk with an open laptop and a mouse, and a plain chair,
+# for perception.
+SCENES = {"default": SCENE, "desk": Path(__file__).parent / "assets" / "scene_desk.xml"}
+# Where the robot (re)starts, (x, y, yaw rad): in the desk scene at the origin facing +x: the sofa straight ahead, the desk at the left
+# edge of the head camera's view and the plant at the right edge (the chair is further left, out of view).
+SCENE_START = {"desk": (0.0, 0.0, 0.0)}
+# External view (azimuth = viewing direction, elevation, distance): desk scene = from behind and a bit to the left, the whole room ahead.
+SCENE_ORBIT = {"desk": (-25.0, -25.0, 6.0)}
+# The desk scene starts with lab29: standing still with zero command, gym12 walks off by itself (~1.7 m and 30 deg in 10 s, measured).
+SCENE_CONTROLLER = {"desk": "lab29"}
+# ...and even lab29 turns away slowly (~35 deg in 2 min). The real G1 stands still without Move: in these scenes, with no command,
+# small corrective commands bring the robot back to where it was left (at start: facing the sofa).
+HOLD_POSE_SCENES = {"desk"}
 
 # Two interchangeable leg/whole-body controllers (both Unitree's, both in the simulator only):
 #   "gym12": unitree_rl_gym motion.pt, 12 leg joints, arms/waist held by PD at our targets (jog, gestures work); arms forward at ~90 deg
 #   "lab29": unitree_rl_lab velocity/v0 (onnx), ALL 29 joints driven by the policy (arms near its default pose, elbows ~55 deg);
 #            no jog/gestures here (the policy owns the arms); command ranges x [-0.5, 1], y +-0.3, yaw +-0.2
-CONTROLLERS = {"gym12": "unitree_rl_gym · 12 giunti, braccia a 90° (le muovi tu)", "lab29": "unitree_rl_lab · 29 giunti, braccia della policy"}
+CONTROLLERS = {"gym12": "unitree_rl_gym · 12 joints", "lab29": "unitree_rl_lab · 29 joints"}
 
 # Legs: from unitree_rl_gym deploy/deploy_mujoco/configs/g1.yaml
 KPS = np.array([100, 100, 100, 150, 40, 40] * 2, np.float32)
@@ -119,8 +136,13 @@ def gravity_in_body(quat: np.ndarray) -> np.ndarray:
 
 
 class G1World:
-    def __init__(self, width: int = 800, height: int = 450, head_size: tuple[int, int] = (640, 360), controller: str = "gym12"):
-        self.model = mujoco.MjModel.from_xml_path(str(SCENE))
+    def __init__(self, width: int = 800, height: int = 450, head_size: tuple[int, int] = (640, 360), controller: str | None = None,
+                 scene: str = "default"):
+        if scene not in SCENES:
+            raise ValueError(f"scene {scene!r}: choose from {sorted(SCENES)}")
+        self.scene = scene
+        controller = controller or SCENE_CONTROLLER.get(scene, "gym12")
+        self.model = mujoco.MjModel.from_xml_path(str(SCENES[scene]))
         self.model.opt.timestep = SIM_DT
         self.data = mujoco.MjData(self.model)
         self.policy = LstmPolicy()
@@ -155,6 +177,9 @@ class G1World:
         self._damped = False
         self._jpeg: dict[str, bytes | None] = {"view": None, "head": None}
         self._frame_n = {"view": 0, "head": 0}
+        self._rgbd: RGBD | None = None  # head RGB + exact depth, rendered only when someone asks (head_rgbd)
+        self._rgbd_n = 0
+        self._rgbd_req = False
         self._cond = threading.Condition()
         self._stop = False
         self._last_view = {"view": time.monotonic(), "head": 0.0}  # a renderer idles when nobody is watching it
@@ -164,8 +189,11 @@ class G1World:
         self.fallen = False
         self.falls = 0
         self.cam = mujoco.MjvCamera()
-        self.cam.type, self.cam.distance, self.cam.azimuth, self.cam.elevation = mujoco.mjtCamera.mjCAMERA_FREE, 3.0, 145.0, -15.0
+        az, el, dist = SCENE_ORBIT.get(scene, (145.0, -15.0, 3.0))
+        self.cam.type, self.cam.distance, self.cam.azimuth, self.cam.elevation = mujoco.mjtCamera.mjCAMERA_FREE, dist, az, el
         self.follow = True
+        self.hold_pose = scene in HOLD_POSE_SCENES
+        self._anchor: tuple[float, float, float] | None = None  # (x, y, yaw) to hold while no command arrives
 
     # ------------------------------------------------------------------ public API (thread-safe)
     def start(self) -> None:
@@ -299,6 +327,7 @@ class G1World:
                 "vyaw": round(float(self._cmd_eff[2]), 2), "fallen": self.fallen, "falls": self.falls,
                 "sim_time": round(self.sim_time, 1), "preset": self._seq_name, "damped": self._damped,
                 "controller": self.controller, "controllers": CONTROLLERS,
+                "orbit": [round(float(self.cam.azimuth), 1), round(float(self.cam.elevation), 1), round(float(self.cam.distance), 2)],
                 "arms": {n: round(float(self._utarget[i]), 2) for i, n in enumerate(UPPER) if n not in LOCKED},
                 "arm_limits": {n: [round(float(self._lo[i]), 2), round(float(self._hi[i]), 2)]
                                for i, n in enumerate(UPPER) if n not in LOCKED}}
@@ -324,12 +353,26 @@ class G1World:
         n, _ = self.frame(-1, 0.1, "head")
         return self.frame(n, timeout, "head")[1]
 
+    def head_rgbd(self, timeout: float = 5.0) -> RGBD | None:
+        """Head camera RGB + exact metric depth from the SAME physics state, with the floor plane known from the camera pose.
+        Rendered on request (the depth pass costs ~60 ms at 640x360), so it costs nothing when perception is off."""
+        self._last_view["head"] = time.monotonic()  # wakes the renderer up
+        with self._cond:
+            n = self._rgbd_n
+            self._rgbd_req = True
+            self._cond.wait_for(lambda: self._rgbd_n > n or self._stop, timeout)
+            return self._rgbd if self._rgbd_n > n else None
+
     # ------------------------------------------------------------------ internals
     def _do_reset(self) -> None:
         m, d = self.model, self.data
         if self._pending_controller is not None:
             self.controller, self._pending_controller = self._pending_controller, None
         mujoco.mj_resetData(m, d)
+        x, y, yaw = SCENE_START.get(self.scene, (0.0, 0.0, 0.0))
+        d.qpos[0:2] = x, y
+        d.qpos[3:7] = np.cos(yaw / 2), 0.0, 0.0, np.sin(yaw / 2)
+        self._anchor = (x, y, yaw)
         d.qpos[2] = 0.793
         if self.controller == "lab29":
             if self._lab is None:
@@ -373,6 +416,7 @@ class G1World:
         """Own thread (rendering costs ~50 ms/frame and must not slow the physics): draws a copy of the state."""
         r_view = mujoco.Renderer(self.model, height=self.height, width=self.width)  # GL context lives in this thread
         r_head = mujoco.Renderer(self.model, height=self.head_size[1], width=self.head_size[0])
+        r_depth = None  # created the first time perception asks for depth
         rd = mujoco.MjData(self.model)
         while not self._stop:
             t = time.monotonic()
@@ -389,10 +433,52 @@ class G1World:
                 self._publish("view", r_view.render())
             if want_head:
                 r_head.update_scene(rd, camera="head_cam")
-                self._publish("head", r_head.render())
+                rgb = r_head.render()
+                self._publish("head", rgb)
+                if self._rgbd_req:
+                    if r_depth is None:
+                        r_depth = mujoco.Renderer(self.model, height=self.head_size[1], width=self.head_size[0])
+                        r_depth.enable_depth_rendering()
+                    self._publish_rgbd(rgb, r_depth, rd, t)
             time.sleep(max(0.0, 1 / 25 - (time.monotonic() - t)))
         r_view.close()
         r_head.close()
+        if r_depth is not None:
+            r_depth.close()
+
+    def _publish_rgbd(self, rgb: np.ndarray, r_depth: "mujoco.Renderer", rd: "mujoco.MjData", t: float) -> None:
+        t0 = time.perf_counter()
+        r_depth.update_scene(rd, camera="head_cam")
+        z = r_depth.render().astype(np.float32)
+        far = self.model.vis.map.zfar * self.model.stat.extent
+        z[z >= 0.99 * far] = np.nan  # sky / nothing hit
+        cid = self.model.camera("head_cam").id
+        R = rd.cam_xmat[cid].reshape(3, 3)  # columns: camera axes (x right, y up, z backward) in the world
+        up = np.array([R[2, 0], -R[2, 1], -R[2, 2]])  # world up in OpenCV camera axes (y down, z forward)
+        w, h = self.head_size
+        frame = RGBD(rgb.copy(), z, Intrinsics.from_fovy(float(self.model.cam_fovy[cid]), w, h),
+                     Floor(up, float(rd.cam_xpos[cid][2]), "sim"), t, "sim", self._rgbd_n + 1,
+                     {"depth_ms": round((time.perf_counter() - t0) * 1000, 1)})
+        with self._cond:
+            self._rgbd, self._rgbd_n, self._rgbd_req = frame, self._rgbd_n + 1, False
+            self._rgbd_pose = rd.qpos.copy()  # the exact state of that frame (tests rebuild ground-truth masks from it)
+            self._cond.notify_all()
+
+    def _hold(self, d: "mujoco.MjData") -> np.ndarray:
+        """Zero command with hold_pose: a gentle velocity command back to the anchor (position in the body frame, then heading)."""
+        q = d.qpos
+        yaw = float(np.arctan2(2 * (q[3] * q[6] + q[4] * q[5]), 1 - 2 * (q[5] ** 2 + q[6] ** 2)))
+        if self._anchor is None:
+            self._anchor = (float(q[0]), float(q[1]), yaw)
+        ax, ay, ayaw = self._anchor
+        ex, ey = ax - q[0], ay - q[1]
+        fwd, side = np.cos(yaw) * ex + np.sin(yaw) * ey, -np.sin(yaw) * ex + np.cos(yaw) * ey
+        eyaw = (ayaw - yaw + np.pi) % (2 * np.pi) - np.pi
+        if np.hypot(fwd, side) < 0.06 and abs(eyaw) < np.radians(3):
+            return np.zeros(3, np.float32)
+        lo, hi = self.limits()
+        cap = np.array([0.25, 0.15, 0.2], np.float32)  # yaw 0.2: the lab29 limit before it was raised to 1.0 for the keys; a stronger hold oscillates
+        return np.clip(np.array([0.8 * fwd, 0.8 * side, 1.2 * eyaw], np.float32), np.maximum(lo, -cap), np.minimum(hi, cap))
 
     def _step_upper(self, dt: float, now: float) -> None:
         """Called once per control tick (50 Hz): advance jog / preset and move the target toward the goal."""
@@ -421,6 +507,8 @@ class G1World:
                     t0, steps = time.monotonic(), 0
                 fresh = time.monotonic() - self._cmd_t < 0.4
                 want = self._cmd.copy() if fresh else np.zeros(3, np.float32)
+                if fresh and want.any():
+                    self._anchor = None  # moving: the place to hold is wherever it stops
             d = self.data
             tau = np.empty(29, np.float32)
             if self.controller == "lab29":
@@ -437,6 +525,8 @@ class G1World:
             steps += 1
             self.sim_time = steps * SIM_DT
             if self._counter % DECIMATION == 0:
+                if self.hold_pose and not want.any() and not self.fallen and not self._damped:
+                    want = self._hold(d)
                 step = CMD_RATE * (SIM_DT * DECIMATION)
                 self._cmd_eff += np.clip(want - self._cmd_eff, -step, step)
                 if self.controller == "lab29":

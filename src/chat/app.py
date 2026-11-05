@@ -1,4 +1,4 @@
-"""Chat with the dog: web UI + OpenAI agent + an always-on MuJoCo window, with a mock/real switch.
+"""Chat with the dog: web UI + Grok agent + an always-on MuJoCo window, with a mock/real switch.
 
     mjpython src/chat/app.py            # macOS (the viewer needs mjpython); simulator only
     python src/chat/app.py              # Linux/Windows
@@ -27,6 +27,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))  # llm_provider.py
 for sub in ("chat", "dog", "sim"):
     sys.path.insert(0, str(ROOT / "src" / sub))
 
@@ -61,10 +62,6 @@ class ChatIn(BaseModel):
 
 class SpeedIn(BaseModel):
     time_scale: float
-
-
-class BrainIn(BaseModel):
-    brain: str
 
 
 class ModeIn(BaseModel):
@@ -179,20 +176,8 @@ def create_app(hub: RobotHub, sim: DogSim, agent: DogAgent) -> FastAPI:
             status = hub.set_robot(body.robot)
         except HubError as e:
             return {"ok": False, "error": str(e), **hub.status()}
-        if hub.robot == "go2" and agent.brain == "jev":
-            agent.set_brain("llm")  # JEV is tuned for the Go1
         agent.reset()  # history from the other robot would mislead the model
-        return {"ok": True, **status, "brain": agent.brain}
-
-    @app.post("/api/brain")
-    def set_brain(body: BrainIn, request: Request):
-        """LLM agent <-> JEV (Decisions API) switch. Ends the running mission; the conversation is kept."""
-        _log_call(request)
-        try:
-            agent.set_brain(body.brain)
-        except AgentError as e:
-            return {"ok": False, "error": str(e), "brain": agent.brain}
-        return {"ok": True, "brain": agent.brain}
+        return {"ok": True, **status}
 
     @app.get("/api/settings")
     def get_settings():

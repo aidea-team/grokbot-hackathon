@@ -1,4 +1,4 @@
-"""The dog's brain: a closed perception -> action loop driven by an OpenAI model.
+"""The dog's brain: a closed perception -> action loop driven by a Grok model (xAI Responses API).
 
 A user message starts a mission. Each step: wait until the dog is still, take a camera frame, show the
 model the frame + odometry + the log of previous steps, and let it reason and choose ONE atomic action
@@ -26,7 +26,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import cameras
-import jev
+import llm_provider
 import commands
 import go2_commands
 from real_body import DISARMED, HALTED, RealBody
@@ -34,7 +34,6 @@ from scene import describe
 from settings import Settings, SettingsStore
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MODEL = "gpt-4o-mini"
 HISTORY_MISSIONS = 8  # past missions (goal + final message) kept in the prompt
 MAX_EVENTS, MAX_FRAMES = 1000, 400
 
@@ -225,10 +224,6 @@ def _camera_parts(shots: dict[str, bytes | None]) -> list[dict]:
     return parts
 
 
-def _key_ok(key: str | None) -> bool:
-    return bool(key) and "REPLACE" not in key.upper()
-
-
 class DogAgent:
     def __init__(self, hub, log=None):
         self.hub = hub  # chat/hub.py RobotHub: decides whether the body is the simulator or the real dog
@@ -245,20 +240,6 @@ class DogAgent:
         self._running = False
         self._epoch = 0  # bumped by abort()/reset(): a stale mission thread exits silently
         self._phase, self._step = "idle", 0
-        self.brain = "llm"  # "llm" = OpenAI reasoning agent (Responses API); "jev" = Decisions API (src/chat/jev.py)
-
-    def set_brain(self, brain: str) -> None:
-        if brain not in ("llm", "jev"):
-            raise AgentError(f"brain sconosciuto: {brain!r}")
-        if brain == "jev" and self.hub.robot == "go2":
-            raise AgentError("JEV è tarato sul Go1 (azioni e angoli): per il Go2 usa il cervello LLM.")
-        self.abort()  # a running mission keeps its brain: switching ends it
-        self.brain = brain
-
-    def _jev_tools(self, mode: str) -> dict[str, str]:
-        """tool name -> description, from the same specs the LLM brain sees (so the whitelist is the same)."""
-        specs = commands.tool_specs()
-        return {**{n: s["description"] for n, s in specs.items()}, "finish": FINISH_TOOL["description"]}
 
     @property
     def sim(self):
@@ -269,9 +250,9 @@ class DogAgent:
     def send(self, text: str) -> None:
         """Start a mission, or hand the message to the running one. Raises AgentError (e.g. no key)."""
         load_dotenv(ROOT / ".env", override=True)  # pick up a key pasted into .env without restarting
-        if not _key_ok(os.environ.get("OPENAI_API_KEY")):
-            raise AgentError("Manca la chiave: metti la tua OPENAI_API_KEY nel file .env della repo "
-                             "(ora c'è il placeholder sk-REPLACE_ME) e rimanda il messaggio. Non serve riavviare.")
+        lc = llm_provider.config()
+        if not llm_provider.key_ok(lc):
+            raise AgentError(llm_provider.missing_key_message(lc) + " Non serve riavviare.")
         self._emit("user", text=text)
         with self._lock:
             if self._running:
@@ -307,7 +288,8 @@ class DogAgent:
             return self._frames.get(frame_id)
 
     def status(self) -> dict:
-        return {"running": self._running, "phase": self._phase, "step": self._step, "brain": self.brain}
+        lc = llm_provider.config()
+        return {"running": self._running, "phase": self._phase, "step": self._step, "model": lc.model}
 
     # ---------------------------------------------------------------- the loop (mission thread)
     def _run(self, goal: str, epoch: int) -> None:
@@ -330,14 +312,14 @@ class DogAgent:
                                  name="dog-mission").start()
 
     def _mission(self, goal: str, epoch: int) -> None:
-        from openai import OpenAI, OpenAIError
+        from openai import OpenAIError
 
-        model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
-        env_effort = os.environ.get("OPENAI_REASONING_EFFORT") or None  # reasoning models only
+        lc = llm_provider.config()
+        model = lc.model
+        env_effort = lc.effort  # reasoning models only
         actual_mode = self.hub.mode  # fixed for the whole mission: switching mode aborts it
         mode = "real" if actual_mode in ("real", "both") else "sim"  # "both" is the real dog (+ a simulator mirror)
         robot = self.hub.robot  # fixed for the whole mission too: switching robot aborts it
-        brain = self.brain  # same: fixed for the mission
         if mode == "real":
             max_steps = int(os.environ.get("DOG_MAX_STEPS_REAL") or 20)  # step limit: the real dog gets fewer
             if self.hub.active_real.state in (DISARMED, HALTED):
@@ -345,16 +327,14 @@ class DogAgent:
                                  "arma di nuovo dal pulsante REAL prima di dare comandi.")
         else:
             max_steps = int(os.environ.get("DOG_MAX_STEPS") or 40)
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ.get("OPENAI_BASE_URL") or None)
+        client = llm_provider.make_client(lc)
         cfg = self.settings.get()
-        if brain == "jev" and cfg.jev_session:
-            jev.prewarm()  # open the TLS connection before the first decision
         goals = [goal]
         steps: list[str] = []
         final: str | None = None
         totals = {"wait": 0.0, "cap": 0.0, "api": 0.0, "exec": 0.0}
-        self._log("mission_start", goal=goal, mode=mode, robot=robot, body=actual_mode, model=model, effort=cfg.llm_effort or env_effort,
-                  brain=brain, settings=asdict(cfg))
+        self._log("mission_start", goal=goal, mode=mode, robot=robot, body=actual_mode, provider=lc.provider, model=model, effort=cfg.llm_effort or env_effort,
+                  settings=asdict(cfg))
 
         for n in range(1, max_steps + 1):
             cfg = self.settings.get()  # live: changes from the settings dialog apply at the next step
@@ -381,44 +361,27 @@ class DogAgent:
 
             self._set_phase(epoch, "ragiono", n)
             t0 = time.monotonic()
-            dec = None
-            if brain == "jev":
-                multi = cfg.jev_multi and mode == "sim"  # a blind 2nd move is never allowed on the real dog
+            kwargs: dict = {"model": model, "instructions": system_prompt(mode, cfg, robot),
+                            "tools": self._tools_for(mode, cfg.llm_thought, robot),
+                            "tool_choice": "required", "parallel_tool_calls": False,
+                            "input": [{"role": "user", "content": [{"type": "input_text", "text": text},
+                                                                   *_camera_parts(shots)]}]}
+            if effort:
+                kwargs["reasoning"] = {"effort": effort}
+            try:
+                resp = client.responses.create(**kwargs)
+            except OpenAIError as e:
+                self._log("llm_error", error=repr(e))
+                raise AgentError(f"Errore dall'API {lc.label}: {e}") from e
+            calls = [o for o in resp.output if o.type == "function_call"]
+            if calls:
                 try:
-                    dec = jev.decide([{"type": "input_text", "text": text}, *_camera_parts(shots)],
-                                     self._jev_tools(mode), mode, reuse_session=cfg.jev_session,
-                                     reduced=cfg.jev_reduced_angles, multi=multi, cam_block=cam_block(cfg))
-                except jev.JevError as e:
-                    self._log("llm_error", error=repr(e), brain="jev")
-                    raise AgentError(f"Errore dalla Decisions API (JEV): {e}") from e
-                name, args, thought = dec.name, dict(dec.args), dec.thought
-                if name == "finish":
-                    args["message"] = (self._compose_final(client, model, effort, mode, text, shots, cfg)
-                                       if cfg.jev_finish_llm
-                                       else "Obiettivo concluso (JEV sceglie solo azioni: non scrive testo).")
-                extra = {"confidence": dec.confidence}
-            else:
-                kwargs: dict = {"model": model, "instructions": system_prompt(mode, cfg, robot),
-                                "tools": self._tools_for(mode, cfg.llm_thought, robot),
-                                "tool_choice": "required", "parallel_tool_calls": False,
-                                "input": [{"role": "user", "content": [{"type": "input_text", "text": text},
-                                                                       *_camera_parts(shots)]}]}
-                if effort:
-                    kwargs["reasoning"] = {"effort": effort}
-                try:
-                    resp = client.responses.create(**kwargs)
-                except OpenAIError as e:
-                    self._log("llm_error", error=repr(e))
-                    raise AgentError(f"Errore dall'API OpenAI: {e}") from e
-                calls = [o for o in resp.output if o.type == "function_call"]
-                if calls:
-                    try:
-                        args = json.loads(calls[0].arguments or "{}")
-                    except json.JSONDecodeError:
-                        args = {}
-                    name, thought, extra = calls[0].name, str(args.pop("thought", "")).strip(), {}
-                else:  # the model answered in plain text: treat it as the final message
-                    name, args, thought, extra = "finish", {"message": resp.output_text or "(nessuna risposta)"}, "", {}
+                    args = json.loads(calls[0].arguments or "{}")
+                except json.JSONDecodeError:
+                    args = {}
+                name, thought, extra = calls[0].name, str(args.pop("thought", "")).strip(), {}
+            else:  # the model answered in plain text: treat it as the final message
+                name, args, thought, extra = "finish", {"message": resp.output_text or "(nessuna risposta)"}, "", {}
             t_api = time.monotonic() - t0
             latency = round(t_api, 2)
             if self._epoch != epoch:
@@ -433,13 +396,13 @@ class DogAgent:
                     totals[k] += timing[k]
                 t = {k: round(v, 2) for k, v in timing.items()}
                 t["total"] = round(sum(timing.values()), 2)
-                self._emit("timing", n=n, brain=brain, epoch=epoch, **t)
-                self._log("step_timing", n=n, brain=brain, **t)
+                self._emit("timing", n=n, epoch=epoch, **t)
+                self._log("step_timing", n=n, **t)
 
             if name == "finish":
                 final = str(args.get("message") or thought or "Fatto.")
                 self._emit("step", n=n, thought=thought, action="finish", frame=frame_id, epoch=epoch)
-                self._log("step", n=n, action="finish", thought=thought, latency_s=latency, brain=brain, **extra)
+                self._log("step", n=n, action="finish", thought=thought, latency_s=latency, **extra)
                 close_step()
                 break
 
@@ -448,7 +411,7 @@ class DogAgent:
             label = result.get("queued") or name
             self._emit("step", n=n, thought=thought, action=label, frame=frame_id,
                        **({} if result["ok"] else {"error": result["error"]}), epoch=epoch)
-            self._log("step", n=n, action=label, thought=thought, latency_s=latency, ok=result["ok"], brain=brain, **extra)
+            self._log("step", n=n, action=label, thought=thought, latency_s=latency, ok=result["ok"], **extra)
             if not result["ok"]:
                 steps.append(f"{n}. «{thought}» → azione rifiutata ({result['error']})")
                 close_step()
@@ -461,24 +424,6 @@ class DogAgent:
                          f"yaw={after['yaw_deg']}° (prima: x={before['x']} y={before['y']} yaw={before['yaw_deg']}°)"
                          + "".join(f" → {f}" for f in feedback))
 
-            # JEV only: a 2nd action from the same call, when both are confident and the 1st went smoothly
-            sec = dec.second if dec is not None else None
-            if (sec is not None and not feedback and dec.confidence >= cfg.jev_multi_min_conf
-                    and sec.confidence >= cfg.jev_multi_min_conf and self._epoch == epoch):
-                before2 = after
-                r2 = self.sim.submit(sec.name, sec.args)
-                label2 = r2.get("queued") or sec.name
-                self._emit("step", n=n, thought=sec.thought, action=label2, frame=frame_id,
-                           **({} if r2["ok"] else {"error": r2["error"]}), epoch=epoch)
-                self._log("step", n=n, part=2, action=label2, thought=sec.thought, ok=r2["ok"], brain=brain,
-                          confidence=sec.confidence)
-                if r2["ok"]:
-                    alive, after2, fb2 = self._observe(epoch, n, label2)
-                    if not alive:
-                        return
-                    steps.append(f"{n}b. «{sec.thought}» → {label2} → odometria: x={after2['x']} y={after2['y']} "
-                                 f"yaw={after2['yaw_deg']}° (prima: x={before2['x']} y={before2['y']} "
-                                 f"yaw={before2['yaw_deg']}°)" + "".join(f" → {f}" for f in fb2))
             timing["exec"] = time.monotonic() - t0
             close_step(label)
         else:
@@ -491,7 +436,7 @@ class DogAgent:
             self._history.append({"goal": " / ".join(goals), "final": final})
             del self._history[:-HISTORY_MISSIONS]
         n_steps = max(1, len(steps))
-        self._log("mission_end", goal=goal, final=final, steps=len(steps), brain=brain,
+        self._log("mission_end", goal=goal, final=final, steps=len(steps),
                   avg_s={k: round(v / n_steps, 2) for k, v in totals.items()},
                   total_s={k: round(v, 2) for k, v in totals.items()})
 
@@ -533,23 +478,6 @@ class DogAgent:
         if key not in self._tool_cache:
             self._tool_cache[key] = build_tools(mode, thought, robot)
         return self._tool_cache[key]
-
-    def _compose_final(self, client, model: str, effort: str | None, mode: str, text: str,
-                       shots: dict, cfg: Settings) -> str:
-        """JEV cannot write text: one LLM call (no tools) words the final answer for the human."""
-        fallback = "Obiettivo concluso (JEV sceglie solo azioni: non scrive testo)."
-        kwargs: dict = {"model": model, "instructions": system_prompt(mode, cfg),
-                        "input": [{"role": "user", "content": [
-                            {"type": "input_text", "text": text + "\n\nLa missione è conclusa (o la richiesta è solo "
-                             "una domanda): rispondi all'umano con un messaggio breve e fattuale. Non chiamare tool."},
-                            *_camera_parts(shots)]}]}
-        if effort:
-            kwargs["reasoning"] = {"effort": effort}
-        try:
-            return client.responses.create(**kwargs).output_text or fallback
-        except Exception as e:  # never lose the mission over the final message
-            self._log("llm_error", error=repr(e), where="compose_final")
-            return fallback
 
     def _prompt(self, goals: list[str], notes: list[str], steps: list[str], cfg: Settings) -> str:
         s = self.sim.snapshot()

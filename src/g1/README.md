@@ -20,6 +20,12 @@ Trascina l'immagine per ruotare la vista, rotella per lo zoom. Test: `python tes
 - `g1_world.py`: stessa pipeline di `deploy_mujoco.py` (policy a 50 Hz, PD a 500 Hz, kp/kd/default di `g1.yaml`); comando con rampa e watchdog di 0,4 s (se il browser tace, il robot si ferma); rilevamento caduta (bacino < 0,45 m) e reset. Il rendering ha un thread suo.
 - Limiti dei comandi: vx ±0,8 m/s, vy ±0,4 m/s, ω ±1,0 rad/s. Misurati: 0,5 → ~0,44 m/s, 0,8 → ~0,73 m/s, ω 0,8 → ~41°/s.
 
+## Percezione (cosa vede, distanza, altezza)
+
+Sotto la telecamera della testa: **camera | oggetti | profondità**. Segmentazione con YOLOE/YOLO in locale (ONNX) o SAM 3 in cloud a
+campione; distanza e altezza dalla profondità esatta del simulatore o dallo stereo della testa vera. Scena con scrivania:
+`--scene desk`; dashboard: `/?head=annotated`. Dettagli, misure e calibrazione: [docs/vision/live-perception.md](../../docs/vision/live-perception.md).
+
 ## Non fatto / da sapere
 
 - Solo simulatore: nessun driver per il G1 vero (SDK Unitree `LocoClient`/DDS non toccato).

@@ -9,7 +9,7 @@ included, from the default pose below (elbows ~55 deg, shoulders slightly forwar
   joint_vel_rel * 0.05, last_action (raw); each TERM keeps a 5-step history (oldest first) and terms are concatenated: 5*(3+3+3+29+29+29) = 480
 - the history is initialised by repeating the first observation
 - target position of motor JOINT_IDS_MAP[i] = DEFAULT[i] + 0.25 * action[i]; PD gains in robot MOTOR order (STIFFNESS / DAMPING)
-- 50 Hz; command ranges of the deploy config: x [-0.5, 1.0], y [-0.3, 0.3], yaw [-0.2, 0.2]
+- 50 Hz; command ranges of the deploy config: x [-0.5, 1.0], y [-0.3, 0.3], yaw [-0.2, 0.2] (Unitree deploy config; the simulator uses +-1.0, see CMD_LIMITS)
 The weights are Unitree's (see assets/lab29/); check their license before redistributing outside the team.
 """
 from __future__ import annotations
@@ -31,7 +31,9 @@ DAMPING = np.array([2, 2, 2, 4, 2, 2, 2, 2, 2, 4, 2, 2, 5, 5, 5] + [10] * 14, np
 ACTION_SCALE = 0.25
 ANG_VEL_SCALE, JOINT_VEL_SCALE = 0.2, 0.05
 HISTORY = 5
-CMD_LIMITS = (np.array([-0.5, -0.3, -0.2], np.float32), np.array([1.0, 0.3, 0.2], np.float32))  # (low, high) of (vx, vy, vyaw)
+# (low, high) of (vx, vy, vyaw). Unitree trains/deploys yaw at +-0.2 rad/s, but in MuJoCo that turns the G1 at ~1 deg/s (keys A/D seem dead).
+# Measured 2026-11-05 in the simulator, 5 s each, no fall: yaw cmd 0.6 -> 14 deg/s, 1.0 -> 29 deg/s. So the simulator accepts +-1.0.
+CMD_LIMITS = (np.array([-0.5, -0.3, -1.0], np.float32), np.array([1.0, 0.3, 1.0], np.float32))
 STEP_DT = 0.02
 
 

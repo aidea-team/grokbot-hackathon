@@ -173,7 +173,7 @@ def test_mission_stops_a_model_that_keeps_nudging() -> None:
     ag = G1Agent(Hub(r))
     ag.hub.mode = "real"
     real_openai, openai.OpenAI = openai.OpenAI, FakeOpenAI
-    os.environ["OPENAI_API_KEY"] = "sk-test"
+    os.environ["XAI_API_KEY"] = "xai-test"
     try:
         ag._mission("vai avanti di un metro", ag._epoch, "real")
     finally:
@@ -206,7 +206,7 @@ def test_agent_gestures_follow_the_body_and_mock_flags_unsimulated() -> None:
         ps = c.get("/api/presets").json()["presets"]
         assert any(p["name"] == "high_five" and p["simulated"] for p in ps)
         res = c.post("/api/preset", json={"name": "custom_dance"}).json()
-        assert res["ok"] is False and "non è simulato" in res["error"]
+        assert res["ok"] is False and "not simulated" in res["error"]
     finally:
         w.shutdown()
 
@@ -240,7 +240,7 @@ def _scripted_mission(script, body_factory=None):
     ag = G1Agent(Hub(r))
     ag.hub.mode = "real"
     real_openai, openai.OpenAI = openai.OpenAI, FakeOpenAI
-    os.environ["OPENAI_API_KEY"] = "sk-test"
+    os.environ["XAI_API_KEY"] = "xai-test"
     try:
         ag._mission("vai verso il palo rosso", ag._epoch, "real")
     finally:

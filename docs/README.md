@@ -82,6 +82,7 @@
 | File | Contenuto |
 |---|---|
 | [sam3.md](vision/sam3.md) | SAM 3 su Roboflow serverless: come chiamarlo, cosa torna indietro (maschere a poligoni, niente bbox), risultato sulla scrivania |
+| [live-perception.md](vision/live-perception.md) | **Percezione live del G1**: segmentazione (YOLOE/YOLO locali, SAM 3 a campione) + distanza e altezza (profondità esatta nel simulatore, stereo SGBM sul vero), calibrazione col metro, misure |
 | [g1-desk-demo.md](vision/g1-desk-demo.md) | Piano della demo "il G1 va alla scrivania": solo immagine vs immagine + SAM 3, worker di percezione, dashboard, WASD sull'altro robot (progetto, nessun codice) |
 
 ### [hardware/](hardware/README.md): SDK e integrazione dell'hardware
