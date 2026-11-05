@@ -17,7 +17,7 @@ import numpy as np  # noqa: E402
 from fake_g1_head import SimStereoHead  # noqa: E402
 from stereo import StereoCalib, StereoDepth  # noqa: E402
 
-OBJECTS = ("desk_", "monitor_", "chair_", "keyboard")
+OBJECTS = ("desk_", "laptop_", "chair_")
 
 
 def main() -> int:
@@ -49,8 +49,8 @@ def main() -> int:
                 fails += 1
                 continue
             err = (np.median(zm) - np.median(tz)) / np.median(tz)
-            # 10%: the chair is flat black with no texture, the worst case for block matching (it reached +8% in one view);
-            # textured objects stay within ~5%
+            # 10%: dark, flat, textureless surfaces are the worst case for block matching (a black office chair reached +8% in one
+            # view); the current scene stays within ~3%
             ok = abs(err) < 0.10
             fails += not ok
             print(f"   {prefix:10} stereo {np.median(zm):.2f} m vs truth {np.median(tz):.2f} m ({err:+.1%}), "

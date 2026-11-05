@@ -13,14 +13,15 @@ Il pannello "Percezione" a destra elenca gli oggetti con distanza, altezza e dir
 ## Provarla
 
 ```bash
-python src/g1/g1_app.py --port 8766 --scene desk      # simulatore con scrivania, monitor, tastiera, sedia
+python src/g1/g1_app.py --port 8766 --scene desk      # simulatore: scrivania con portatile e mouse, sedia normale
 ```
 
 Apri <http://127.0.0.1:8766/?head=annotated>. Nel simulatore la profondità è **esatta** (buffer di profondità di MuJoCo).
 
 Come parte la scena `desk`:
 
-- **Posizione:** il G1 parte a circa 1,5 m dalla scrivania, girato verso il suo centro. Scrivania, monitor, tastiera e mouse sono al centro della camera della testa, la sedia a sinistra. La vista esterna lo mostra di profilo davanti alla scrivania.
+- **Scena:** una scrivania con sopra un portatile aperto (tipo MacBook) e un mouse, e una sedia normale a quattro gambe (non da ufficio), come ai tavoli dell'hackathon.
+- **Posizione:** il G1 parte a circa 1,7 m dalla scrivania, girato verso il suo centro. Portatile e mouse sono al centro della camera della testa, la sedia quasi intera a sinistra. La vista esterna lo mostra di profilo davanti alla scrivania.
 - **Controller:** `lab29`, perché con `gym12` il G1 "fermo" se ne va da solo (1,7 m e 30° in 10 s, misurato).
 - **Mantiene la posizione:** senza comandi, il simulatore riporta il robot dove l'hai lasciato, come fa il G1 vero quando non riceve `Move`. Misurato: entro 1 cm e 3° in 30 s.
 - **Comandi:** con WASD lo sposti, e la nuova posizione diventa quella da mantenere. R lo rimette al punto di partenza.
@@ -63,29 +64,28 @@ Col robot vero (lo avvia una persona, come sempre): `python src/g1/g1_app.py --p
 
 | Oggetto | Altezza misurata | Vera |
 |---|---|---|
-| Monitor | 1,19 m | 1,21 m |
-| Sedia | 1,03 m | 1,04 m |
+| Portatile (bordo dello schermo) | 0,95 m | 0,96 m |
+| Sedia (schienale) | 0,84 m | 0,86 m |
 | Scrivania | 0,75 m | 0,75 m |
-| PC | 0,44 m | 0,44 m |
 
-- La distanza del monitor è 2,68 m contro 2,69 m veri.
-- Camera: 1,240 m contro 1,240 m, sia dalla posa sia dal RANSAC sulla sola profondità.
+- Camera: 1,262 m contro 1,262 m, sia dalla posa sia dal RANSAC sulla sola profondità.
 
-**Catena completa nel simulatore con YOLOE** (webapp, `--scene desk`):
+**Catena completa nel simulatore con YOLOE** (webapp, `--scene desk`, dal punto di partenza):
 
-| Oggetto | Altezza misurata | Vera |
-|---|---|---|
-| Scrivania | 0,77 m | 0,75 m |
-| Monitor | 1,19 m | 1,21 m |
-| Sedia | 1,03 m | 1,04 m |
+| Oggetto | Score | Distanza | Altezza misurata | Vera |
+|---|---|---|---|---|
+| Sedia | 0,92 | 1,71 m | 0,85 m | 0,86 m |
+| Mouse | 0,82 | 1,87 m | 0,79 m | 0,78 m |
+| Scrivania | 0,77 | 1,90 m | 0,75 m | 0,75 m |
+| Portatile | 0,88 | 2,06 m | 0,96 m | 0,96 m |
 
-Circa 2 analisi al secondo. Qui il limite è il rendering software del simulatore su questa macchina, non il modello.
+Circa 2 analisi al secondo, 320 ms di segmentazione. Qui il limite è il rendering software del simulatore su questa macchina, non il modello. Sullo stesso frame SAM 3 trova scrivania 0,94, sedia 0,93, portatile 0,96 e mouse 0,91.
 
 **Stereo contro verità** (`tests/test_vision_stereo.py`, coppie renderizzate con baseline 60 mm e FOV 75°):
 
-- Errore mediano sul frame: 1,8–2,1%.
-- Per oggetto, nella maggior parte dei casi entro il 5%. Esempi: monitor a 3,00 m contro 2,99 m, scrivania a 1,32 m contro 1,31 m.
-- Caso peggiore: la sedia nera e senza texture, +8%.
+- Errore mediano sul frame: 1,6–1,8%.
+- Per oggetto, entro il 3,1% in tutte e tre le viste. Esempi: portatile a 2,09 m contro 2,09 m, scrivania a 1,97 m contro 1,95 m, sedia a 0,98 m contro 0,97 m.
+- Con la sedia da ufficio nera e senza texture della prima versione della scena si arrivava a +8%: le superfici scure e uniformi sono il caso peggiore.
 
 Questo è il limite del solo matcher: sul modulo vero si aggiunge l'errore di calibrazione.
 
@@ -115,7 +115,7 @@ In alternativa si può usare una calibrazione OpenCV completa con la scacchiera 
 
 - **Superfici senza texture:** schermi accesi, muri bianchi, plastica nera opaca. Lo stereo non trova corrispondenze lì, quindi la distanza di quegli oggetti è meno affidabile, o manca.
 - **Errore dello stereo con la distanza:** cresce col quadrato della distanza. Con 60 mm di baseline a 800 px, circa 2 cm a 1 m, 6–8 cm a 2 m e 25–35 cm a 4 m (stima teorica della ricerca).
-- **Oggetti coperti:** se ne misura solo la parte visibile. Il PC dietro la sedia risultava alto 2 cm.
+- **Oggetti coperti:** se ne misura solo la parte visibile. Nella prima versione della scena, un PC nascosto dietro la sedia risultava alto 2 cm.
 - **SAM 3:** il risultato si riferisce al frame analizzato. In movimento, la vista "oggetti" mostra quel frame con la sua età.
 - **Robot simulato:** con `gym12` deriva anche da fermo (si sposta e si gira da solo). Va riportato davanti alla scrivania con WASD.
 - **WSL2:** la rete NAT di default potrebbe non far passare broadcast e RTP del robot vero. Non provato: forse serve la rete "mirrored".

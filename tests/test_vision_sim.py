@@ -16,7 +16,7 @@ from g1_world import G1World  # noqa: E402
 from rgbd import fit_floor, measure  # noqa: E402
 
 # object (geom name prefix: all its pieces) -> (true top above the floor in m, world x,y of its centre or None)
-TRUTH = {"desk_": (0.75, (3.0, 0.0)), "monitor_": (1.21, (3.15, 0.0)), "chair_": (1.04, None), "pc_tower": (0.44, (3.05, 0.5))}
+TRUTH = {"desk_": (0.75, (3.0, 0.0)), "laptop_": (0.96, (2.9, 0.0)), "chair_": (0.86, None)}
 HIDDEN = 3  # geom group used to hide everything but one object
 
 

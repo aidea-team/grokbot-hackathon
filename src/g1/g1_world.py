@@ -28,11 +28,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "vision"))
 from rgbd import RGBD, Floor, Intrinsics  # noqa: E402
 
 SCENE = Path(__file__).parent / "assets" / "scene.xml"
-# "default": two coloured cylinders 4 m ahead (chat/camera tests). "desk": an office corner (desk, monitor, keyboard, chair) for perception.
+# "default": two coloured cylinders 4 m ahead (chat/camera tests). "desk": a desk with an open laptop and a mouse, and a plain chair,
+# for perception.
 SCENES = {"default": SCENE, "desk": Path(__file__).parent / "assets" / "scene_desk.xml"}
-# Where the robot (re)starts, (x, y, yaw rad): in the desk scene ~1.5 m from the desk's front edge, a bit to the right of the chair,
-# facing the desk's centre (3.0, 0): desk, monitor, keyboard and mouse centred in the head camera, the chair on the left.
-SCENE_START = {"desk": (1.2, -0.6, float(np.arctan2(0.6, 1.8)))}
+# Where the robot (re)starts, (x, y, yaw rad): in the desk scene ~1.7 m from the desk's front edge, to the right of the chair, facing
+# the desk's centre (3.0, 0): laptop and mouse centred in the head camera, the chair (almost whole) on the left.
+SCENE_START = {"desk": (1.0, -0.65, float(np.arctan2(0.65, 2.0)))}
 # External view (azimuth = viewing direction, elevation, distance): desk scene = the robot in profile with the desk in front of it.
 SCENE_ORBIT = {"desk": (-50.0, -22.0, 3.8)}
 # The desk scene starts with lab29: standing still with zero command, gym12 walks off by itself (~1.7 m and 30 deg in 10 s, measured).
