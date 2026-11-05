@@ -141,3 +141,16 @@ In alternativa si può usare una calibrazione OpenCV completa con la scacchiera 
   - PINTO model zoo (HITNet, RealtimeStereo, CREStereo, Fast-ACVNet, misurati e scartati);
   - nicolas.burrus.name/stereo-comparison.
 - Modulo probabile: ELP-USB3DGS1200P01 (pagine prodotto ELP/Amazon). Teste stereo Unitree: github.com/unitreerobotics/xr_teleoperate `Device.md`.
+
+## Sul girato del telefono (per il video)
+
+`scripts/yoloe_footage.py` fa passare un video registrato nello stesso modello e con lo stesso disegno della dashboard (maschere, contorni, etichette, barra di stato), fotogramma per fotogramma, e scrive un MP4 H.264 più un JSONL con gli oggetti di ogni fotogramma. Legge HEVC e rotazione dei telefoni tramite ffmpeg. Sul girato non c'è profondità: le etichette hanno solo il nome e la confidenza, niente distanza né altezza.
+
+```bash
+pip install onnxruntime opencv-python-headless numpy        # già nella venv se hai fatto setup.sh
+python scripts/yoloe_footage.py assets/footage/pov-verso-scrivania-1.mp4 -o out/pov.mp4 --start 6 --duration 8 --width 1920 --it --solid person
+```
+
+- `--it` etichette in italiano (person → umano, desk → scrivania…); `--solid person` riempie le persone di colore pieno (anonimizza gli altri partecipanti).
+- `--vf` filtro ffmpeg applicato prima (es. `crop=iw:ih*0.47:0:ih*0.30` per tenere solo la telecamera della testa in un video girato allo schermo).
+- Misurato su CPU (4 core, nessuna GPU): YOLOE a 1280–1920 px circa 3 fotogrammi al secondo, cioè 2–3 minuti per 10 s di video a 30 fps.
